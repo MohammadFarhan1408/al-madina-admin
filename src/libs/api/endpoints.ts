@@ -1,0 +1,55 @@
+// Typed API path constants — the single place that maps to backend doc §7.
+// Do NOT introduce paths that are not documented in al-madina-ittar-backend.md.
+
+export const endpoints = {
+  auth: {
+    signIn: '/auth/sign-in',
+    signOut: '/auth/sign-out',
+    refresh: '/auth/refresh',
+    me: '/auth/me',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password'
+  },
+
+  // Public catalogue reads (used by admin list/detail views).
+  products: {
+    list: '/products',
+    detail: (id: string) => `/products/${id}`,
+    reviews: (id: string) => `/products/${id}/reviews`
+  },
+  categories: {
+    list: '/categories',
+    products: (id: string) => `/categories/${id}/products`
+  },
+  collections: {
+    list: '/collections',
+    products: (id: string) => `/collections/${id}/products`
+  },
+  orders: {
+    detail: (id: string) => `/orders/${id}`
+  },
+
+  // Admin (role: admin | manager) — audited mutations.
+  admin: {
+    dashboard: '/admin/dashboard',
+    ordersStats: '/admin/orders/stats',
+    products: '/admin/products',
+    product: (id: string) => `/admin/products/${id}`,
+    productImages: (id: string) => `/admin/products/${id}/images`,
+    categories: '/admin/categories',
+    category: (id: string) => `/admin/categories/${id}`,
+    collections: '/admin/collections',
+    collection: (id: string) => `/admin/collections/${id}`,
+    collectionProducts: (id: string) => `/admin/collections/${id}/products`,
+    collectionProduct: (id: string, productId: string) => `/admin/collections/${id}/products/${productId}`,
+    orders: '/admin/orders',
+    orderStatus: (id: string) => `/admin/orders/${id}/status`,
+    users: '/admin/users',
+    user: (id: string) => `/admin/users/${id}`,
+    userTier: (id: string) => `/admin/users/${id}/tier`,
+    reviews: '/admin/reviews',
+    review: (id: string) => `/admin/reviews/${id}`,
+    notifications: '/admin/notifications',
+    upload: '/admin/upload'
+  }
+} as const
