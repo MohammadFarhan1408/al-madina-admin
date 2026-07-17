@@ -218,3 +218,138 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+
+/* =====================================================================
+   Al Madina brand polish — bronze borders, gold accents.
+   Targets stable MUI class names so the component theme (mergedTheme.ts)
+   doesn't need to replace @core's style functions wholesale.
+
+   Colours here are built from MUI's OWN generated CSS variables
+   (--mui-palette-*-mainChannel etc.) rather than custom variables scoped to
+   `[data-mui-color-scheme]`. That attribute is set by InitColorSchemeScript
+   at runtime (not present in the initial server HTML), and custom rules
+   scoped to it were resolving as undefined in practice — MUI's native
+   variables are the proven-reliable mechanism (they already drive every
+   other correctly-themed surface in the app), so we reuse those directly
+   instead of re-deriving our own scheme-scoped tokens.
+   ===================================================================== */
+
+/* Cards — thin bronze border + smooth hover elevation (never flat). */
+.MuiCard-root {
+  border: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+.MuiCard-root:hover {
+  border-color: rgb(var(--mui-palette-primary-mainChannel) / 0.35);
+}
+
+/* Dialogs / Drawers / Popovers / Menus / Autocomplete / Selects — solid raised
+   surface + bronze border. Covers every MUI overlay built on Popover/Modal
+   (Select and context menus render via Menu; Autocomplete uses its own Paper
+   class). Must be opaque: these float above real page content and a
+   transparent background makes that content bleed through and hurts
+   readability. Kept as a backstop alongside the equivalent theme overrides
+   in @core/theme/overrides/{dialog,drawer,popover,menu,autocomplete}. */
+.MuiDialog-paper,
+.MuiDrawer-paper,
+.MuiPopover-paper,
+.MuiMenu-paper,
+.MuiAutocomplete-paper {
+  background-color: var(--mui-palette-background-paper) !important;
+  border: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
+}
+
+/* Tables — bronze header separator, ivory tracked header type, gold row states. */
+.MuiTableHead-root .MuiTableCell-root {
+  border-block-end: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
+  color: var(--mui-palette-text-primary);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+.MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgb(var(--mui-palette-primary-mainChannel) / 0.06);
+}
+.MuiTableBody-root .MuiTableRow-root.Mui-selected {
+  background-color: rgb(var(--mui-palette-primary-mainChannel) / 0.12) !important;
+}
+
+/* Chips — outlined pills (filters) get letter-spaced uppercase treatment; the
+   mobile app pairs these with solid gold "badge" chips (StatusChip variant='tonal'). */
+.MuiChip-outlined {
+  background-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Focus rings — gold, not the browser default. */
+.MuiButtonBase-root:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgb(var(--mui-palette-primary-mainChannel) / 0.6);
+  outline-offset: 2px;
+}
+
+/* Art Deco corner-bracket frame — see components/shared/CornerFrame.tsx */
+.am-corner-frame {
+  position: relative;
+}
+.am-corner {
+  position: absolute;
+  inline-size: 18px;
+  block-size: 18px;
+  border-color: var(--mui-palette-primary-main);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+}
+.am-corner-tl {
+  inset-block-start: 10px;
+  inset-inline-start: 10px;
+  border-block-start: 2px solid;
+  border-inline-start: 2px solid;
+}
+.am-corner-tr {
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+  border-block-start: 2px solid;
+  border-inline-end: 2px solid;
+}
+.am-corner-bl {
+  inset-block-end: 10px;
+  inset-inline-start: 10px;
+  border-block-end: 2px solid;
+  border-inline-start: 2px solid;
+}
+.am-corner-br {
+  inset-block-end: 10px;
+  inset-inline-end: 10px;
+  border-block-end: 2px solid;
+  border-inline-end: 2px solid;
+}
+
+/* Art Deco auth-screen background — dark gradient + diamond lattice, no image
+   assets. Matches the mobile app's splash screen. */
+.am-deco-bg {
+  position: relative;
+  background-color: #0b0b0b;
+  background-image:
+    linear-gradient(180deg, #0b0b0b 0%, #141414 55%, #1c1608 100%),
+    linear-gradient(135deg, rgba(212, 175, 55, 0.07) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(212, 175, 55, 0.07) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    56px 56px,
+    56px 56px;
+}
+.am-deco-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(212, 175, 55, 0.08), transparent 60%);
+  pointer-events: none;
+}

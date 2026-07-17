@@ -8,6 +8,11 @@ const dialog = (skin: Skin): Theme['components'] => ({
   MuiDialog: {
     styleOverrides: {
       paper: ({ theme }) => ({
+        // Set explicitly (not just via globals.css) so the dialog surface is
+        // guaranteed opaque regardless of any external stylesheet cascade —
+        // this is the same mechanism MUI uses for every other override here.
+        backgroundColor: 'var(--mui-palette-background-paper)',
+        border: '1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35)',
         borderRadius: 'var(--mui-shape-customBorderRadius-lg)',
         ...(skin !== 'bordered'
           ? {
