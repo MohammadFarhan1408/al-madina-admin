@@ -4,21 +4,21 @@
 import { useMemo, useState } from 'react'
 
 import Box from '@mui/material/Box'
-import MenuItem from '@mui/material/MenuItem'
 import Avatar from '@mui/material/Avatar'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import Rating from '@mui/material/Rating'
 import Alert from '@mui/material/Alert'
-import type { ColumnDef, PaginationState } from '@tanstack/react-table'
+import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CustomTextField from '@core/components/mui/TextField'
+import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
-import { ApiError } from '@/libs/api/types'
+import { getErrorMessage } from '@/libs/api/types'
 import { formatDate } from '@/libs/format'
 import { useDeleteReview, useReviews } from '@/features/reviews/hooks/useReviews'
 import type { Review } from '@/features/reviews/types'
@@ -26,7 +26,9 @@ import type { Review } from '@/features/reviews/types'
 const ReviewsView = () => {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [rating, setRating] = useState<number | ''>('')
+  const [sorting, setSorting] = useState<SortingState>([])
   const [toDelete, setToDelete] = useState<Review | null>(null)
+  const resetOnChange = useFilterReset(setPagination)
 
   const deleteMutation = useDeleteReview()
   const { success, error: toastError } = useToast()
@@ -34,7 +36,9 @@ const ReviewsView = () => {
   const { data, isLoading, isFetching, isError, error } = useReviews({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
-    rating: rating === '' ? undefined : rating
+    rating: rating === '' ? undefined : rating,
+    sortBy: (sorting[0]?.id as 'rating' | 'date') || undefined,
+    sortOrder: sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : undefined
   })
 
   const confirmDelete = async () => {
@@ -45,7 +49,7 @@ const ReviewsView = () => {
       success('Review deleted')
       setToDelete(null)
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to delete review')
+      toastError(getErrorMessage(err, 'Failed to delete review'))
     }
   }
 
@@ -54,6 +58,7 @@ const ReviewsView = () => {
       {
         header: 'Author',
         accessorKey: 'author',
+        enableSorting: false,
         cell: ({ row }) => (
           <div className='flex items-center gap-3'>
             <Avatar src={row.original.avatar}>{row.original.author?.charAt(0)}</Avatar>
@@ -72,6 +77,7 @@ const ReviewsView = () => {
       {
         header: 'Review',
         accessorKey: 'title',
+        enableSorting: false,
         cell: ({ row }) => (
           <div className='flex flex-col max-is-[360px]'>
             <Typography variant='subtitle2'>{row.original.title}</Typography>
@@ -88,10 +94,19 @@ const ReviewsView = () => {
       },
       {
         header: 'Actions',
+        enableSorting: false,
+        meta: { align: 'right' },
         cell: ({ row }) => (
-          <IconButton size='small' color='error' onClick={() => setToDelete(row.original)}>
-            <i className='tabler-trash' />
-          </IconButton>
+          <div className='flex justify-end'>
+            <IconButton
+              size='small'
+              color='error'
+              aria-label={`Delete review by ${row.original.author}`}
+              onClick={() => setToDelete(row.original)}
+            >
+              <i className='tabler-trash' />
+            </IconButton>
+          </div>
         )
       }
     ],
@@ -100,6 +115,7 @@ const ReviewsView = () => {
 
   return (
     <>
+      <Breadcrumbs />
       <PageHeader title='Reviews' subtitle='Moderate customer product reviews' />
 
       {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load reviews.'}</Alert>}
@@ -110,27 +126,25 @@ const ReviewsView = () => {
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
-        isLoading={isLoading || isFetching}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        isLoading={isLoading}
+        isRefetching={isFetching && !isLoading}
         emptyMessage='No reviews found'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <CustomTextField
-              select
-              value={rating}
-              onChange={e => {
-                setRating(e.target.value === '' ? '' : Number(e.target.value))
-                setPagination(p => ({ ...p, pageIndex: 0 }))
-              }}
-              className='min-is-[160px]'
-              label='Rating'
-            >
-              <MenuItem value=''>All ratings</MenuItem>
-              {[5, 4, 3, 2, 1].map(r => (
-                <MenuItem key={r} value={r}>
-                  {r} star{r > 1 ? 's' : ''}
-                </MenuItem>
-              ))}
-            </CustomTextField>
+          <Box className='flex flex-wrap items-center gap-3 p-6'>
+            <Typography variant='body2' color='text.secondary'>
+              Filter by rating:
+            </Typography>
+            <Rating
+              value={rating || 0}
+              onChange={(_, value) => resetOnChange(setRating)(value ?? '')}
+            />
+            {rating !== '' && (
+              <IconButton size='small' aria-label='Clear rating filter' onClick={() => resetOnChange(setRating)('')}>
+                <i className='tabler-x text-[16px]' />
+              </IconButton>
+            )}
           </Box>
         }
       />
