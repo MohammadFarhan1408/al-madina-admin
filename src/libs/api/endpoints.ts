@@ -28,6 +28,9 @@ export const endpoints = {
   orders: {
     detail: (id: string) => `/orders/${id}`
   },
+  tags: {
+    list: '/tags'
+  },
 
   // Admin (role: admin | manager) — audited mutations.
   admin: {
@@ -50,6 +53,13 @@ export const endpoints = {
     reviews: '/admin/reviews',
     review: (id: string) => `/admin/reviews/${id}`,
     notifications: '/admin/notifications',
-    upload: '/admin/upload'
+    upload: '/admin/upload',
+    coupons: '/admin/coupons',
+    coupon: (id: string) => `/admin/coupons/${id}`,
+    roles: '/admin/roles',
+    role: (id: string) => `/admin/roles/${id}`,
+    permissions: '/admin/permissions',
+    tags: '/admin/tags',
+    tag: (id: string) => `/admin/tags/${id}`
   }
 } as const
