@@ -13,17 +13,22 @@ import Alert from '@mui/material/Alert'
 import Skeleton from '@mui/material/Skeleton'
 
 import PageHeader from '@/components/shared/PageHeader'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import CornerFrame from '@/components/shared/CornerFrame'
 import { useToast } from '@/contexts/ToastContext'
-import { ApiError } from '@/libs/api/types'
+import { getErrorMessage } from '@/libs/api/types'
 import { useCollections, useDeleteCollection } from '@/features/collections/hooks/useCollections'
 import CollectionFormDialog from '@/features/collections/components/CollectionFormDialog'
 import ManageProductsDialog from '@/features/collections/components/ManageProductsDialog'
 import type { Collection } from '@/features/collections/types'
 
 const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } as const
+
+// ponytail: matches the md:4 (3-per-row) grid below; not breakpoint-aware,
+// bump if the grid's column count changes.
+const SKELETON_COUNT = 3
 
 const CollectionsView = () => {
   const { data: collections, isLoading, isError, error } = useCollections()
@@ -53,12 +58,13 @@ const CollectionsView = () => {
       success('Collection deleted')
       setToDelete(null)
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to delete collection')
+      toastError(getErrorMessage(err, 'Failed to delete collection'))
     }
   }
 
   return (
     <>
+      <Breadcrumbs />
       <PageHeader
         eyebrow='Catalogue'
         title='Collections'
@@ -74,7 +80,7 @@ const CollectionsView = () => {
 
       <Grid container spacing={6}>
         {isLoading ? (
-          [...Array(3)].map((_, i) => (
+          [...Array(SKELETON_COUNT)].map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
               <Skeleton variant='rounded' height={280} />
             </Grid>
@@ -97,7 +103,7 @@ const CollectionsView = () => {
                   <Typography variant='caption' color='text.disabled'>
                     {collection.productCount} products
                   </Typography>
-                  <div className='flex items-center gap-2 mbs-auto pbs-3'>
+                  <div className='flex flex-wrap items-center gap-2 mbs-auto pbs-3'>
                     <Button size='small' variant='tonal' onClick={() => setManaging(collection)}>
                       Products
                     </Button>
