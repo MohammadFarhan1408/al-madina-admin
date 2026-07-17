@@ -1,7 +1,18 @@
 // Product form schema mirroring backend model/validation (doc §5.2).
 import { z } from 'zod'
 
-import { PRODUCT_BADGES, SCENT_FAMILIES } from './types'
+import { PRODUCT_BADGES, PRODUCT_VARIANT_SIZES_ML, SCENT_FAMILIES } from './types'
+
+const productVariantSchema = z.object({
+  volumeMl: z.number().refine(v => (PRODUCT_VARIANT_SIZES_ML as readonly number[]).includes(v), {
+    message: 'Choose a standard size'
+  }),
+  price: z.number().min(0, 'Must be 0 or greater'),
+  sku: z.string().trim().min(2, 'SKU is required'),
+  barcode: z.string().trim().optional().or(z.literal('')),
+  stock: z.number().int().min(0, 'Must be 0 or greater'),
+  inStock: z.boolean()
+})
 
 export const productSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
@@ -22,7 +33,13 @@ export const productSchema = z.object({
   isNewArrival: z.boolean(),
   isBestSeller: z.boolean(),
   isSignature: z.boolean(),
-  isSeasonal: z.boolean()
+  isSeasonal: z.boolean(),
+  variants: z.array(productVariantSchema),
+  tagIds: z.array(z.string()),
+  slug: z.string().trim().optional().or(z.literal('')),
+  metaTitle: z.string().trim().optional().or(z.literal('')),
+  metaDescription: z.string().trim().optional().or(z.literal('')),
+  metaKeywords: z.array(z.string())
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>
@@ -46,5 +63,11 @@ export const defaultProductValues: ProductFormValues = {
   isNewArrival: false,
   isBestSeller: false,
   isSignature: false,
-  isSeasonal: false
+  isSeasonal: false,
+  variants: [],
+  tagIds: [],
+  slug: '',
+  metaTitle: '',
+  metaDescription: '',
+  metaKeywords: []
 }
