@@ -1,6 +1,8 @@
 'use client'
 
 // Customer detail — profile, tier control, and recent orders (doc §7.12).
+import { useState } from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -14,8 +16,10 @@ import CircularProgress from '@mui/material/CircularProgress'
 
 import CustomTextField from '@core/components/mui/TextField'
 import StatusChip from '@/components/shared/StatusChip'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import ZoomableImage from '@/components/shared/ZoomableImage'
 import { useToast } from '@/contexts/ToastContext'
-import { ApiError } from '@/libs/api/types'
+import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
 import { useCustomer, useUpdateCustomerTier } from '../hooks/useCustomers'
 import { USER_TIERS, type UserTier } from '../types'
@@ -28,17 +32,20 @@ type Props = {
 
 const CustomerDetailDialog = ({ open, onClose, customerId }: Props) => {
   const { success, error } = useToast()
-  const { data, isLoading } = useCustomer(open ? customerId ?? undefined : undefined)
+  const { data, isLoading } = useCustomer(open ? (customerId ?? undefined) : undefined)
   const updateTier = useUpdateCustomerTier()
+  const [pendingTier, setPendingTier] = useState<UserTier | null>(null)
 
-  const handleTierChange = async (tier: UserTier) => {
-    if (!customerId) return
+  const applyTierChange = async () => {
+    if (!customerId || !pendingTier) return
 
     try {
-      await updateTier.mutateAsync({ id: customerId, tier })
+      await updateTier.mutateAsync({ id: customerId, tier: pendingTier })
       success('Tier updated')
     } catch (err) {
-      error(err instanceof ApiError ? err.message : 'Failed to update tier')
+      error(getErrorMessage(err, 'Failed to update tier'))
+    } finally {
+      setPendingTier(null)
     }
   }
 
@@ -53,7 +60,9 @@ const CustomerDetailDialog = ({ open, onClose, customerId }: Props) => {
         ) : (
           <>
             <div className='flex items-center gap-4'>
-              <Avatar src={data.user.avatar} sx={{ width: 56, height: 56 }} />
+              <ZoomableImage src={data.user.avatar} alt={data.user.fullName}>
+                <Avatar src={data.user.avatar} sx={{ width: 56, height: 56 }} />
+              </ZoomableImage>
               <div className='flex flex-col'>
                 <Typography variant='h6'>{data.user.fullName}</Typography>
                 <Typography variant='body2' color='text.secondary'>
@@ -71,8 +80,17 @@ const CustomerDetailDialog = ({ open, onClose, customerId }: Props) => {
               fullWidth
               label='Loyalty tier'
               value={data.user.tier}
-              onChange={e => handleTierChange(e.target.value as UserTier)}
+              onChange={e => {
+                const next = e.target.value as UserTier
+
+                if (next !== data.user.tier) setPendingTier(next)
+              }}
               disabled={updateTier.isPending}
+              slotProps={{
+                input: {
+                  endAdornment: updateTier.isPending ? <CircularProgress size={18} className='mie-6' /> : null
+                }
+              }}
             >
               {USER_TIERS.map(tier => (
                 <MenuItem key={tier} value={tier}>
@@ -105,6 +123,66 @@ const CustomerDetailDialog = ({ open, onClose, customerId }: Props) => {
             ) : (
               <Typography color='text.secondary'>No orders yet.</Typography>
             )}
+
+            <Divider textAlign='left'>
+              <Typography variant='body2' color='text.secondary'>
+                Saved addresses
+              </Typography>
+            </Divider>
+
+            {data.addresses.length ? (
+              data.addresses.map(addr => (
+                <div key={addr.id} className='flex flex-col gap-0.5'>
+                  <div className='flex items-center gap-2'>
+                    <Typography variant='subtitle2'>{addr.fullName}</Typography>
+                    {addr.isDefault && <StatusChip value='default' color='primary' />}
+                    {addr.label && (
+                      <Typography variant='caption' color='text.secondary'>
+                        ({addr.label})
+                      </Typography>
+                    )}
+                  </div>
+                  <Typography variant='body2' color='text.secondary'>
+                    {addr.phone}
+                  </Typography>
+                  <Typography variant='body2' color='text.secondary'>
+                    {[addr.addressLine, addr.city, addr.state, addr.country].filter(Boolean).join(', ')}
+                  </Typography>
+                </div>
+              ))
+            ) : (
+              <Typography color='text.secondary'>No saved addresses.</Typography>
+            )}
+
+            <Divider textAlign='left'>
+              <Typography variant='body2' color='text.secondary'>
+                Current cart
+              </Typography>
+            </Divider>
+
+            {data.cart.length ? (
+              data.cart.map((item, idx) => {
+                const product = typeof item.productId === 'string' ? null : item.productId
+
+                return (
+                  <div key={idx} className='flex items-center justify-between gap-2'>
+                    <div className='flex items-center gap-3'>
+                      {product && (
+                        <ZoomableImage src={product.images?.[0]} alt={product.name}>
+                          <Avatar variant='rounded' src={product.images?.[0]} sx={{ width: 40, height: 40 }} />
+                        </ZoomableImage>
+                      )}
+                      <Typography variant='body2'>{product?.name ?? 'Unknown product'}</Typography>
+                    </div>
+                    <Typography variant='caption' color='text.secondary'>
+                      Qty {item.quantity} · {item.volumeMl}ml
+                    </Typography>
+                  </div>
+                )
+              })
+            ) : (
+              <Typography color='text.secondary'>Cart is empty.</Typography>
+            )}
           </>
         )}
       </DialogContent>
@@ -113,6 +191,17 @@ const CustomerDetailDialog = ({ open, onClose, customerId }: Props) => {
           Close
         </Button>
       </DialogActions>
+
+      <ConfirmDialog
+        open={!!pendingTier}
+        title='Change loyalty tier'
+        description={`Move ${data?.user.fullName ?? 'this customer'} to "${pendingTier ?? ''}"?`}
+        confirmText='Change tier'
+        confirmColor='primary'
+        loading={updateTier.isPending}
+        onConfirm={applyTierChange}
+        onClose={() => setPendingTier(null)}
+      />
     </Dialog>
   )
 }

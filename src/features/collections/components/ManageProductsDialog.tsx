@@ -9,7 +9,6 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import Autocomplete from '@mui/material/Autocomplete'
-import TextField from '@mui/material/TextField'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -19,9 +18,10 @@ import IconButton from '@mui/material/IconButton'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import CustomTextField from '@core/components/mui/TextField'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useToast } from '@/contexts/ToastContext'
-import { ApiError } from '@/libs/api/types'
+import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency } from '@/libs/format'
 import { useProducts } from '@/features/products/hooks/useProducts'
 import type { Product } from '@/features/products/types'
@@ -42,10 +42,11 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
   const { success, error } = useToast()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Product | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(search)
 
   const { data: members, isLoading } = useCollectionProducts(open ? collection?.id : undefined)
-  const { data: searchResults } = useProducts({ q: debouncedSearch || undefined, limit: 10 })
+  const { data: searchResults, isFetching: searching } = useProducts({ q: debouncedSearch || undefined, limit: 10 })
   const addMutation = useAddCollectionProduct()
   const removeMutation = useRemoveCollectionProduct()
 
@@ -61,18 +62,22 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
       setSelected(null)
       setSearch('')
     } catch (err) {
-      error(err instanceof ApiError ? err.message : 'Failed to add product')
+      error(getErrorMessage(err, 'Failed to add product'))
     }
   }
 
   const handleRemove = async (productId: string) => {
     if (!collection) return
 
+    setRemovingId(productId)
+
     try {
       await removeMutation.mutateAsync({ id: collection.id, productId })
       success('Product removed')
     } catch (err) {
-      error(err instanceof ApiError ? err.message : 'Failed to remove product')
+      error(getErrorMessage(err, 'Failed to remove product'))
+    } finally {
+      setRemovingId(null)
     }
   }
 
@@ -85,11 +90,27 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
             fullWidth
             options={options}
             value={selected}
+            loading={searching}
+            loadingText='Searching…'
+            noOptionsText={debouncedSearch ? 'No matching products (or already in this collection)' : 'Type to search products'}
             onChange={(_, value) => setSelected(value)}
             getOptionLabel={option => `${option.name} — ${option.brand}`}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             onInputChange={(_, value) => setSearch(value)}
-            renderInput={params => <TextField {...params} label='Search products to add' />}
+            renderOption={(props, option) => (
+              <li {...props} key={option.id}>
+                <div className='flex items-center gap-3'>
+                  <Avatar variant='rounded' src={option.images?.[0]} sx={{ width: 32, height: 32 }} />
+                  <div className='flex flex-col'>
+                    <Typography variant='body2'>{option.name}</Typography>
+                    <Typography variant='caption' color='text.secondary'>
+                      {option.brand}
+                    </Typography>
+                  </div>
+                </div>
+              </li>
+            )}
+            renderInput={params => <CustomTextField {...params} label='Search products to add' />}
           />
           <Button
             variant='contained'
@@ -111,8 +132,14 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
               <ListItem
                 key={product.id}
                 secondaryAction={
-                  <IconButton edge='end' color='error' onClick={() => handleRemove(product.id)}>
-                    <i className='tabler-trash' />
+                  <IconButton
+                    edge='end'
+                    color='error'
+                    aria-label={`Remove ${product.name} from collection`}
+                    disabled={removingId === product.id}
+                    onClick={() => handleRemove(product.id)}
+                  >
+                    {removingId === product.id ? <CircularProgress size={18} /> : <i className='tabler-trash' />}
                   </IconButton>
                 }
               >
