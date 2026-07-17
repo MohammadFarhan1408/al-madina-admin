@@ -37,3 +37,8 @@ export class ApiError extends Error {
     this.details = body.details
   }
 }
+
+/** Extracts a user-facing message from a caught mutation error, falling back for non-API errors. */
+export function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof ApiError ? err.message : fallback
+}
