@@ -9,6 +9,18 @@ export type ProductBadge = (typeof PRODUCT_BADGES)[number]
 export const PRODUCT_SORTS = ['featured', 'price_asc', 'price_desc', 'rating', 'newest'] as const
 export type ProductSort = (typeof PRODUCT_SORTS)[number]
 
+export const PRODUCT_VARIANT_SIZES_ML = [3, 6, 12, 30, 50, 100] as const
+export type ProductVariantSizeMl = (typeof PRODUCT_VARIANT_SIZES_ML)[number]
+
+export type ProductVariant = {
+  volumeMl: number
+  price: number
+  sku: string
+  barcode?: string
+  stock: number
+  inStock: boolean
+}
+
 export type Product = {
   id: string
   name: string
@@ -32,6 +44,12 @@ export type Product = {
   isBestSeller: boolean
   isSignature: boolean
   isSeasonal: boolean
+  variants: ProductVariant[]
+  tagIds: string[]
+  slug?: string
+  metaTitle?: string
+  metaDescription?: string
+  metaKeywords?: string[]
   createdAt: string
   updatedAt: string
 }

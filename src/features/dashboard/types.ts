@@ -17,13 +17,14 @@ export type TopProduct = {
   revenue: number
 }
 
-/** Shape of `GET /admin/dashboard`. Fields are defensive/optional since the
- *  backend aggregation may evolve; the UI degrades gracefully. */
+/** Shape of `GET /admin/dashboard` — mirrors adminService.dashboard() exactly:
+ *  `revenue` is amounts, `orders` is counts (+ status breakdown), `products`
+ *  is catalogue totals, `customers` is a plain count. */
 export type DashboardData = {
   revenue: RevenueBreakdown
-  ordersByStatus: OrderStatusCounts
-  productCount: number
-  customerCount: number
+  orders: RevenueBreakdown & { byStatus: OrderStatusCounts }
+  products: { total: number; outOfStock: number }
+  customers: number
   recentOrders: Order[]
   topProducts: TopProduct[]
 }

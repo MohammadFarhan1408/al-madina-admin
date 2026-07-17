@@ -19,4 +19,6 @@ export type AdminReviewListParams = {
   page?: number
   limit?: number
   rating?: number
+  sortBy?: 'rating' | 'date'
+  sortOrder?: 'asc' | 'desc'
 }

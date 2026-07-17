@@ -48,4 +48,6 @@ export type AdminOrderListParams = {
   status?: OrderStatus
   from?: string
   to?: string
+  sortBy?: 'reference' | 'placedAt' | 'total' | 'status'
+  sortOrder?: 'asc' | 'desc'
 }

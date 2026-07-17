@@ -7,6 +7,10 @@ export type Category = {
   image: string
   productCount: number
   sortOrder: number
+  slug?: string
+  metaTitle?: string
+  metaDescription?: string
+  metaKeywords?: string[]
   createdAt: string
   updatedAt: string
 }
