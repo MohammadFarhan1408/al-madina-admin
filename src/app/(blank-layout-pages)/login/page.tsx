@@ -1,22 +1,22 @@
+// React Imports
+import { Suspense } from 'react'
+
 // Next Imports
 import type { Metadata } from 'next'
 
 // Component Imports
 import Login from '@views/Login'
-
-// Server Action Imports
-import { getServerMode } from '@core/utils/serverHelpers'
+import BrandLoader from '@components/shared/BrandLoader'
 
 export const metadata: Metadata = {
   title: 'Login',
-  description: 'Login to your account'
+  description: 'Sign in to the Al Madina Ittar admin panel'
 }
 
-const LoginPage = async () => {
-  // Vars
-  const mode = await getServerMode()
-
-  return <Login mode={mode} />
-}
+const LoginPage = () => (
+  <Suspense fallback={<BrandLoader />}>
+    <Login />
+  </Suspense>
+)
 
 export default LoginPage
