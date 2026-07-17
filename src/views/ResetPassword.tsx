@@ -21,7 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 // Component Imports
 import Link from '@components/Link'
 import CustomTextField from '@core/components/mui/TextField'
-import AuthShell, { authInputSx } from '@components/shared/AuthShell'
+import AuthShell, { authInputSx, authButtonSx } from '@components/shared/AuthShell'
 
 // Config Imports
 import { Palette } from '@configs/palette'
@@ -33,6 +33,7 @@ import { ApiError } from '@/libs/api/types'
 
 const ResetPassword = () => {
   const [isPasswordShown, setIsPasswordShown] = useState(false)
+  const [isConfirmShown, setIsConfirmShown] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const router = useRouter()
@@ -113,6 +114,7 @@ const ResetPassword = () => {
                         edge='end'
                         onClick={() => setIsPasswordShown(s => !s)}
                         onMouseDown={e => e.preventDefault()}
+                        aria-label={isPasswordShown ? 'Hide password' : 'Show password'}
                         sx={{ color: Palette.stone }}
                       >
                         <i className={isPasswordShown ? 'tabler-eye-off' : 'tabler-eye'} />
@@ -133,10 +135,27 @@ const ResetPassword = () => {
               fullWidth
               label='Confirm password'
               placeholder='············'
-              type={isPasswordShown ? 'text' : 'password'}
+              type={isConfirmShown ? 'text' : 'password'}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword?.message}
               sx={authInputSx}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position='end'>
+                      <IconButton
+                        edge='end'
+                        onClick={() => setIsConfirmShown(s => !s)}
+                        onMouseDown={e => e.preventDefault()}
+                        aria-label={isConfirmShown ? 'Hide password' : 'Show password'}
+                        sx={{ color: Palette.stone }}
+                      >
+                        <i className={isConfirmShown ? 'tabler-eye-off' : 'tabler-eye'} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }
+              }}
             />
           )}
         />
@@ -145,13 +164,7 @@ const ResetPassword = () => {
           variant='contained'
           type='submit'
           disabled={isSubmitting}
-          sx={{
-            backgroundColor: Palette.gold,
-            color: Palette.richBlack,
-            fontWeight: 600,
-            boxShadow: `0 8px 24px ${Palette.goldGlow}`,
-            '&:hover': { backgroundColor: Palette.goldBright }
-          }}
+          sx={authButtonSx}
         >
           {isSubmitting ? <CircularProgress size={22} sx={{ color: Palette.richBlack }} /> : 'Set new password'}
         </Button>

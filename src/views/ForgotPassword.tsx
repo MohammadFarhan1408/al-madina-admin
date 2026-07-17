@@ -16,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 // Component Imports
 import Link from '@components/Link'
 import CustomTextField from '@core/components/mui/TextField'
-import AuthShell, { authInputSx } from '@components/shared/AuthShell'
+import AuthShell, { authInputSx, authButtonSx } from '@components/shared/AuthShell'
 
 // Config Imports
 import { Palette } from '@configs/palette'
@@ -81,13 +81,7 @@ const ForgotPassword = () => {
             variant='contained'
             type='submit'
             disabled={isSubmitting}
-            sx={{
-              backgroundColor: Palette.gold,
-              color: Palette.richBlack,
-              fontWeight: 600,
-              boxShadow: `0 8px 24px ${Palette.goldGlow}`,
-              '&:hover': { backgroundColor: Palette.goldBright }
-            }}
+            sx={authButtonSx}
           >
             {isSubmitting ? <CircularProgress size={22} sx={{ color: Palette.richBlack }} /> : 'Send reset link'}
           </Button>
