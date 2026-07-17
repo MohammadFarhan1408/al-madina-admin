@@ -18,11 +18,24 @@ import Avatar from '@mui/material/Avatar'
 import Divider from '@mui/material/Divider'
 
 import PageHeader from '@/components/shared/PageHeader'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import StatCard from '@/components/shared/StatCard'
 import StatusChip from '@/components/shared/StatusChip'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
 import { ORDER_STATUSES } from '@/features/orders/types'
 import { formatCurrency, formatDate } from '@/libs/format'
+
+const KpiSkeleton = () => (
+  <Card>
+    <CardContent className='flex items-center gap-4'>
+      <Skeleton variant='rounded' width={44} height={44} />
+      <div className='flex flex-col gap-1'>
+        <Skeleton variant='text' width={80} height={28} />
+        <Skeleton variant='text' width={100} />
+      </div>
+    </CardContent>
+  </Card>
+)
 
 const DashboardView = () => {
   const { data, isLoading, isError, error } = useDashboard()
@@ -30,6 +43,7 @@ const DashboardView = () => {
   if (isError) {
     return (
       <>
+        <Breadcrumbs />
         <PageHeader title='Dashboard' />
         <Alert severity='error'>{(error as Error)?.message || 'Failed to load dashboard data.'}</Alert>
       </>
@@ -37,17 +51,18 @@ const DashboardView = () => {
   }
 
   const revenue = data?.revenue
-  const ordersByStatus = data?.ordersByStatus
+  const ordersByStatus = data?.orders?.byStatus
 
   return (
     <>
+      <Breadcrumbs />
       <PageHeader title='Dashboard' subtitle='Store performance at a glance' />
 
       <Grid container spacing={6}>
         {isLoading || !data ? (
           [...Array(4)].map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Skeleton variant='rounded' height={92} />
+              <KpiSkeleton />
             </Grid>
           ))
         ) : (
@@ -77,13 +92,7 @@ const DashboardView = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <StatCard
-                title='Customers'
-                value={data.customerCount ?? 0}
-                icon='tabler-users'
-                color='warning'
-                subtitle={`${data.productCount ?? 0} products`}
-              />
+              <StatCard title='Customers' value={data.customers ?? 0} icon='tabler-users' color='warning' />
             </Grid>
           </>
         )}
@@ -93,12 +102,19 @@ const DashboardView = () => {
           <Card className='bs-full'>
             <CardHeader title='Orders by Status' />
             <CardContent className='flex flex-col gap-4'>
-              {ORDER_STATUSES.map(status => (
-                <div key={status} className='flex items-center justify-between'>
-                  <StatusChip value={status} />
-                  <Typography variant='h6'>{ordersByStatus?.[status] ?? 0}</Typography>
-                </div>
-              ))}
+              {isLoading || !data
+                ? ORDER_STATUSES.map(status => (
+                    <div key={status} className='flex items-center justify-between'>
+                      <Skeleton variant='rounded' width={90} height={24} />
+                      <Skeleton variant='text' width={30} />
+                    </div>
+                  ))
+                : ORDER_STATUSES.map(status => (
+                    <div key={status} className='flex items-center justify-between'>
+                      <StatusChip value={status} />
+                      <Typography variant='h6'>{ordersByStatus?.[status] ?? 0}</Typography>
+                    </div>
+                  ))}
             </CardContent>
           </Card>
         </Grid>
@@ -108,12 +124,28 @@ const DashboardView = () => {
           <Card className='bs-full'>
             <CardHeader title='Top Products' />
             <CardContent>
-              {data?.topProducts?.length ? (
+              {isLoading || !data ? (
                 <List disablePadding>
-                  {data.topProducts.map(product => (
-                    <ListItem key={product.productId} disableGutters secondaryAction={
-                      <Typography variant='subtitle2'>{formatCurrency(product.revenue)}</Typography>
-                    }>
+                  {[...Array(3)].map((_, i) => (
+                    <ListItem key={i} disableGutters>
+                      <ListItemAvatar>
+                        <Skeleton variant='rounded' width={40} height={40} />
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={<Skeleton variant='text' width='60%' />}
+                        secondary={<Skeleton variant='text' width='30%' />}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : data.topProducts?.length ? (
+                <List disablePadding>
+                  {data.topProducts.map((product, index) => (
+                    <ListItem
+                      key={index}
+                      disableGutters
+                      secondaryAction={<Typography variant='subtitle2'>{formatCurrency(product.revenue)}</Typography>}
+                    >
                       <ListItemAvatar>
                         <Avatar variant='rounded' src={product.image} />
                       </ListItemAvatar>
@@ -133,7 +165,14 @@ const DashboardView = () => {
           <Card>
             <CardHeader title='Recent Orders' />
             <CardContent>
-              {data?.recentOrders?.length ? (
+              {isLoading || !data ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className='flex flex-wrap items-center justify-between gap-2 plb-3'>
+                    <Skeleton variant='text' width={120} />
+                    <Skeleton variant='text' width={80} />
+                  </div>
+                ))
+              ) : data.recentOrders?.length ? (
                 data.recentOrders.map((order, idx) => (
                   <div key={order.id}>
                     <div className='flex flex-wrap items-center justify-between gap-2 plb-3'>
