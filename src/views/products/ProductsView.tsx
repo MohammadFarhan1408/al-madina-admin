@@ -2,9 +2,9 @@
 
 // Products management — server-paginated table with search/category/family
 // filters, create/edit drawer, delete confirm.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { useSearchParams } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -13,16 +13,19 @@ import Avatar from '@mui/material/Avatar'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
-import type { ColumnDef, PaginationState } from '@tanstack/react-table'
+import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import CustomTextField from '@core/components/mui/TextField'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
-import { ApiError } from '@/libs/api/types'
+import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, humanize } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
@@ -30,13 +33,17 @@ import ProductFormDrawer from '@/features/products/components/ProductFormDrawer'
 import { SCENT_FAMILIES, type Product, type ScentFamily } from '@/features/products/types'
 
 const ProductsView = () => {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
-  const [categoryId, setCategoryId] = useState('')
-  const [family, setFamily] = useState<ScentFamily | ''>('')
+  const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') ?? '')
+  const [family, setFamily] = useState<ScentFamily | ''>(() => (searchParams.get('family') as ScentFamily) ?? '')
+  const [sorting, setSorting] = useState<SortingState>([])
   const debouncedSearch = useDebouncedValue(search)
+  const resetOnChange = useFilterReset(setPagination)
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -46,18 +53,38 @@ const ProductsView = () => {
   const deleteMutation = useDeleteProduct()
   const { success, error: toastError } = useToast()
 
-  const categoryMap = useMemo(
-    () => new Map((categories ?? []).map(c => [c.id, c.name])),
-    [categories]
-  )
+  // Keep category/family filters in the URL, matching the existing `q` sync.
+  useEffect(() => {
+    const params = new URLSearchParams()
+
+    if (debouncedSearch) params.set('q', debouncedSearch)
+    if (categoryId) params.set('categoryId', categoryId)
+    if (family) params.set('family', family)
+    router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, categoryId, family])
+
+  const categoryMap = useMemo(() => new Map((categories ?? []).map(c => [c.id, c.name])), [categories])
+
+  const sort = sorting[0]?.id === 'price' ? (sorting[0].desc ? 'price_desc' : 'price_asc') : 'featured'
 
   const { data, isLoading, isFetching, isError, error } = useProducts({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     q: debouncedSearch || undefined,
     categoryId: categoryId || undefined,
-    family: family || undefined
+    family: family || undefined,
+    sort
   })
+
+  const hasFilters = Boolean(search || categoryId || family)
+
+  const clearFilters = () => {
+    setSearch('')
+    setCategoryId('')
+    setFamily('')
+    setPagination(p => ({ ...p, pageIndex: 0 }))
+  }
 
   const openCreate = () => {
     setEditing(null)
@@ -77,7 +104,7 @@ const ProductsView = () => {
       success('Product deleted')
       setToDelete(null)
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to delete product')
+      toastError(getErrorMessage(err, 'Failed to delete product'))
     }
   }
 
@@ -86,12 +113,15 @@ const ProductsView = () => {
       {
         header: 'Product',
         accessorKey: 'name',
+        enableSorting: false,
         cell: ({ row }) => (
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-3 min-is-0'>
             <Avatar variant='rounded' src={row.original.images?.[0]} />
-            <div className='flex flex-col'>
-              <Typography variant='subtitle2'>{row.original.name}</Typography>
-              <Typography variant='caption' color='text.secondary'>
+            <div className='flex flex-col min-is-0'>
+              <Typography variant='subtitle2' noWrap>
+                {row.original.name}
+              </Typography>
+              <Typography variant='caption' color='text.secondary' noWrap>
                 {row.original.brand} · {row.original.volumeMl}ml
               </Typography>
             </div>
@@ -101,36 +131,44 @@ const ProductsView = () => {
       {
         header: 'Category',
         accessorKey: 'categoryId',
+        enableSorting: false,
         cell: ({ getValue }) => categoryMap.get(getValue() as string) ?? '—'
       },
       {
         header: 'Family',
         accessorKey: 'scentFamily',
+        enableSorting: false,
         cell: ({ getValue }) => humanize(getValue() as string)
       },
       {
         header: 'Price',
         accessorKey: 'price',
+        meta: { align: 'right' },
         cell: ({ row }) => formatCurrency(row.original.price, row.original.currency)
       },
       {
         header: 'Stock',
         accessorKey: 'inStock',
-        cell: ({ getValue }) => <StatusChip value={(getValue() as boolean) ? 'active' : 'inactive'} />
+        enableSorting: false,
+        meta: { align: 'right' },
+        cell: ({ getValue }) => <StatusChip value={(getValue() as boolean) ? 'in-stock' : 'out-of-stock'} />
       },
       {
         header: 'Badge',
         accessorKey: 'badge',
+        enableSorting: false,
         cell: ({ getValue }) => <StatusChip value={getValue() as string} />
       },
       {
         header: 'Actions',
+        enableSorting: false,
+        meta: { align: 'right' },
         cell: ({ row }) => (
-          <div className='flex items-center'>
-            <IconButton size='small' onClick={() => openEdit(row.original)}>
+          <div className='flex items-center justify-end'>
+            <IconButton size='small' aria-label={`Edit ${row.original.name}`} onClick={() => openEdit(row.original)}>
               <i className='tabler-edit' />
             </IconButton>
-            <IconButton size='small' color='error' onClick={() => setToDelete(row.original)}>
+            <IconButton size='small' color='error' aria-label={`Delete ${row.original.name}`} onClick={() => setToDelete(row.original)}>
               <i className='tabler-trash' />
             </IconButton>
           </div>
@@ -142,6 +180,7 @@ const ProductsView = () => {
 
   return (
     <>
+      <Breadcrumbs />
       <PageHeader
         title='Products'
         subtitle='Manage your fragrance catalogue'
@@ -160,26 +199,23 @@ const ProductsView = () => {
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
-        isLoading={isLoading || isFetching}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        isLoading={isLoading}
+        isRefetching={isFetching && !isLoading}
         emptyMessage='No products match your filters'
         toolbar={
           <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <CustomTextField
+            <SearchField
               value={search}
-              onChange={e => {
-                setSearch(e.target.value)
-                setPagination(p => ({ ...p, pageIndex: 0 }))
-              }}
+              onChange={resetOnChange(setSearch)}
               placeholder='Search products'
               className='min-is-[220px]'
             />
             <CustomTextField
               select
               value={categoryId}
-              onChange={e => {
-                setCategoryId(e.target.value)
-                setPagination(p => ({ ...p, pageIndex: 0 }))
-              }}
+              onChange={e => resetOnChange(setCategoryId)(e.target.value)}
               className='min-is-[180px]'
               label='Category'
             >
@@ -193,10 +229,7 @@ const ProductsView = () => {
             <CustomTextField
               select
               value={family}
-              onChange={e => {
-                setFamily(e.target.value as ScentFamily | '')
-                setPagination(p => ({ ...p, pageIndex: 0 }))
-              }}
+              onChange={e => resetOnChange(setFamily)(e.target.value as ScentFamily | '')}
               className='min-is-[160px]'
               label='Scent family'
             >
@@ -207,6 +240,11 @@ const ProductsView = () => {
                 </MenuItem>
               ))}
             </CustomTextField>
+            {hasFilters && (
+              <Button size='small' color='secondary' onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
           </Box>
         }
       />
@@ -215,7 +253,7 @@ const ProductsView = () => {
       <ConfirmDialog
         open={!!toDelete}
         title='Delete product'
-        description={`Delete "${toDelete?.name}"? This performs a soft delete.`}
+        description={`Delete "${toDelete?.name}"? This performs a soft delete — it can be restored from the database if needed.`}
         confirmText='Delete'
         loading={deleteMutation.isPending}
         onConfirm={confirmDelete}
