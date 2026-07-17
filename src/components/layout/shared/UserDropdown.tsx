@@ -25,6 +25,8 @@ import { useSettings } from '@core/hooks/useSettings'
 
 // Auth Imports
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
+import { getErrorMessage } from '@/libs/api/types'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -46,6 +48,7 @@ const UserDropdown = () => {
   // Hooks
   const router = useRouter()
   const { user, signOut } = useAuth()
+  const { error } = useToast()
 
   const { settings } = useSettings()
 
@@ -72,7 +75,8 @@ const UserDropdown = () => {
   const handleUserLogout = async () => {
     try {
       await signOut()
-    } catch {
+    } catch (err) {
+      error(getErrorMessage(err, 'Sign out failed'))
       router.push('/login')
     }
   }
