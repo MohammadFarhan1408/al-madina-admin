@@ -29,7 +29,11 @@ const COLOR_MAP: Record<string, ChipColor> = {
   // Generic boolean-ish states
   active: 'success',
   inactive: 'secondary',
-  verified: 'success'
+  verified: 'success',
+
+  // Product inventory state — distinct from active/inactive (enabled vs disabled)
+  'in-stock': 'success',
+  'out-of-stock': 'error'
 }
 
 type StatusChipProps = {
