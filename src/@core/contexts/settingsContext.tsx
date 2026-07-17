@@ -46,6 +46,23 @@ type Props = {
   mode?: Mode
 }
 
+// Guards against a persisted primaryColor that no longer matches any brand
+// swatch (e.g. a stale cookie from before a palette change) silently keeping
+// an off-brand colour active forever — drop it so the current default wins.
+const sanitizeSettingsCookie = (cookie: Settings | null): Settings | null => {
+  if (!cookie?.primaryColor) return cookie
+
+  const isKnownSwatch = primaryColorConfig.some(swatch => swatch.main === cookie.primaryColor)
+
+  if (isKnownSwatch) return cookie
+
+  const sanitized = { ...cookie }
+
+  delete sanitized.primaryColor
+
+  return sanitized
+}
+
 // Initial Settings Context
 export const SettingsContext = createContext<SettingsContextProps | null>(null)
 
@@ -68,10 +85,15 @@ export const SettingsProvider = (props: Props) => {
     mode: props.mode || themeConfig.mode
   }
 
-  // Cookies
+  const sanitizedPropsCookie = sanitizeSettingsCookie(props.settingsCookie)
+
+  // Cookies — merge over the defaults so a sanitized (key-dropped) cookie still
+  // resolves a valid primaryColor rather than leaving it undefined.
   const [settingsCookie, updateSettingsCookie] = useObjectCookie<Settings>(
     themeConfig.settingsCookieName,
-    JSON.stringify(props.settingsCookie) !== '{}' ? props.settingsCookie : updatedInitialSettings
+    JSON.stringify(props.settingsCookie) !== '{}'
+      ? { ...updatedInitialSettings, ...sanitizedPropsCookie }
+      : updatedInitialSettings
   )
 
   // State
