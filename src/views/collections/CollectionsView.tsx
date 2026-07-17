@@ -15,6 +15,7 @@ import Skeleton from '@mui/material/Skeleton'
 import PageHeader from '@/components/shared/PageHeader'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import CornerFrame from '@/components/shared/CornerFrame'
 import { useToast } from '@/contexts/ToastContext'
 import { ApiError } from '@/libs/api/types'
 import { useCollections, useDeleteCollection } from '@/features/collections/hooks/useCollections'
@@ -59,6 +60,7 @@ const CollectionsView = () => {
   return (
     <>
       <PageHeader
+        eyebrow='Catalogue'
         title='Collections'
         subtitle='Curated groupings of your fragrances'
         action={
@@ -81,7 +83,9 @@ const CollectionsView = () => {
           collections.map(collection => (
             <Grid key={collection.id} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card className='bs-full flex flex-col'>
-                <CardMedia image={collection.image} sx={{ height: 160 }} />
+                <CornerFrame>
+                  <CardMedia image={collection.image} sx={{ height: 160 }} />
+                </CornerFrame>
                 <CardContent className='flex flex-col gap-2 flex-1'>
                   <div className='flex items-center justify-between gap-2'>
                     <Typography variant='h6'>{collection.title}</Typography>

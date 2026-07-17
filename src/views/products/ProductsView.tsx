@@ -4,6 +4,8 @@
 // filters, create/edit drawer, delete confirm.
 import { useMemo, useState } from 'react'
 
+import { useSearchParams } from 'next/navigation'
+
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import MenuItem from '@mui/material/MenuItem'
@@ -28,8 +30,10 @@ import ProductFormDrawer from '@/features/products/components/ProductFormDrawer'
 import { SCENT_FAMILIES, type Product, type ScentFamily } from '@/features/products/types'
 
 const ProductsView = () => {
+  const searchParams = useSearchParams()
+
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [categoryId, setCategoryId] = useState('')
   const [family, setFamily] = useState<ScentFamily | ''>('')
   const debouncedSearch = useDebouncedValue(search)
