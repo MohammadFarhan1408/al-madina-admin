@@ -21,7 +21,7 @@ export const useCollections = () =>
 export const useCollectionProducts = (id: string | undefined) =>
   useQuery({
     queryKey: collectionKeys.products(id ?? ''),
-    queryFn: () => collectionsApi.products(id as string, { limit: 50 }),
+    queryFn: () => collectionsApi.products(id as string),
     enabled: !!id
   })
 

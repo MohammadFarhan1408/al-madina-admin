@@ -49,7 +49,7 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
   const addMutation = useAddCollectionProduct()
   const removeMutation = useRemoveCollectionProduct()
 
-  const memberIds = new Set((members?.items ?? []).map(p => p.id))
+  const memberIds = new Set((members ?? []).map(p => p.id))
   const options = (searchResults?.items ?? []).filter(p => !memberIds.has(p.id))
 
   const handleAdd = async () => {
@@ -105,9 +105,9 @@ const ManageProductsDialog = ({ open, onClose, collection }: Props) => {
           <div className='flex justify-center p-6'>
             <CircularProgress size={24} />
           </div>
-        ) : members?.items.length ? (
+        ) : members?.length ? (
           <List>
-            {members.items.map(product => (
+            {members.map(product => (
               <ListItem
                 key={product.id}
                 secondaryAction={

@@ -52,7 +52,10 @@ export type Config = {
 const themeConfig: Config = {
   templateName: 'Al Madina',
   homePageUrl: '/dashboard',
-  settingsCookieName: 'al-madina-admin',
+
+  // Bumped (v2) to invalidate any stale cookie persisting the old template's
+  // purple primaryColor from before the Al Madina brand palette was applied.
+  settingsCookieName: 'al-madina-admin-v2',
   mode: 'light', // 'system', 'light', 'dark'
   skin: 'default', // 'default', 'bordered'
   semiDark: true, // true, false — dark obsidian+gold sidebar over light content
