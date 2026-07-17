@@ -45,18 +45,26 @@ const menuItemStyles = (verticalNavOptions: VerticalNavState, theme: Theme): Men
               }
             }
           : {
-              color: 'var(--mui-palette-primary-contrastText)',
-              background:
-                theme.direction === 'ltr'
-                  ? `linear-gradient(270deg,
-                    rgb(var(--mui-palette-primary-mainChannel) / 0.7) 0%,
-                    var(--mui-palette-primary-main) 100%) !important`
-                  : `linear-gradient(270deg,
-                     var(--mui-palette-primary-main) 100%,
-                     rgb(var(--mui-palette-primary-mainChannel) / 0.7) 100%) !important`,
-              boxShadow: 'var(--mui-customShadows-primary-sm)',
+              // Gold is an accent, not a background: dark/transparent row with a
+              // slim gold indicator bar + gold icon/text, not a solid fill.
+              position: 'relative',
+              color: 'var(--mui-palette-primary-main) !important',
+              backgroundColor: 'var(--mui-palette-primary-lighterOpacity) !important',
+              boxShadow: 'none',
+              fontWeight: 600,
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                insetInlineStart: 0,
+                insetBlockStart: '14%',
+                insetBlockEnd: '14%',
+                inlineSize: '3px',
+                borderRadius: '0 4px 4px 0',
+                backgroundColor: 'var(--mui-palette-primary-main)',
+                boxShadow: '0 0 8px rgb(var(--mui-palette-primary-mainChannel) / 0.55)'
+              },
               [`& .${menuClasses.icon}`]: {
-                color: 'inherit'
+                color: 'var(--mui-palette-primary-main)'
               }
             })
       }

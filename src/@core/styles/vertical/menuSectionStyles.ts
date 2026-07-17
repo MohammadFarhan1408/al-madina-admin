@@ -18,16 +18,17 @@ const menuSectionStyles = (verticalNavOptions: VerticalNavState, theme: Theme): 
     root: {
       marginBlockStart: theme.spacing(0),
       [`& .${menuClasses.menuSectionContent}`]: {
-        color: 'var(--mui-palette-text-disabled)',
+        color: 'var(--mui-palette-secondary-main)',
         paddingInline: '12px !important',
         paddingBlock: `${theme.spacing(collapsedNotHovered ? 3.625 : 1.5)} !important`,
         marginBlockStart: theme.spacing(3.5),
+        borderBlockStart: '1px solid var(--mui-palette-divider)',
 
         '&:before': {
           content: '""',
           blockSize: 1,
           inlineSize: '1.375rem',
-          backgroundColor: 'var(--mui-palette-text-disabled)'
+          backgroundColor: 'var(--mui-palette-secondary-main)'
         },
         ...(!collapsedNotHovered && {
           '&:before': {
@@ -38,9 +39,10 @@ const menuSectionStyles = (verticalNavOptions: VerticalNavState, theme: Theme): 
         [`& .${menuClasses.menuSectionLabel}`]: {
           flexGrow: 0,
           textTransform: 'uppercase',
-          fontSize: '13px',
+          fontSize: '11.5px',
+          fontWeight: 600,
           lineHeight: 1.38462,
-          letterSpacing: '0.4px',
+          letterSpacing: '1px',
           ...(collapsedNotHovered && {
             display: 'none'
           })

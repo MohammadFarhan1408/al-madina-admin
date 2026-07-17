@@ -17,16 +17,22 @@ const menuItemStyles = (theme: Theme, iconClass: string): MenuItemStyles => ({
     },
     ...(level === 0
       ? {
+          // Gold is an accent, not a background — dark row + gold text/icon +
+          // slim gold underline, not a solid fill.
           [`& .${menuClasses.button}.${menuClasses.active}`]: {
-            color: 'var(--mui-palette-primary-contrastText) !important',
-            background:
-              theme.direction === 'ltr'
-                ? `linear-gradient(270deg,
-                  rgb(var(--mui-palette-primary-mainChannel) / 0.7) 0%,
-                  var(--mui-palette-primary-main) 100%) !important`
-                : `linear-gradient(270deg,
-                  var(--mui-palette-primary-main) 100%,
-                  rgb(var(--mui-palette-primary-mainChannel) / 0.7) 100%) !important`
+            position: 'relative',
+            color: 'var(--mui-palette-primary-main) !important',
+            backgroundColor: 'var(--mui-palette-primary-lighterOpacity) !important',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              insetInlineStart: '14%',
+              insetInlineEnd: '14%',
+              insetBlockEnd: 2,
+              blockSize: '2px',
+              borderRadius: 2,
+              backgroundColor: 'var(--mui-palette-primary-main)'
+            }
           }
         }
       : {
