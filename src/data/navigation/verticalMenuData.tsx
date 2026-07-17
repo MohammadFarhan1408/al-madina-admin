@@ -25,6 +25,11 @@ const verticalMenuData = (): VerticalMenuDataType[] => [
         label: 'Collections',
         href: '/collections',
         icon: 'tabler-stack-2'
+      },
+      {
+        label: 'Tags',
+        href: '/tags',
+        icon: 'tabler-tags'
       }
     ]
   },
@@ -46,6 +51,11 @@ const verticalMenuData = (): VerticalMenuDataType[] => [
         label: 'Reviews',
         href: '/reviews',
         icon: 'tabler-star'
+      },
+      {
+        label: 'Coupons',
+        href: '/coupons',
+        icon: 'tabler-discount'
       }
     ]
   },
@@ -57,6 +67,17 @@ const verticalMenuData = (): VerticalMenuDataType[] => [
         label: 'Notifications',
         href: '/notifications',
         icon: 'tabler-bell'
+      }
+    ]
+  },
+  {
+    label: 'Administration',
+    isSection: true,
+    children: [
+      {
+        label: 'Roles & Permissions',
+        href: '/roles',
+        icon: 'tabler-shield-lock'
       }
     ]
   }

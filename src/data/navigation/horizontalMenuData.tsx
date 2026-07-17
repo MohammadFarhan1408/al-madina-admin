@@ -23,6 +23,11 @@ const horizontalMenuData = (): HorizontalMenuDataType[] => [
     icon: 'tabler-stack-2'
   },
   {
+    label: 'Tags',
+    href: '/tags',
+    icon: 'tabler-tags'
+  },
+  {
     label: 'Orders',
     href: '/orders',
     icon: 'tabler-shopping-cart'
@@ -38,9 +43,19 @@ const horizontalMenuData = (): HorizontalMenuDataType[] => [
     icon: 'tabler-star'
   },
   {
+    label: 'Coupons',
+    href: '/coupons',
+    icon: 'tabler-discount'
+  },
+  {
     label: 'Notifications',
     href: '/notifications',
     icon: 'tabler-bell'
+  },
+  {
+    label: 'Roles & Permissions',
+    href: '/roles',
+    icon: 'tabler-shield-lock'
   }
 ]
 
