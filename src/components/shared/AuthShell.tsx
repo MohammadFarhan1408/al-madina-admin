@@ -46,6 +46,15 @@ export const authInputSx = {
   '& .MuiFormHelperText-root': { color: Palette.burgundyLight }
 }
 
+/** Shared sx for the primary gold CTA button across Login/ForgotPassword/ResetPassword. */
+export const authButtonSx = {
+  backgroundColor: Palette.gold,
+  color: Palette.richBlack,
+  fontWeight: 600,
+  boxShadow: `0 8px 24px ${Palette.goldGlow}`,
+  '&:hover': { backgroundColor: Palette.goldBright }
+}
+
 type AuthShellProps = {
   subtitle: string
   tagline?: string
@@ -53,22 +62,16 @@ type AuthShellProps = {
 }
 
 const AuthShell = ({ subtitle, tagline, children }: AuthShellProps) => (
-  <div className='am-deco-bg flex min-bs-[100dvh] items-center justify-center p-6'>
+  <div className='am-deco-bg flex min-bs-dvh items-center justify-center p-6'>
     <div className='relative flex flex-col items-center gap-8 is-full max-is-[440px]'>
       <div className='flex flex-col items-center gap-4 text-center'>
         <AuthMark style={{ width: 56, height: 56, color: Palette.gold }} />
         <div className='flex flex-col items-center gap-2'>
-          <Typography
-            variant='h3'
-            sx={{ color: Palette.ivory, letterSpacing: '0.08em', textTransform: 'uppercase' }}
-          >
+          <Typography variant='h3' sx={{ color: Palette.ivory, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {themeConfig.templateName}
           </Typography>
           <DecorativeDivider width={40} />
-          <Typography
-            variant='overline'
-            sx={{ color: Palette.goldBright, display: 'block', lineHeight: 1.2 }}
-          >
+          <Typography variant='overline' sx={{ color: Palette.goldBright, display: 'block', lineHeight: 1.2 }}>
             {subtitle}
           </Typography>
         </div>
