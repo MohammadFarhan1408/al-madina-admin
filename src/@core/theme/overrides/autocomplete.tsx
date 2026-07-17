@@ -49,6 +49,8 @@ const autocomplete = (skin: Skin): Theme['components'] => ({
         }
       },
       paper: {
+        backgroundColor: 'var(--mui-palette-background-paper)',
+        border: '1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35)',
         ...(skin !== 'bordered' && {
           boxShadow: 'var(--mui-customShadows-lg)',
           marginBlockStart: '0.125rem'
