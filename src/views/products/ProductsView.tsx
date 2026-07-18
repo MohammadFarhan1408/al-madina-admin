@@ -1,7 +1,7 @@
 'use client'
 
 // Products management — server-paginated table with search/category/family
-// filters, create/edit drawer, delete confirm.
+// filters, navigates to dedicated Create/Detail/Edit pages, delete confirm.
 import { useEffect, useMemo, useState } from 'react'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
@@ -22,6 +22,7 @@ import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import CustomTextField from '@core/components/mui/TextField'
+import OptionMenu from '@core/components/option-menu'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
@@ -29,7 +30,6 @@ import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, humanize } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
-import ProductFormDrawer from '@/features/products/components/ProductFormDrawer'
 import { SCENT_FAMILIES, type Product, type ScentFamily } from '@/features/products/types'
 
 const ProductsView = () => {
@@ -45,8 +45,6 @@ const ProductsView = () => {
   const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
 
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editing, setEditing] = useState<Product | null>(null)
   const [toDelete, setToDelete] = useState<Product | null>(null)
 
   const { data: categories } = useCategories()
@@ -86,16 +84,6 @@ const ProductsView = () => {
     setPagination(p => ({ ...p, pageIndex: 0 }))
   }
 
-  const openCreate = () => {
-    setEditing(null)
-    setDrawerOpen(true)
-  }
-
-  const openEdit = (product: Product) => {
-    setEditing(product)
-    setDrawerOpen(true)
-  }
-
   const confirmDelete = async () => {
     if (!toDelete) return
 
@@ -115,7 +103,10 @@ const ProductsView = () => {
         accessorKey: 'name',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className='flex items-center gap-3 min-is-0'>
+          <div
+            className='flex items-center gap-3 min-is-0 cursor-pointer'
+            onClick={() => router.push(`/products/${row.original.id}`)}
+          >
             <Avatar variant='rounded' src={row.original.images?.[0]} />
             <div className='flex flex-col min-is-0'>
               <Typography variant='subtitle2' noWrap>
@@ -165,17 +156,26 @@ const ProductsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`Edit ${row.original.name}`} onClick={() => openEdit(row.original)}>
-              <i className='tabler-edit' />
+            <IconButton
+              size='small'
+              aria-label={`View ${row.original.name}`}
+              onClick={() => router.push(`/products/${row.original.id}`)}
+            >
+              <i className='tabler-eye' />
             </IconButton>
-            <IconButton size='small' color='error' aria-label={`Delete ${row.original.name}`} onClick={() => setToDelete(row.original)}>
-              <i className='tabler-trash' />
-            </IconButton>
+            <OptionMenu
+              iconButtonProps={{ size: 'medium' }}
+              iconClassName='text-textSecondary'
+              options={[
+                { text: 'Edit', icon: 'tabler-edit', menuItemProps: { onClick: () => router.push(`/products/${row.original.id}/edit`) } },
+                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+              ]}
+            />
           </div>
         )
       }
     ],
-    [categoryMap]
+    [categoryMap, router]
   )
 
   return (
@@ -185,7 +185,7 @@ const ProductsView = () => {
         title='Products'
         subtitle='Manage your fragrance catalogue'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
             Add Product
           </Button>
         }
@@ -249,7 +249,6 @@ const ProductsView = () => {
         }
       />
 
-      <ProductFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} product={editing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete product'
