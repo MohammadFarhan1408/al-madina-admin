@@ -16,7 +16,8 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import TablePagination from '@mui/material/TablePagination'
+import Pagination from '@mui/material/Pagination'
+import MenuItem from '@mui/material/MenuItem'
 import LinearProgress from '@mui/material/LinearProgress'
 import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
@@ -32,6 +33,9 @@ import {
   type PaginationState,
   type SortingState
 } from '@tanstack/react-table'
+
+import CustomTextField from '@core/components/mui/TextField'
+
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -204,25 +208,59 @@ function DataTable<T>({
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        component='div'
-        count={manualPagination ? (total ?? 0) : data.length}
-        page={activePagination.pageIndex}
-        rowsPerPage={activePagination.pageSize}
-        rowsPerPageOptions={pageSizeOptions}
-        onPageChange={(_, page) => {
+      {(() => {
+        const rowCount = manualPagination ? (total ?? 0) : data.length
+        const pageCount = Math.max(1, Math.ceil(rowCount / activePagination.pageSize))
+        const from = rowCount === 0 ? 0 : activePagination.pageIndex * activePagination.pageSize + 1
+        const to = Math.min((activePagination.pageIndex + 1) * activePagination.pageSize, rowCount)
+
+        const setPage = (page: number) => {
           const next = { ...activePagination, pageIndex: page }
 
           if (manualPagination) onPaginationChange?.(next)
           else setInternalPagination(next)
-        }}
-        onRowsPerPageChange={e => {
-          const next = { pageIndex: 0, pageSize: parseInt(e.target.value, 10) }
+        }
+
+        const setPageSize = (pageSize: number) => {
+          const next = { pageIndex: 0, pageSize }
 
           if (manualPagination) onPaginationChange?.(next)
           else setInternalPagination(next)
-        }}
-      />
+        }
+
+        return (
+          <div className='flex flex-wrap items-center justify-between gap-4 p-4 border-bs'>
+            <div className='flex items-center gap-4'>
+              <Typography color='text.disabled'>
+                {`Showing ${from} to ${to} of ${rowCount} entries`}
+              </Typography>
+              <CustomTextField
+                select
+                size='small'
+                value={activePagination.pageSize}
+                onChange={e => setPageSize(Number(e.target.value))}
+                className='is-[70px]'
+              >
+                {pageSizeOptions.map(size => (
+                  <MenuItem key={size} value={size}>
+                    {size}
+                  </MenuItem>
+                ))}
+              </CustomTextField>
+            </div>
+            <Pagination
+              shape='rounded'
+              color='primary'
+              variant='tonal'
+              count={pageCount}
+              page={activePagination.pageIndex + 1}
+              onChange={(_, page) => setPage(page - 1)}
+              showFirstButton
+              showLastButton
+            />
+          </div>
+        )
+      })()}
     </Card>
   )
 }

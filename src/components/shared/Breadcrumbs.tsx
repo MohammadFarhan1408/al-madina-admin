@@ -4,6 +4,13 @@
 // (Catalogue/Commerce/Engagement) and the current route, so navigation
 // structure isn't duplicated in a second place. Activates the
 // @core/theme/overrides/breadcrumbs.ts styling, previously unused.
+//
+// The nav-derived trail only ever knows about the 3 levels the sidebar
+// itself models (Dashboard / Section / Module). Dynamic routes one level
+// beyond a module (e.g. /products/[id], /products/[id]/edit) prefix-match
+// against the module's own href so the trail still resolves, and the page
+// supplies its own trailing crumb(s) via `extra` (e.g. the record's name,
+// then "Edit").
 import type { ReactNode } from 'react'
 
 import { usePathname } from 'next/navigation'
@@ -15,24 +22,28 @@ import Typography from '@mui/material/Typography'
 import verticalMenuData from '@/data/navigation/verticalMenuData'
 import type { VerticalMenuDataType, VerticalSectionDataType, VerticalMenuItemDataType } from '@/types/menuTypes'
 
-type Crumb = { label: ReactNode; href?: string }
+export type Crumb = { label: ReactNode; href?: string }
 
 const isSection = (item: VerticalMenuDataType): item is VerticalSectionDataType => 'isSection' in item && Boolean(item.isSection)
 const isLeaf = (item: VerticalMenuDataType): item is VerticalMenuItemDataType => 'href' in item
+
+const matches = (pathname: string, href?: string) => Boolean(href) && (pathname === href || pathname.startsWith(`${href}/`))
 
 function findTrail(pathname: string): Crumb[] {
   const menu = verticalMenuData()
 
   for (const item of menu) {
-    if (isLeaf(item) && item.href === pathname) {
-      return item.href === '/dashboard' ? [{ label: item.label }] : [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label }]
+    if (isLeaf(item) && matches(pathname, item.href)) {
+      return item.href === '/dashboard'
+        ? [{ label: item.label, href: item.href }]
+        : [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label, href: item.href }]
     }
 
     if (isSection(item)) {
-      const child = item.children.find(c => isLeaf(c) && c.href === pathname)
+      const child = item.children.filter(isLeaf).find(c => matches(pathname, c.href))
 
       if (child) {
-        return [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label }, { label: child.label }]
+        return [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label }, { label: child.label, href: child.href }]
       }
     }
   }
@@ -40,9 +51,16 @@ function findTrail(pathname: string): Crumb[] {
   return []
 }
 
-const Breadcrumbs = () => {
+type BreadcrumbsProps = {
+
+  /** Trailing crumbs appended after the nav-derived trail, e.g. a record's
+   *  name on a Detail page, or `[{label: 'Royal Oud', href: '/products/1'}, {label: 'Edit'}]` on its Edit page. */
+  extra?: Crumb[]
+}
+
+const Breadcrumbs = ({ extra = [] }: BreadcrumbsProps) => {
   const pathname = usePathname()
-  const trail = findTrail(pathname)
+  const trail = [...findTrail(pathname), ...extra]
 
   if (trail.length === 0) return null
 

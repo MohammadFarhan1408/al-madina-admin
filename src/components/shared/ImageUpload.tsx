@@ -15,6 +15,8 @@ import IconButton from '@mui/material/IconButton'
 import CircularProgress from '@mui/material/CircularProgress'
 import Avatar from '@mui/material/Avatar'
 
+import CustomAvatar from '@core/components/mui/Avatar'
+
 import { uploadImage, type UploadType } from '@/libs/api/upload'
 import { ApiError } from '@/libs/api/types'
 import ZoomableImage from './ZoomableImage'
@@ -127,7 +129,8 @@ const ImageUpload = ({
         {label}
       </Typography>
       <Box
-        className='flex flex-wrap items-center gap-3 rounded p-2'
+        className='flex flex-col items-center justify-center gap-4 rounded-xl p-8 text-center cursor-pointer'
+        onClick={() => inputRef.current?.click()}
         onDragOver={e => {
           e.preventDefault()
           setIsDragging(true)
@@ -140,44 +143,59 @@ const ImageUpload = ({
         }}
         sx={{
           border: '1px dashed',
-          borderColor: isDragging ? 'primary.main' : 'transparent',
-          transition: 'border-color 0.15s'
+          borderColor: isDragging ? 'primary.main' : 'divider',
+          bgcolor: isDragging ? 'action.hover' : 'transparent',
+          transition: 'border-color 0.15s, background-color 0.15s'
         }}
       >
-        {value.map((url, index) => (
-          <Box key={url + index} className='relative'>
-            <ZoomableImage src={url} alt={`Image ${index + 1}`}>
-              <Avatar variant='rounded' src={url} sx={{ width: 72, height: 72 }} />
-            </ZoomableImage>
-            <IconButton
-              size='small'
-              color='error'
-              aria-label={`Remove image ${index + 1}`}
-              onClick={() => removeAt(index)}
-              sx={{ position: 'absolute', top: -10, insetInlineEnd: -10, bgcolor: 'background.paper' }}
-            >
-              <i className='tabler-x text-[16px]' />
-            </IconButton>
-          </Box>
-        ))}
-        {pending.map((p, index) => (
-          <Box key={p.localUrl + index} className='relative'>
-            <Avatar variant='rounded' src={p.localUrl} sx={{ width: 72, height: 72, opacity: 0.6 }} />
-            <Box className='absolute inset-0 flex items-center justify-center'>
-              <CircularProgress size={20} />
-            </Box>
-          </Box>
-        ))}
+        <CustomAvatar variant='rounded' skin='light' color='primary'>
+          <i className='tabler-upload text-[22px]' />
+        </CustomAvatar>
+        <Typography variant='h6'>Drag and drop image{multiple ? 's' : ''} here</Typography>
+        <Typography variant='body2' color='text.secondary'>
+          or
+        </Typography>
         <Button
           variant='tonal'
           color='secondary'
-          onClick={() => inputRef.current?.click()}
+          onClick={e => {
+            e.stopPropagation()
+            inputRef.current?.click()
+          }}
           disabled={uploading}
           startIcon={uploading ? <CircularProgress size={16} color='inherit' /> : <i className='tabler-upload' />}
         >
-          {uploading ? 'Uploading…' : multiple ? 'Add image' : value.length ? 'Replace' : 'Upload or drop'}
+          {uploading ? 'Uploading…' : 'Browse image'}
         </Button>
       </Box>
+      {(value.length > 0 || pending.length > 0) && (
+        <div className='flex flex-wrap items-center gap-3'>
+          {value.map((url, index) => (
+            <Box key={url + index} className='relative'>
+              <ZoomableImage src={url} alt={`Image ${index + 1}`}>
+                <Avatar variant='rounded' src={url} sx={{ width: 72, height: 72 }} />
+              </ZoomableImage>
+              <IconButton
+                size='small'
+                color='error'
+                aria-label={`Remove image ${index + 1}`}
+                onClick={() => removeAt(index)}
+                sx={{ position: 'absolute', top: -10, insetInlineEnd: -10, bgcolor: 'background.paper' }}
+              >
+                <i className='tabler-x text-[16px]' />
+              </IconButton>
+            </Box>
+          ))}
+          {pending.map((p, index) => (
+            <Box key={p.localUrl + index} className='relative'>
+              <Avatar variant='rounded' src={p.localUrl} sx={{ width: 72, height: 72, opacity: 0.6 }} />
+              <Box className='absolute inset-0 flex items-center justify-center'>
+                <CircularProgress size={20} />
+              </Box>
+            </Box>
+          ))}
+        </div>
+      )}
       <input
         ref={inputRef}
         type='file'
