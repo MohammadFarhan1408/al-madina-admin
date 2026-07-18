@@ -1,9 +1,10 @@
 'use client'
 
-// Categories management — list (all, client-paginated), create/edit dialog,
-// delete confirm. Uses the shared DataTable in client mode: the full list is
-// already fetched (small dataset), so search/sort/pagination run in-browser.
+// Categories management — list (all, client-paginated), navigates to
+// dedicated Create/Detail/Edit pages, delete confirm inline.
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
@@ -18,20 +19,19 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import OptionMenu from '@core/components/option-menu'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useCategories, useDeleteCategory } from '@/features/categories/hooks/useCategories'
-import CategoryFormDialog from '@/features/categories/components/CategoryFormDialog'
 import type { Category } from '@/features/categories/types'
 
 const CategoriesView = () => {
+  const router = useRouter()
   const { data: categories, isLoading, isError, error } = useCategories()
   const deleteMutation = useDeleteCategory()
   const { success, error: toastError } = useToast()
 
   const [search, setSearch] = useState('')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Category | null>(null)
   const [toDelete, setToDelete] = useState<Category | null>(null)
 
   const filtered = useMemo(() => {
@@ -43,16 +43,6 @@ const CategoriesView = () => {
       c => c.name.toLowerCase().includes(q) || (c.tagline ?? '').toLowerCase().includes(q)
     )
   }, [categories, search])
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (category: Category) => {
-    setEditing(category)
-    setFormOpen(true)
-  }
 
   const confirmDelete = async () => {
     if (!toDelete) return
@@ -72,7 +62,7 @@ const CategoriesView = () => {
         header: 'Category',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-3 cursor-pointer' onClick={() => router.push(`/categories/${row.original.id}`)}>
             <Avatar variant='rounded' src={row.original.image} />
             <Typography variant='subtitle2'>{row.original.name}</Typography>
           </div>
@@ -92,17 +82,30 @@ const CategoriesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`Edit ${row.original.name}`} onClick={() => openEdit(row.original)}>
-              <i className='tabler-edit' />
+            <IconButton
+              size='small'
+              aria-label={`View ${row.original.name}`}
+              onClick={() => router.push(`/categories/${row.original.id}`)}
+            >
+              <i className='tabler-eye' />
             </IconButton>
-            <IconButton size='small' color='error' aria-label={`Delete ${row.original.name}`} onClick={() => setToDelete(row.original)}>
-              <i className='tabler-trash' />
-            </IconButton>
+            <OptionMenu
+              iconButtonProps={{ size: 'medium' }}
+              iconClassName='text-textSecondary'
+              options={[
+                {
+                  text: 'Edit',
+                  icon: 'tabler-edit',
+                  menuItemProps: { onClick: () => router.push(`/categories/${row.original.id}/edit`) }
+                },
+                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+              ]}
+            />
           </div>
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -112,7 +115,7 @@ const CategoriesView = () => {
         title='Categories'
         subtitle='Organize your fragrance catalogue'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/categories/new')}>
             Add Category
           </Button>
         }
@@ -133,7 +136,6 @@ const CategoriesView = () => {
         }
       />
 
-      <CategoryFormDialog open={formOpen} onClose={() => setFormOpen(false)} category={editing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete category'

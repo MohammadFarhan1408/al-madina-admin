@@ -7,7 +7,8 @@ import type { CategoryFormValues } from '../schema'
 
 export const categoryKeys = {
   all: ['categories'] as const,
-  list: () => [...categoryKeys.all, 'list'] as const
+  list: () => [...categoryKeys.all, 'list'] as const,
+  detail: (id: string) => [...categoryKeys.all, 'detail', id] as const
 }
 
 export const useCategories = () =>
@@ -15,6 +16,13 @@ export const useCategories = () =>
     queryKey: categoryKeys.list(),
     queryFn: categoriesApi.list,
     staleTime: 5 * 60_000
+  })
+
+export const useCategory = (id: string | undefined) =>
+  useQuery({
+    queryKey: categoryKeys.detail(id ?? ''),
+    queryFn: () => categoriesApi.detail(id as string),
+    enabled: !!id
   })
 
 export const useCreateCategory = () => {

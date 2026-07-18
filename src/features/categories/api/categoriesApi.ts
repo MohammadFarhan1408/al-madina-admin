@@ -9,6 +9,8 @@ export const categoriesApi = {
   // Public list endpoint returns all categories (cached 24h server-side).
   list: () => apiGet<Category[]>(endpoints.categories.list),
 
+  detail: (id: string) => apiGet<Category>(endpoints.categories.detail(id)),
+
   create: (body: CategoryFormValues) => apiPost<Category>(endpoints.admin.categories, body),
 
   update: (id: string, body: Partial<CategoryFormValues>) => apiPatch<Category>(endpoints.admin.category(id), body),
