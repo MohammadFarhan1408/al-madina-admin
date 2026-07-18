@@ -1,12 +1,10 @@
 'use client'
 
-// Create/edit coupon dialog. RHF + Zod.
+// Create/edit coupon form. RHF + Zod.
 import { useEffect } from 'react'
 
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import MenuItem from '@mui/material/MenuItem'
 import Grid from '@mui/material/Grid'
@@ -24,12 +22,12 @@ import { useCreateCoupon, useUpdateCoupon } from '../hooks/useCoupons'
 import { DISCOUNT_TYPES, type Coupon } from '../types'
 
 type Props = {
-  open: boolean
-  onClose: () => void
   coupon?: Coupon | null
+  onSuccess: (coupon: Coupon) => void
+  onCancel: () => void
 }
 
-const CouponFormDialog = ({ open, onClose, coupon }: Props) => {
+const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
   const { success, error } = useToast()
   const createMutation = useCreateCoupon()
   const updateMutation = useUpdateCoupon()
@@ -46,8 +44,6 @@ const CouponFormDialog = ({ open, onClose, coupon }: Props) => {
   })
 
   useEffect(() => {
-    if (!open) return
-
     reset(
       coupon
         ? {
@@ -63,19 +59,22 @@ const CouponFormDialog = ({ open, onClose, coupon }: Props) => {
           }
         : defaultCouponValues
     )
-  }, [open, coupon, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coupon])
 
   const onSubmit = async (values: CouponFormValues) => {
     try {
       if (isEdit && coupon) {
-        await updateMutation.mutateAsync({ id: coupon.id, body: values })
-        success('Coupon updated')
-      } else {
-        await createMutation.mutateAsync(values)
-        success('Coupon created')
-      }
+        const updated = await updateMutation.mutateAsync({ id: coupon.id, body: values })
 
-      onClose()
+        success('Coupon updated')
+        onSuccess(updated)
+      } else {
+        const created = await createMutation.mutateAsync(values)
+
+        success('Coupon created')
+        onSuccess(created)
+      }
     } catch (err) {
       error(getErrorMessage(err, 'Something went wrong'))
     }
@@ -84,10 +83,9 @@ const CouponFormDialog = ({ open, onClose, coupon }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} maxWidth='sm' fullWidth>
-      <DialogTitle>{isEdit ? 'Edit Coupon' : 'Add Coupon'}</DialogTitle>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogContent className='flex flex-col gap-5'>
+    <Card>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='code'
             control={control}
@@ -228,18 +226,19 @@ const CouponFormDialog = ({ open, onClose, coupon }: Props) => {
               />
             )}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button color='secondary' variant='tonal' onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type='submit' variant='contained' disabled={submitting}>
-            {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+
+          <div className='flex items-center justify-end gap-4'>
+            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type='submit' variant='contained' disabled={submitting}>
+              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 
-export default CouponFormDialog
+export default CouponForm

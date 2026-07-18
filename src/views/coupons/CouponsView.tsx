@@ -1,14 +1,16 @@
 'use client'
 
-// Coupons management — server-paginated table, active filter, create/edit
-// dialog, delete confirm. Admin-only (no public read endpoint).
+// Coupons management — server-paginated table, active filter, navigates to
+// dedicated Create/Edit pages (no Detail page — fields fit as list columns),
+// delete confirm. Admin-only (no public read endpoint).
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import MenuItem from '@mui/material/MenuItem'
 import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 
@@ -18,19 +20,18 @@ import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import CustomTextField from '@core/components/mui/TextField'
+import OptionMenu from '@core/components/option-menu'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
 import { useCoupons, useDeleteCoupon } from '@/features/coupons/hooks/useCoupons'
-import CouponFormDialog from '@/features/coupons/components/CouponFormDialog'
 import type { Coupon } from '@/features/coupons/types'
 
 const CouponsView = () => {
+  const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [isActive, setIsActive] = useState<'' | 'true' | 'false'>('')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Coupon | null>(null)
   const [toDelete, setToDelete] = useState<Coupon | null>(null)
   const resetOnChange = useFilterReset(setPagination)
 
@@ -42,16 +43,6 @@ const CouponsView = () => {
     limit: pagination.pageSize,
     isActive: isActive === '' ? undefined : isActive === 'true'
   })
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (coupon: Coupon) => {
-    setEditing(coupon)
-    setFormOpen(true)
-  }
 
   const confirmDelete = async () => {
     if (!toDelete) return
@@ -106,17 +97,23 @@ const CouponsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`Edit ${row.original.code}`} onClick={() => openEdit(row.original)}>
-              <i className='tabler-edit' />
-            </IconButton>
-            <IconButton size='small' color='error' aria-label={`Delete ${row.original.code}`} onClick={() => setToDelete(row.original)}>
-              <i className='tabler-trash' />
-            </IconButton>
+            <OptionMenu
+              iconButtonProps={{ size: 'medium' }}
+              iconClassName='text-textSecondary'
+              options={[
+                {
+                  text: 'Edit',
+                  icon: 'tabler-edit',
+                  menuItemProps: { onClick: () => router.push(`/coupons/${row.original.id}/edit`) }
+                },
+                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+              ]}
+            />
           </div>
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -126,7 +123,7 @@ const CouponsView = () => {
         title='Coupons'
         subtitle='Discount codes for campaigns and promotions'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>
             Add Coupon
           </Button>
         }
@@ -160,7 +157,6 @@ const CouponsView = () => {
         }
       />
 
-      <CouponFormDialog open={formOpen} onClose={() => setFormOpen(false)} coupon={editing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete coupon'

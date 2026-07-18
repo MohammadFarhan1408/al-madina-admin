@@ -8,7 +8,8 @@ import type { CouponFormValues } from '../schema'
 
 export const couponKeys = {
   all: ['coupons'] as const,
-  list: (params: AdminCouponListParams) => [...couponKeys.all, 'list', params] as const
+  list: (params: AdminCouponListParams) => [...couponKeys.all, 'list', params] as const,
+  detail: (id: string) => [...couponKeys.all, 'detail', id] as const
 }
 
 export const useCoupons = (params: AdminCouponListParams) =>
@@ -16,6 +17,13 @@ export const useCoupons = (params: AdminCouponListParams) =>
     queryKey: couponKeys.list(params),
     queryFn: () => couponsApi.list(params),
     placeholderData: keepPreviousData
+  })
+
+export const useCoupon = (id: string | undefined) =>
+  useQuery({
+    queryKey: couponKeys.detail(id ?? ''),
+    queryFn: () => couponsApi.detail(id as string),
+    enabled: !!id
   })
 
 export const useCreateCoupon = () => {

@@ -8,6 +8,8 @@ import type { CouponFormValues } from '../schema'
 export const couponsApi = {
   list: (params: AdminCouponListParams) => apiGet<Paginated<Coupon>>(endpoints.admin.coupons, { params }),
 
+  detail: (id: string) => apiGet<Coupon>(endpoints.admin.coupon(id)),
+
   create: (body: CouponFormValues) => apiPost<Coupon>(endpoints.admin.coupons, body),
 
   update: (id: string, body: Partial<CouponFormValues>) => apiPatch<Coupon>(endpoints.admin.coupon(id), body),
