@@ -1,8 +1,11 @@
 'use client'
 
-// Orders management — server-paginated table with status + date filters and a
-// detail dialog that also drives status transitions.
+// Orders management — server-paginated table with status + date filters,
+// navigates to a dedicated Detail page (also drives status transitions).
+// No create/edit routes — orders aren't admin-created.
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import MenuItem from '@mui/material/MenuItem'
@@ -19,16 +22,15 @@ import CustomTextField from '@core/components/mui/TextField'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate, humanize } from '@/libs/format'
 import { useOrders } from '@/features/orders/hooks/useOrders'
-import OrderDetailDialog from '@/features/orders/components/OrderDetailDialog'
 import { ORDER_STATUSES, type Order, type OrderStatus } from '@/features/orders/types'
 
 const OrdersView = () => {
+  const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [status, setStatus] = useState<OrderStatus | ''>('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
   const resetOnChange = useFilterReset(setPagination)
 
   const { data, isLoading, isFetching, isError, error } = useOrders({
@@ -46,7 +48,15 @@ const OrdersView = () => {
       {
         header: 'Reference',
         accessorKey: 'reference',
-        cell: ({ getValue }) => <Typography variant='subtitle2'>{getValue() as string}</Typography>
+        cell: ({ row }) => (
+          <Typography
+            variant='subtitle2'
+            className='cursor-pointer'
+            onClick={() => router.push(`/orders/${row.original.id}`)}
+          >
+            {row.original.reference}
+          </Typography>
+        )
       },
       {
         header: 'Customer',
@@ -81,14 +91,18 @@ const OrdersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex justify-end'>
-            <IconButton size='small' aria-label={`View order ${row.original.reference}`} onClick={() => setActiveId(row.original.id)}>
+            <IconButton
+              size='small'
+              aria-label={`View order ${row.original.reference}`}
+              onClick={() => router.push(`/orders/${row.original.id}`)}
+            >
               <i className='tabler-eye' />
             </IconButton>
           </div>
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -142,8 +156,6 @@ const OrdersView = () => {
           </Box>
         }
       />
-
-      <OrderDetailDialog open={!!activeId} onClose={() => setActiveId(null)} orderId={activeId} />
     </>
   )
 }
