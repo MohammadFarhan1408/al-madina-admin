@@ -8,6 +8,7 @@ import type { CollectionFormValues } from '../schema'
 export const collectionKeys = {
   all: ['collections'] as const,
   list: () => [...collectionKeys.all, 'list'] as const,
+  detail: (id: string) => [...collectionKeys.all, 'detail', id] as const,
   products: (id: string) => [...collectionKeys.all, 'products', id] as const
 }
 
@@ -16,6 +17,13 @@ export const useCollections = () =>
     queryKey: collectionKeys.list(),
     queryFn: collectionsApi.list,
     staleTime: 5 * 60_000
+  })
+
+export const useCollection = (id: string | undefined) =>
+  useQuery({
+    queryKey: collectionKeys.detail(id ?? ''),
+    queryFn: () => collectionsApi.detail(id as string),
+    enabled: !!id
   })
 
 export const useCollectionProducts = (id: string | undefined) =>

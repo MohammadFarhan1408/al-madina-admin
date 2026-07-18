@@ -1,24 +1,20 @@
 'use client'
 
-// Create/edit collection dialog (doc §5.4). RHF + Zod; accent enum + image.
+// Create/edit collection form (doc §5.4). RHF + Zod; accent enum + image.
 import { useEffect, useState } from 'react'
 
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import MenuItem from '@mui/material/MenuItem'
 import Divider from '@mui/material/Divider'
-import Typography from '@mui/material/Typography'
-import Autocomplete from '@mui/material/Autocomplete'
-import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import CustomTextField from '@core/components/mui/TextField'
 import ImageUpload from '@/components/shared/ImageUpload'
+import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { humanize } from '@/libs/format'
@@ -27,12 +23,12 @@ import { useCreateCollection, useUpdateCollection } from '../hooks/useCollection
 import { COLLECTION_ACCENTS, type Collection } from '../types'
 
 type Props = {
-  open: boolean
-  onClose: () => void
   collection?: Collection | null
+  onSuccess: (collection: Collection) => void
+  onCancel: () => void
 }
 
-const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
+const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
   const { success, error } = useToast()
   const createMutation = useCreateCollection()
   const updateMutation = useUpdateCollection()
@@ -52,8 +48,6 @@ const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
   })
 
   useEffect(() => {
-    if (!open) return
-
     reset(
       collection
         ? {
@@ -69,7 +63,8 @@ const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
           }
         : defaultCollectionValues
     )
-  }, [open, collection, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collection])
 
   const image = watch('image')
   const metaKeywords = watch('metaKeywords')
@@ -84,14 +79,16 @@ const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
 
     try {
       if (isEdit && collection) {
-        await updateMutation.mutateAsync({ id: collection.id, body: payload })
-        success('Collection updated')
-      } else {
-        await createMutation.mutateAsync(payload)
-        success('Collection created')
-      }
+        const updated = await updateMutation.mutateAsync({ id: collection.id, body: payload })
 
-      onClose()
+        success('Collection updated')
+        onSuccess(updated)
+      } else {
+        const created = await createMutation.mutateAsync(payload)
+
+        success('Collection created')
+        onSuccess(created)
+      }
     } catch (err) {
       error(getErrorMessage(err, 'Something went wrong'))
     }
@@ -100,10 +97,9 @@ const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending || imageUploading
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} maxWidth='sm' fullWidth>
-      <DialogTitle>{isEdit ? 'Edit Collection' : 'Add Collection'}</DialogTitle>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogContent className='flex flex-col gap-5'>
+    <Card>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='title'
             control={control}
@@ -162,59 +158,21 @@ const CollectionFormDialog = ({ open, onClose, collection }: Props) => {
           />
 
           <Divider />
-          <Typography variant='overline' color='text.secondary'>
-            SEO
-          </Typography>
-          <Controller
-            name='slug'
-            control={control}
-            render={({ field }) => <CustomTextField {...field} fullWidth label='Slug (optional — auto-generated from title)' />}
-          />
-          <Controller
-            name='metaTitle'
-            control={control}
-            render={({ field }) => <CustomTextField {...field} fullWidth label='Meta title (optional)' />}
-          />
-          <Controller
-            name='metaDescription'
-            control={control}
-            render={({ field }) => <CustomTextField {...field} fullWidth multiline minRows={2} label='Meta description (optional)' />}
-          />
-          <Controller
-            name='metaKeywords'
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                multiple
-                freeSolo
-                options={[]}
-                value={metaKeywords ?? []}
-                onChange={(_, next) => field.onChange(next)}
-                renderTags={(tagValue, getTagProps) =>
-                  tagValue.map((option, index) => {
-                    const { key, ...rest } = getTagProps({ index })
+          <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' />
 
-                    return <Chip key={key} variant='tonal' label={option} size='small' {...rest} />
-                  })
-                }
-                renderInput={params => (
-                  <CustomTextField {...params} label='Meta keywords (optional)' placeholder='Type a keyword and press Enter' />
-                )}
-              />
-            )}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button color='secondary' variant='tonal' onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type='submit' variant='contained' disabled={submitting}>
-            {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+          <Divider />
+          <div className='flex items-center justify-end gap-4'>
+            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type='submit' variant='contained' disabled={submitting}>
+              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 
-export default CollectionFormDialog
+export default CollectionForm

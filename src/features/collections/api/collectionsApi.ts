@@ -9,6 +9,8 @@ import type { Product } from '@/features/products/types'
 export const collectionsApi = {
   list: () => apiGet<Collection[]>(endpoints.collections.list),
 
+  detail: (id: string) => apiGet<Collection>(endpoints.collections.detail(id)),
+
   // Doc §7.4 documents this as "Products within a collection" (unlike the
   // categories equivalent, which is explicitly "Paginated") — the backend
   // returns a plain array, not a { items, page, ... } envelope.

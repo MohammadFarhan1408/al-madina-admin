@@ -1,7 +1,10 @@
 'use client'
 
-// Collections management — grid of collection cards with edit / manage / delete.
+// Collections management — grid of collection cards, navigates to dedicated
+// Create/Detail/Edit pages (product membership lives on the Detail page).
 import { useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
@@ -20,8 +23,6 @@ import CornerFrame from '@/components/shared/CornerFrame'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useCollections, useDeleteCollection } from '@/features/collections/hooks/useCollections'
-import CollectionFormDialog from '@/features/collections/components/CollectionFormDialog'
-import ManageProductsDialog from '@/features/collections/components/ManageProductsDialog'
 import type { Collection } from '@/features/collections/types'
 
 const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } as const
@@ -31,24 +32,12 @@ const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } 
 const SKELETON_COUNT = 3
 
 const CollectionsView = () => {
+  const router = useRouter()
   const { data: collections, isLoading, isError, error } = useCollections()
   const deleteMutation = useDeleteCollection()
   const { success, error: toastError } = useToast()
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Collection | null>(null)
-  const [managing, setManaging] = useState<Collection | null>(null)
   const [toDelete, setToDelete] = useState<Collection | null>(null)
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (collection: Collection) => {
-    setEditing(collection)
-    setFormOpen(true)
-  }
 
   const confirmDelete = async () => {
     if (!toDelete) return
@@ -70,13 +59,21 @@ const CollectionsView = () => {
         title='Collections'
         subtitle='Curated groupings of your fragrances'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button
+            variant='contained'
+            startIcon={<i className='tabler-plus' />}
+            onClick={() => router.push('/collections/new')}
+          >
             Add Collection
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load collections.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mbe-4'>
+          {(error as Error)?.message || 'Failed to load collections.'}
+        </Alert>
+      )}
 
       <Grid container spacing={6}>
         {isLoading ? (
@@ -104,10 +101,15 @@ const CollectionsView = () => {
                     {collection.productCount} products
                   </Typography>
                   <div className='flex flex-wrap items-center gap-2 mbs-auto pbs-3'>
-                    <Button size='small' variant='tonal' onClick={() => setManaging(collection)}>
+                    <Button size='small' variant='tonal' onClick={() => router.push(`/collections/${collection.id}`)}>
                       Products
                     </Button>
-                    <Button size='small' variant='tonal' color='secondary' onClick={() => openEdit(collection)}>
+                    <Button
+                      size='small'
+                      variant='tonal'
+                      color='secondary'
+                      onClick={() => router.push(`/collections/${collection.id}/edit`)}
+                    >
                       Edit
                     </Button>
                     <Button size='small' variant='tonal' color='error' onClick={() => setToDelete(collection)}>
@@ -127,8 +129,6 @@ const CollectionsView = () => {
         )}
       </Grid>
 
-      <CollectionFormDialog open={formOpen} onClose={() => setFormOpen(false)} collection={editing} />
-      <ManageProductsDialog open={!!managing} onClose={() => setManaging(null)} collection={managing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete collection'
