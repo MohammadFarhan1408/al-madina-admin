@@ -1,8 +1,11 @@
 'use client'
 
-// Customers management — server-paginated table, search + tier filter, detail
-// dialog, and deactivate action.
+// Customers management — server-paginated table, search + tier filter,
+// navigates to a dedicated Detail page, and deactivate action. No
+// create/edit routes — customers self-register.
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import MenuItem from '@mui/material/MenuItem'
@@ -25,15 +28,14 @@ import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatDate } from '@/libs/format'
 import { useCustomers, useDeactivateCustomer } from '@/features/customers/hooks/useCustomers'
-import CustomerDetailDialog from '@/features/customers/components/CustomerDetailDialog'
 import { USER_TIERS, type Customer, type UserTier } from '@/features/customers/types'
 
 const CustomersView = () => {
+  const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [search, setSearch] = useState('')
   const [tier, setTier] = useState<UserTier | ''>('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [detailId, setDetailId] = useState<string | null>(null)
   const [toDeactivate, setToDeactivate] = useState<Customer | null>(null)
   const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
@@ -68,7 +70,7 @@ const CustomersView = () => {
         header: 'Customer',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-3 cursor-pointer' onClick={() => router.push(`/customers/${row.original.id}`)}>
             <Avatar src={row.original.avatar}>{row.original.fullName?.charAt(0)}</Avatar>
             <div className='flex flex-col'>
               <Typography variant='subtitle2'>{row.original.fullName}</Typography>
@@ -101,7 +103,11 @@ const CustomersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`View ${row.original.fullName}`} onClick={() => setDetailId(row.original.id)}>
+            <IconButton
+              size='small'
+              aria-label={`View ${row.original.fullName}`}
+              onClick={() => router.push(`/customers/${row.original.id}`)}
+            >
               <i className='tabler-eye' />
             </IconButton>
             <IconButton
@@ -117,7 +123,7 @@ const CustomersView = () => {
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -164,7 +170,6 @@ const CustomersView = () => {
         }
       />
 
-      <CustomerDetailDialog open={!!detailId} onClose={() => setDetailId(null)} customerId={detailId} />
       <ConfirmDialog
         open={!!toDeactivate}
         title='Deactivate customer'
