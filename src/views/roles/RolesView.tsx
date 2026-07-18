@@ -1,14 +1,16 @@
 'use client'
 
-// Roles & Permissions management — list roles, edit permission assignment,
-// create/delete (system roles protected from deletion). Informational only —
-// existing route authorization still runs on the `role` enum (see AGENTS.md).
+// Roles & Permissions management — list roles, navigates to dedicated
+// Create/Detail/Edit pages (system roles protected from deletion).
+// Informational only — existing route authorization still runs on the
+// `role` enum (see AGENTS.md).
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
 import Alert from '@mui/material/Alert'
 import type { ColumnDef } from '@tanstack/react-table'
 
@@ -17,30 +19,19 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import OptionMenu from '@core/components/option-menu'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useRoles, useDeleteRole } from '@/features/roles/hooks/useRoles'
-import RoleFormDialog from '@/features/roles/components/RoleFormDialog'
 import type { Role } from '@/features/roles/types'
 
 const RolesView = () => {
+  const router = useRouter()
   const { data: roles, isLoading, isError, error } = useRoles()
   const deleteMutation = useDeleteRole()
   const { success, error: toastError } = useToast()
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Role | null>(null)
   const [toDelete, setToDelete] = useState<Role | null>(null)
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (role: Role) => {
-    setEditing(role)
-    setFormOpen(true)
-  }
 
   const confirmDelete = async () => {
     if (!toDelete) return
@@ -60,7 +51,7 @@ const RolesView = () => {
         header: 'Role',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 cursor-pointer' onClick={() => router.push(`/roles/${row.original.id}`)}>
             <Typography variant='subtitle2'>{row.original.name}</Typography>
             {row.original.isSystem && <StatusChip value='system' color='secondary' />}
           </div>
@@ -84,27 +75,37 @@ const RolesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`Edit ${row.original.name}`} onClick={() => openEdit(row.original)}>
-              <i className='tabler-edit' />
+            <IconButton
+              size='small'
+              aria-label={`View ${row.original.name}`}
+              onClick={() => router.push(`/roles/${row.original.id}`)}
+            >
+              <i className='tabler-eye' />
             </IconButton>
-            <Tooltip title={row.original.isSystem ? 'System roles cannot be deleted' : ''}>
-              <span>
-                <IconButton
-                  size='small'
-                  color='error'
-                  aria-label={`Delete ${row.original.name}`}
-                  disabled={row.original.isSystem}
-                  onClick={() => setToDelete(row.original)}
-                >
-                  <i className='tabler-trash' />
-                </IconButton>
-              </span>
-            </Tooltip>
+            <OptionMenu
+              iconButtonProps={{ size: 'medium' }}
+              iconClassName='text-textSecondary'
+              options={[
+                {
+                  text: 'Edit',
+                  icon: 'tabler-edit',
+                  menuItemProps: { onClick: () => router.push(`/roles/${row.original.id}/edit`) }
+                },
+                {
+                  text: 'Delete',
+                  icon: 'tabler-trash',
+                  menuItemProps: {
+                    disabled: row.original.isSystem,
+                    onClick: () => setToDelete(row.original)
+                  }
+                }
+              ]}
+            />
           </div>
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -114,7 +115,7 @@ const RolesView = () => {
         title='Roles & Permissions'
         subtitle='Manage admin role definitions and their permission sets'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/roles/new')}>
             Add Role
           </Button>
         }
@@ -124,7 +125,6 @@ const RolesView = () => {
 
       <DataTable manualPagination={false} data={roles ?? []} columns={columns} isLoading={isLoading} emptyMessage='No roles yet.' />
 
-      <RoleFormDialog open={formOpen} onClose={() => setFormOpen(false)} role={editing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete role'

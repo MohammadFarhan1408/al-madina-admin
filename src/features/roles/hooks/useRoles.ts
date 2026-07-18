@@ -8,6 +8,7 @@ import type { RoleFormValues } from '../schema'
 export const roleKeys = {
   all: ['roles'] as const,
   list: () => [...roleKeys.all, 'list'] as const,
+  detail: (id: string) => [...roleKeys.all, 'detail', id] as const,
   permissions: ['permissions'] as const
 }
 
@@ -16,6 +17,13 @@ export const useRoles = () =>
     queryKey: roleKeys.list(),
     queryFn: rolesApi.list,
     staleTime: 5 * 60_000
+  })
+
+export const useRole = (id: string | undefined) =>
+  useQuery({
+    queryKey: roleKeys.detail(id ?? ''),
+    queryFn: () => rolesApi.detail(id as string),
+    enabled: !!id
   })
 
 export const usePermissions = () =>

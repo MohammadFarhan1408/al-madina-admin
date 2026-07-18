@@ -7,6 +7,8 @@ import type { RoleFormValues } from '../schema'
 export const rolesApi = {
   list: () => apiGet<Role[]>(endpoints.admin.roles),
 
+  detail: (id: string) => apiGet<Role>(endpoints.admin.role(id)),
+
   listPermissions: () => apiGet<Permission[]>(endpoints.admin.permissions),
 
   create: (body: RoleFormValues) => apiPost<Role>(endpoints.admin.roles, body),
