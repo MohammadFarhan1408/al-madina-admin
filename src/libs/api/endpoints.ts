@@ -19,17 +19,20 @@ export const endpoints = {
   },
   categories: {
     list: '/categories',
+    detail: (id: string) => `/categories/${id}`,
     products: (id: string) => `/categories/${id}/products`
   },
   collections: {
     list: '/collections',
+    detail: (id: string) => `/collections/${id}`,
     products: (id: string) => `/collections/${id}/products`
   },
   orders: {
     detail: (id: string) => `/orders/${id}`
   },
   tags: {
-    list: '/tags'
+    list: '/tags',
+    detail: (id: string) => `/tags/${id}`
   },
 
   // Admin (role: admin | manager) — audited mutations.
