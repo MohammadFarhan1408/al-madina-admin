@@ -7,7 +7,8 @@ import type { TagFormValues } from '../schema'
 
 export const tagKeys = {
   all: ['tags'] as const,
-  list: () => [...tagKeys.all, 'list'] as const
+  list: () => [...tagKeys.all, 'list'] as const,
+  detail: (id: string) => [...tagKeys.all, 'detail', id] as const
 }
 
 export const useTags = () =>
@@ -15,6 +16,13 @@ export const useTags = () =>
     queryKey: tagKeys.list(),
     queryFn: tagsApi.list,
     staleTime: 5 * 60_000
+  })
+
+export const useTag = (id: string | undefined) =>
+  useQuery({
+    queryKey: tagKeys.detail(id ?? ''),
+    queryFn: () => tagsApi.detail(id as string),
+    enabled: !!id
   })
 
 export const useCreateTag = () => {

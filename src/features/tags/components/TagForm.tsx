@@ -1,12 +1,10 @@
 'use client'
 
-// Create/edit (rename) tag dialog. RHF + Zod.
+// Create/edit (rename) tag form. RHF + Zod.
 import { useEffect } from 'react'
 
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
@@ -20,12 +18,12 @@ import { useCreateTag, useUpdateTag } from '../hooks/useTags'
 import type { Tag } from '../types'
 
 type Props = {
-  open: boolean
-  onClose: () => void
   tag?: Tag | null
+  onSuccess: (tag: Tag) => void
+  onCancel: () => void
 }
 
-const TagFormDialog = ({ open, onClose, tag }: Props) => {
+const TagForm = ({ tag, onSuccess, onCancel }: Props) => {
   const { success, error } = useToast()
   const createMutation = useCreateTag()
   const updateMutation = useUpdateTag()
@@ -42,20 +40,23 @@ const TagFormDialog = ({ open, onClose, tag }: Props) => {
   })
 
   useEffect(() => {
-    if (open) reset(tag ? { name: tag.name } : defaultTagValues)
-  }, [open, tag, reset])
+    reset(tag ? { name: tag.name } : defaultTagValues)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tag])
 
   const onSubmit = async (values: TagFormValues) => {
     try {
       if (isEdit && tag) {
-        await updateMutation.mutateAsync({ id: tag.id, body: values })
-        success('Tag updated')
-      } else {
-        await createMutation.mutateAsync(values)
-        success('Tag created')
-      }
+        const updated = await updateMutation.mutateAsync({ id: tag.id, body: values })
 
-      onClose()
+        success('Tag updated')
+        onSuccess(updated)
+      } else {
+        const created = await createMutation.mutateAsync(values)
+
+        success('Tag created')
+        onSuccess(created)
+      }
     } catch (err) {
       error(getErrorMessage(err, 'Something went wrong'))
     }
@@ -64,10 +65,9 @@ const TagFormDialog = ({ open, onClose, tag }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} maxWidth='xs' fullWidth>
-      <DialogTitle>{isEdit ? 'Rename Tag' : 'Add Tag'}</DialogTitle>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogContent className='flex flex-col gap-5'>
+    <Card>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='name'
             control={control}
@@ -75,18 +75,19 @@ const TagFormDialog = ({ open, onClose, tag }: Props) => {
               <CustomTextField {...field} fullWidth required label='Name' error={!!errors.name} helperText={errors.name?.message} />
             )}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button color='secondary' variant='tonal' onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type='submit' variant='contained' disabled={submitting}>
-            {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+
+          <div className='flex items-center justify-end gap-4'>
+            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type='submit' variant='contained' disabled={submitting}>
+              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 
-export default TagFormDialog
+export default TagForm
