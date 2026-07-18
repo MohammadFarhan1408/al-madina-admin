@@ -1,12 +1,14 @@
 'use client'
 
-// Tags management — list (all, client-paginated), create/rename, delete.
+// Tags management — list (all, client-paginated), navigates to dedicated
+// Create/Edit pages (no Detail page — a single name field), delete.
 import { useMemo, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
 
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
 import type { ColumnDef } from '@tanstack/react-table'
 
@@ -15,20 +17,19 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import OptionMenu from '@core/components/option-menu'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useTags, useDeleteTag } from '@/features/tags/hooks/useTags'
-import TagFormDialog from '@/features/tags/components/TagFormDialog'
 import type { Tag } from '@/features/tags/types'
 
 const TagsView = () => {
+  const router = useRouter()
   const { data: tags, isLoading, isError, error } = useTags()
   const deleteMutation = useDeleteTag()
   const { success, error: toastError } = useToast()
 
   const [search, setSearch] = useState('')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Tag | null>(null)
   const [toDelete, setToDelete] = useState<Tag | null>(null)
 
   const filtered = useMemo(() => {
@@ -36,16 +37,6 @@ const TagsView = () => {
 
     return q ? (tags ?? []).filter(t => t.name.toLowerCase().includes(q)) : (tags ?? [])
   }, [tags, search])
-
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  const openEdit = (tag: Tag) => {
-    setEditing(tag)
-    setFormOpen(true)
-  }
 
   const confirmDelete = async () => {
     if (!toDelete) return
@@ -69,17 +60,23 @@ const TagsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton size='small' aria-label={`Rename ${row.original.name}`} onClick={() => openEdit(row.original)}>
-              <i className='tabler-edit' />
-            </IconButton>
-            <IconButton size='small' color='error' aria-label={`Delete ${row.original.name}`} onClick={() => setToDelete(row.original)}>
-              <i className='tabler-trash' />
-            </IconButton>
+            <OptionMenu
+              iconButtonProps={{ size: 'medium' }}
+              iconClassName='text-textSecondary'
+              options={[
+                {
+                  text: 'Rename',
+                  icon: 'tabler-edit',
+                  menuItemProps: { onClick: () => router.push(`/tags/${row.original.id}/edit`) }
+                },
+                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+              ]}
+            />
           </div>
         )
       }
     ],
-    []
+    [router]
   )
 
   return (
@@ -89,7 +86,7 @@ const TagsView = () => {
         title='Tags'
         subtitle='Reusable labels for product merchandising'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={openCreate}>
+          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
             Add Tag
           </Button>
         }
@@ -110,7 +107,6 @@ const TagsView = () => {
         }
       />
 
-      <TagFormDialog open={formOpen} onClose={() => setFormOpen(false)} tag={editing} />
       <ConfirmDialog
         open={!!toDelete}
         title='Delete tag'

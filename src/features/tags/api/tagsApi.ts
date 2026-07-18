@@ -7,6 +7,8 @@ import type { TagFormValues } from '../schema'
 export const tagsApi = {
   list: () => apiGet<Tag[]>(endpoints.tags.list),
 
+  detail: (id: string) => apiGet<Tag>(endpoints.tags.detail(id)),
+
   create: (body: TagFormValues) => apiPost<Tag>(endpoints.admin.tags, body),
 
   update: (id: string, body: TagFormValues) => apiPatch<Tag>(endpoints.admin.tag(id), body),
