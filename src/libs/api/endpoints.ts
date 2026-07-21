@@ -50,6 +50,8 @@ export const endpoints = {
     collectionProduct: (id: string, productId: string) => `/admin/collections/${id}/products/${productId}`,
     orders: '/admin/orders',
     orderStatus: (id: string) => `/admin/orders/${id}/status`,
+    orderTransactions: (id: string) => `/admin/orders/${id}/transactions`,
+    paymentRefund: (id: string) => `/admin/orders/${id}/payments/refund`,
     users: '/admin/users',
     user: (id: string) => `/admin/users/${id}`,
     userTier: (id: string) => `/admin/users/${id}/tier`,
