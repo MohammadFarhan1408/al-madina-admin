@@ -15,6 +15,15 @@ const COLOR_MAP: Record<string, ChipColor> = {
   delivered: 'success',
   cancelled: 'error',
 
+  // Payment status
+  pending: 'warning',
+  paid: 'success',
+  failed: 'error',
+  refunded: 'secondary',
+
+  // Transaction status
+  succeeded: 'success',
+
   // Loyalty tiers
   member: 'secondary',
   connoisseur: 'info',
