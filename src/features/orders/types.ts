@@ -6,6 +6,22 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number]
 export type DeliveryMethod = 'standard' | 'express'
 export type PaymentMethod = 'card' | 'wallet' | 'cod'
 
+export const PAYMENT_STATUSES = ['pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded'] as const
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number]
+
+export type TransactionStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled' | 'refunded'
+
+export type Transaction = {
+  id: string
+  provider: 'cod' | 'simulated'
+  status: TransactionStatus
+  amount: number
+  currency: string
+  providerReference?: string
+  failureReason?: string
+  createdAt: string
+}
+
 export type ShippingAddress = {
   fullName: string
   phone: string
@@ -31,11 +47,14 @@ export type Order = {
   shippingAddress: ShippingAddress
   deliveryMethod: DeliveryMethod
   paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
   items: OrderItem[]
   subtotal: number
   shipping: number
   total: number
   currency: string
+  couponCode?: string
+  discountAmount?: number
   placedAt: string
   createdAt: string
   updatedAt: string
