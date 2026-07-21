@@ -33,3 +33,19 @@ export const useUpdateOrderStatus = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.all })
   })
 }
+
+export const useOrderTransactions = (id: string | undefined) =>
+  useQuery({
+    queryKey: [...orderKeys.detail(id ?? ''), 'transactions'] as const,
+    queryFn: () => ordersApi.transactions(id as string),
+    enabled: !!id
+  })
+
+export const useRefundPayment = (orderId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (transactionId: string) => ordersApi.refund(orderId, transactionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+  })
+}
