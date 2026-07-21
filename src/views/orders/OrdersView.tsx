@@ -86,6 +86,11 @@ const OrdersView = () => {
         cell: ({ getValue }) => <StatusChip value={getValue() as string} />
       },
       {
+        header: 'Payment',
+        accessorKey: 'paymentStatus',
+        cell: ({ getValue }) => <StatusChip value={getValue() as string} />
+      },
+      {
         header: 'Actions',
         enableSorting: false,
         meta: { align: 'right' },

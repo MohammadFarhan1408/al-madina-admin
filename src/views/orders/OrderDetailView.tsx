@@ -31,7 +31,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDateTime, humanize } from '@/libs/format'
-import { useOrder, useUpdateOrderStatus } from '@/features/orders/hooks/useOrders'
+import { useOrder, useOrderTransactions, useRefundPayment, useUpdateOrderStatus } from '@/features/orders/hooks/useOrders'
 import { ORDER_STATUSES, type OrderStatus } from '@/features/orders/types'
 
 type Props = { id: string }
@@ -40,8 +40,11 @@ const OrderDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { success, error } = useToast()
   const { data: order, isLoading, isError, error: fetchError } = useOrder(id)
+  const { data: transactions } = useOrderTransactions(id)
   const updateStatus = useUpdateOrderStatus()
+  const refundPayment = useRefundPayment(id)
   const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null)
+  const [refundTransactionId, setRefundTransactionId] = useState<string | null>(null)
 
   const applyStatusChange = async () => {
     if (!order || !pendingStatus) return
@@ -55,6 +58,21 @@ const OrderDetailView = ({ id }: Props) => {
       setPendingStatus(null)
     }
   }
+
+  const applyRefund = async () => {
+    if (!refundTransactionId) return
+
+    try {
+      await refundPayment.mutateAsync(refundTransactionId)
+      success('Payment refunded')
+    } catch (err) {
+      error(getErrorMessage(err, 'Failed to refund payment'))
+    } finally {
+      setRefundTransactionId(null)
+    }
+  }
+
+  const latestTransaction = transactions?.[0]
 
   if (isLoading || !order) {
     return (
@@ -80,6 +98,7 @@ const OrderDetailView = ({ id }: Props) => {
         action={
           <div className='flex items-center gap-3'>
             <StatusChip value={order.status} />
+            <StatusChip value={order.paymentStatus} />
             <Button variant='tonal' color='secondary' onClick={() => router.push('/orders')}>
               Back
             </Button>
@@ -132,8 +151,68 @@ const OrderDetailView = ({ id }: Props) => {
                   <Typography variant='body2' color='text.secondary'>
                     Shipping: {formatCurrency(order.shipping, order.currency)}
                   </Typography>
+                  {!!order.discountAmount && (
+                    <Typography variant='body2' color='success.main'>
+                      Discount ({order.couponCode}): -{formatCurrency(order.discountAmount, order.currency)}
+                    </Typography>
+                  )}
                   <Typography variant='h6'>Total: {formatCurrency(order.total, order.currency)}</Typography>
                 </div>
+              </DetailSection>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <DetailSection title='Payment'>
+                <DetailRow label='Status' value={<StatusChip value={order.paymentStatus} />} />
+                {latestTransaction && (
+                  <>
+                    <DetailRow label='Provider' value={humanize(latestTransaction.provider)} />
+                    <DetailRow
+                      label='Amount'
+                      value={formatCurrency(latestTransaction.amount, latestTransaction.currency)}
+                    />
+                    {latestTransaction.providerReference && (
+                      <DetailRow label='Transaction ref' value={latestTransaction.providerReference} />
+                    )}
+                    {latestTransaction.failureReason && (
+                      <DetailRow label='Failure reason' value={latestTransaction.failureReason} />
+                    )}
+                  </>
+                )}
+
+                {transactions && transactions.length > 1 && (
+                  <Table size='small'>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>When</TableCell>
+                        <TableCell>Provider</TableCell>
+                        <TableCell>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {transactions.map(txn => (
+                        <TableRow key={txn.id}>
+                          <TableCell>{formatDateTime(txn.createdAt)}</TableCell>
+                          <TableCell>{humanize(txn.provider)}</TableCell>
+                          <TableCell>
+                            <StatusChip value={txn.status} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                {order.paymentStatus === 'paid' && latestTransaction && (
+                  <Button
+                    variant='tonal'
+                    color='error'
+                    onClick={() => setRefundTransactionId(latestTransaction.id)}
+                    className='is-fit'
+                  >
+                    Refund payment
+                  </Button>
+                )}
               </DetailSection>
             </Grid>
 
@@ -169,7 +248,7 @@ const OrderDetailView = ({ id }: Props) => {
               <DetailSection title='Customer'>
                 <DetailRow label='Placed' value={formatDateTime(order.placedAt)} />
                 <DetailRow
-                  label='Payment / Delivery'
+                  label='Payment method / Delivery'
                   value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
                   stacked
                 />
@@ -215,6 +294,17 @@ const OrderDetailView = ({ id }: Props) => {
         loading={updateStatus.isPending}
         onConfirm={applyStatusChange}
         onClose={() => setPendingStatus(null)}
+      />
+
+      <ConfirmDialog
+        open={!!refundTransactionId}
+        title='Refund payment'
+        description={`Refund the payment for order ${order.reference}? This cannot be undone.`}
+        confirmText='Refund'
+        confirmColor='error'
+        loading={refundPayment.isPending}
+        onConfirm={applyRefund}
+        onClose={() => setRefundTransactionId(null)}
       />
     </>
   )
