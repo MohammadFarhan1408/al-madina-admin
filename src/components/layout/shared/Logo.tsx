@@ -10,9 +10,6 @@ import styled from '@emotion/styled'
 // Type Imports
 import type { VerticalNavContextProps } from '@menu/contexts/verticalNavContext'
 
-// Component Imports
-import BrandLogo from '@core/svg/Logo'
-
 // Config Imports
 import themeConfig from '@configs/themeConfig'
 
@@ -73,7 +70,7 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
 
   return (
     <div className='flex items-center'>
-      <BrandLogo className='text-2xl text-primary' />
+      <img src='/images/al-madina-mark.png' alt='' className='is-8 bs-8 object-contain' />
       <LogoText
         color={color}
         ref={logoTextRef}
