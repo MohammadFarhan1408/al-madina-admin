@@ -70,7 +70,7 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
 
   return (
     <div className='flex items-center'>
-      <img src='/images/al-madina-mark.png' alt='' className='is-8 bs-8 object-contain' />
+      <img src='/images/al-madina-logo.png' alt='' className='is-8 bs-8 object-contain' />
       <LogoText
         color={color}
         ref={logoTextRef}

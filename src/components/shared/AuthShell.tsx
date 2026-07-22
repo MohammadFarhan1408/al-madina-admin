@@ -11,8 +11,6 @@ import type { ReactNode } from 'react'
 import Typography from '@mui/material/Typography'
 import Card from '@mui/material/Card'
 
-import AuthMark from '@core/svg/AuthMark'
-import themeConfig from '@configs/themeConfig'
 import { Palette } from '@configs/palette'
 import DecorativeDivider from './DecorativeDivider'
 
@@ -65,11 +63,8 @@ const AuthShell = ({ subtitle, tagline, children }: AuthShellProps) => (
   <div className='am-deco-bg flex min-bs-dvh items-center justify-center p-6'>
     <div className='relative flex flex-col items-center gap-8 is-full max-is-[440px]'>
       <div className='flex flex-col items-center gap-4 text-center'>
-        <AuthMark style={{ width: 56, height: 56, color: Palette.gold }} />
+        <img src='/images/al-madina-logo.png' alt='' className='w-50 object-contain' />
         <div className='flex flex-col items-center gap-2'>
-          <Typography variant='h3' sx={{ color: Palette.ivory, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {themeConfig.templateName}
-          </Typography>
           <DecorativeDivider width={40} />
           <Typography variant='overline' sx={{ color: Palette.goldBright, display: 'block', lineHeight: 1.2 }}>
             {subtitle}
