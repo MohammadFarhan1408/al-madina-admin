@@ -6,9 +6,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from '@/libs/auth/tokens'
 
+export const runtime = 'experimental-edge'
+
 const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password']
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // A refresh token is enough to consider the session recoverable; the client
