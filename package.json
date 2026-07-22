@@ -12,6 +12,7 @@
     "postinstall": "npm run build:icons",
     "clean": "rm -rf .next",
     "clear": "rm -rf node_modules .next",
+    "build:cf": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
