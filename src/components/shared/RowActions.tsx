@@ -8,6 +8,7 @@ export type RowAction = {
   text: string
   icon?: string
   danger?: boolean
+  disabled?: boolean
   onClick: () => void
 }
 
@@ -24,6 +25,7 @@ const RowActions = ({ options }: { options: RowAction[] }) => (
       <DropdownItem
         key={option.text}
         danger={option.danger}
+        disabled={option.disabled}
         icon={option.icon ? <i className={option.icon} /> : undefined}
         onClick={option.onClick}
       >
