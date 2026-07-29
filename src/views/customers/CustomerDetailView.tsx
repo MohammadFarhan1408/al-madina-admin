@@ -4,32 +4,21 @@
 // tabbed content (Overview/Addresses/Cart), adapted from Theme's ecommerce
 // customers/details layout. Same useCustomer/useUpdateCustomerTier hooks and
 // tier stage-then-confirm logic as before — only the layout changed.
-import { useState, type SyntheticEvent } from 'react'
+import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import CircularProgress from '@mui/material/CircularProgress'
-import Alert from '@mui/material/Alert'
-import Divider from '@mui/material/Divider'
-import TabContext from '@mui/lab/TabContext'
-import TabPanel from '@mui/lab/TabPanel'
-import Tab from '@mui/material/Tab'
-
-import CustomTextField from '@core/components/mui/TextField'
-import CustomTabList from '@core/components/mui/TabList'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import ZoomableImage from '@/components/shared/ZoomableImage'
+import QueryState from '@/components/shared/QueryState'
+import Button from '@/components/ui/Button'
+import Card, { CardBody } from '@/components/ui/Card'
+import Select from '@/components/ui/Select'
+import Tabs, { TabPanel } from '@/components/ui/Tabs'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
@@ -64,13 +53,7 @@ const CustomerDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Customer' />
-        {isError ? (
-          <Alert severity='error'>{(fetchError as Error)?.message || 'Failed to load customer.'}</Alert>
-        ) : (
-          <div className='flex justify-center p-8'>
-            <CircularProgress />
-          </div>
-        )}
+        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load customer.' />
       </>
     )
   }
@@ -82,31 +65,30 @@ const CustomerDetailView = ({ id }: Props) => {
         title={data.user.fullName}
         subtitle={data.user.email}
         action={
-          <Button variant='tonal' color='secondary' onClick={() => router.push('/customers')}>
+          <Button variant='outlined' color='secondary' onClick={() => router.push('/customers')}>
             Back
           </Button>
         }
       />
 
-      <Grid container spacing={6}>
-        <Grid size={{ xs: 12, md: 4 }}>
+      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+        <div>
           <Card>
-            <CardContent className='flex flex-col items-center gap-4 pbs-12'>
+            <CardBody className='flex flex-col items-center gap-4 pt-12'>
               <ZoomableImage src={data.user.avatar} alt={data.user.fullName}>
-                <Avatar src={data.user.avatar} sx={{ width: 100, height: 100 }} />
+                <img src={data.user.avatar} alt='' className='size-25 rounded-full object-cover' />
               </ZoomableImage>
-              <div className='flex flex-col items-center text-center gap-2'>
-                <Typography variant='h5'>{data.user.fullName}</Typography>
-                <Typography color='text.secondary'>{data.user.email}</Typography>
+              <div className='flex flex-col items-center gap-2 text-center'>
+                <h2 className='text-xl font-semibold'>{data.user.fullName}</h2>
+                <p className='text-textSecondary'>{data.user.email}</p>
                 <div className='flex items-center gap-2'>
                   <StatusChip value={data.user.isActive ? 'active' : 'inactive'} />
                   <StatusChip value={data.user.tier} />
                 </div>
               </div>
-              <Divider className='is-full' />
-              <CustomTextField
-                select
-                fullWidth
+              <hr className='w-full border-secondary/20' />
+              <Select
+                containerClassName='w-full'
                 label='Loyalty tier'
                 value={data.user.tier}
                 onChange={e => {
@@ -115,82 +97,68 @@ const CustomerDetailView = ({ id }: Props) => {
                   if (next !== data.user.tier) setPendingTier(next)
                 }}
                 disabled={updateTier.isPending}
-                slotProps={{
-                  input: {
-                    endAdornment: updateTier.isPending ? <CircularProgress size={18} className='mie-6' /> : null
-                  }
-                }}
-              >
-                {USER_TIERS.map(tier => (
-                  <MenuItem key={tier} value={tier}>
-                    {tier}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-            </CardContent>
+                options={USER_TIERS.map(tier => ({ label: tier, value: tier }))}
+              />
+            </CardBody>
           </Card>
-        </Grid>
+        </div>
 
-        <Grid size={{ xs: 12, md: 8 }}>
-          <TabContext value={activeTab}>
-            <CustomTabList onChange={(_: SyntheticEvent, value: string) => setActiveTab(value)} className='mbe-4'>
-              <Tab label='Overview' value='overview' />
-              <Tab label='Addresses' value='addresses' />
-              <Tab label='Cart' value='cart' />
-            </CustomTabList>
+        <div className='md:col-span-2'>
+          <Tabs
+            className='mb-4'
+            value={activeTab}
+            onChange={setActiveTab}
+            items={[
+              { value: 'overview', label: 'Overview' },
+              { value: 'addresses', label: 'Addresses' },
+              { value: 'cart', label: 'Cart' }
+            ]}
+          />
 
-            <TabPanel value='overview' className='p-0'>
+          <TabPanel active={activeTab === 'overview'} className='p-0'>
               <DetailSection title='Recent orders'>
                 {data.recentOrders.length ? (
                   data.recentOrders.map(order => (
                     <div key={order.id} className='flex items-center justify-between gap-2'>
                       <div className='flex flex-col'>
-                        <Typography variant='subtitle2'>{order.reference}</Typography>
-                        <Typography variant='caption' color='text.secondary'>
-                          {formatDate(order.placedAt)}
-                        </Typography>
+                        <span className='text-sm font-medium'>{order.reference}</span>
+                        <span className='text-xs text-textSecondary'>{formatDate(order.placedAt)}</span>
                       </div>
                       <div className='flex items-center gap-3'>
                         <StatusChip value={order.status} />
-                        <Typography variant='subtitle2'>{formatCurrency(order.total, order.currency)}</Typography>
+                        <span className='text-sm font-medium'>{formatCurrency(order.total, order.currency)}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <Typography color='text.secondary'>No orders yet.</Typography>
+                  <p className='text-textSecondary'>No orders yet.</p>
                 )}
               </DetailSection>
-            </TabPanel>
+          </TabPanel>
 
-            <TabPanel value='addresses' className='p-0'>
+          <TabPanel active={activeTab === 'addresses'} className='p-0'>
               <DetailSection title='Saved addresses'>
                 {data.addresses.length ? (
                   data.addresses.map(addr => (
                     <div key={addr.id} className='flex flex-col gap-0.5'>
                       <div className='flex items-center gap-2'>
-                        <Typography variant='subtitle2'>{addr.fullName}</Typography>
+                        <span className='text-sm font-medium'>{addr.fullName}</span>
                         {addr.isDefault && <StatusChip value='default' color='primary' />}
-                        {addr.label && (
-                          <Typography variant='caption' color='text.secondary'>
-                            ({addr.label})
-                          </Typography>
-                        )}
+                        {addr.label && <span className='text-xs text-textSecondary'>({addr.label})</span>}
                       </div>
-                      <Typography variant='body2' color='text.secondary'>
-                        {addr.phone}
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary'>
+                      <span className='text-sm text-textSecondary'>{addr.phone}</span>
+                      <span className='text-sm text-textSecondary'>
                         {[addr.addressLine, addr.city, addr.state, addr.country].filter(Boolean).join(', ')}
-                      </Typography>
+                      </span>
                     </div>
                   ))
                 ) : (
-                  <Typography color='text.secondary'>No saved addresses.</Typography>
+                  <p className='text-textSecondary'>No saved addresses.</p>
                 )}
               </DetailSection>
-            </TabPanel>
+          </TabPanel>
 
-            <TabPanel value='cart' className='p-0'>
+          <TabPanel active={activeTab === 'cart'} className='p-0'>
               <DetailSection title='Current cart'>
                 {data.cart.length ? (
                   data.cart.map((item, idx) => {
@@ -201,25 +169,24 @@ const CustomerDetailView = ({ id }: Props) => {
                         <div className='flex items-center gap-3'>
                           {product && (
                             <ZoomableImage src={product.images?.[0]} alt={product.name}>
-                              <Avatar variant='rounded' src={product.images?.[0]} sx={{ width: 40, height: 40 }} />
+                              <img src={product.images?.[0]} alt='' className='size-10 rounded-md object-cover' />
                             </ZoomableImage>
                           )}
-                          <Typography variant='body2'>{product?.name ?? 'Unknown product'}</Typography>
+                          <span className='text-sm'>{product?.name ?? 'Unknown product'}</span>
                         </div>
-                        <Typography variant='caption' color='text.secondary'>
+                        <span className='text-xs text-textSecondary'>
                           Qty {item.quantity} · {item.volumeMl}ml
-                        </Typography>
+                        </span>
                       </div>
                     )
                   })
                 ) : (
-                  <Typography color='text.secondary'>Cart is empty.</Typography>
+                  <p className='text-textSecondary'>Cart is empty.</p>
                 )}
               </DetailSection>
-            </TabPanel>
-          </TabContext>
-        </Grid>
-      </Grid>
+          </TabPanel>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={!!pendingTier}

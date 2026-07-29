@@ -7,12 +7,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Box from '@mui/material/Box'
-import MenuItem from '@mui/material/MenuItem'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -21,7 +15,8 @@ import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CustomTextField from '@core/components/mui/TextField'
+import Alert from '@/components/ui/Alert'
+import Select from '@/components/ui/Select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
@@ -70,13 +65,17 @@ const CustomersView = () => {
         header: 'Customer',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <div className='flex items-center gap-3 cursor-pointer' onClick={() => router.push(`/customers/${row.original.id}`)}>
-            <Avatar src={row.original.avatar}>{row.original.fullName?.charAt(0)}</Avatar>
+          <div className='flex cursor-pointer items-center gap-3' onClick={() => router.push(`/customers/${row.original.id}`)}>
+            {row.original.avatar ? (
+              <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
+            ) : (
+              <span className='flex size-10 items-center justify-center rounded-full bg-secondary/15 text-sm font-medium'>
+                {row.original.fullName?.charAt(0)}
+              </span>
+            )}
             <div className='flex flex-col'>
-              <Typography variant='subtitle2'>{row.original.fullName}</Typography>
-              <Typography variant='caption' color='text.secondary'>
-                {row.original.email}
-              </Typography>
+              <span className='text-sm font-medium'>{row.original.fullName}</span>
+              <span className='text-xs text-textSecondary'>{row.original.email}</span>
             </div>
           </div>
         )
@@ -103,22 +102,23 @@ const CustomersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton
-              size='small'
+            <button
+              type='button'
               aria-label={`View ${row.original.fullName}`}
               onClick={() => router.push(`/customers/${row.original.id}`)}
+              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </IconButton>
-            <IconButton
-              size='small'
-              color='error'
+            </button>
+            <button
+              type='button'
               aria-label={`Deactivate ${row.original.fullName}`}
               disabled={!row.original.isActive}
               onClick={() => setToDeactivate(row.original)}
+              className='rounded-md p-1.5 text-error hover:bg-error/10 disabled:opacity-40'
             >
               <i className='tabler-user-off' />
-            </IconButton>
+            </button>
           </div>
         )
       }
@@ -131,7 +131,11 @@ const CustomersView = () => {
       <Breadcrumbs />
       <PageHeader title='Customers' subtitle='Your registered account holders' />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load customers.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load customers.'}
+        </Alert>
+      )}
 
       <DataTable
         data={data?.items ?? []}
@@ -145,28 +149,21 @@ const CustomersView = () => {
         isRefetching={isFetching && !isLoading}
         emptyMessage='No customers found'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
+          <div className='flex flex-wrap items-center gap-4 p-6'>
             <SearchField
               value={search}
               onChange={resetOnChange(setSearch)}
               placeholder='Search name or email'
-              className='min-is-[220px]'
+              className='min-w-[220px]'
             />
-            <CustomTextField
-              select
+            <Select
+              label='Tier'
               value={tier}
               onChange={e => resetOnChange(setTier)(e.target.value as UserTier | '')}
-              className='min-is-[200px]'
-              label='Tier'
-            >
-              <MenuItem value=''>All tiers</MenuItem>
-              {USER_TIERS.map(t => (
-                <MenuItem key={t} value={t}>
-                  {t}
-                </MenuItem>
-              ))}
-            </CustomTextField>
-          </Box>
+              containerClassName='min-w-[200px]'
+              options={[{ label: 'All tiers', value: '' }, ...USER_TIERS.map(t => ({ label: t, value: t }))]}
+            />
+          </div>
         }
       />
 
