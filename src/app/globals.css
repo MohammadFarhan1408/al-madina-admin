@@ -5,66 +5,68 @@
 
 @theme {
   --radius-none: 0px;
-  --radius-xs: var(--mui-shape-customBorderRadius-xs);
-  --radius-sm: var(--mui-shape-customBorderRadius-sm);
-  --radius: var(--mui-shape-customBorderRadius-md);
-  --radius-md: var(--mui-shape-customBorderRadius-md);
-  --radius-lg: var(--mui-shape-customBorderRadius-lg);
-  --radius-xl: var(--mui-shape-customBorderRadius-xl);
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-2xl: 0.75rem;
   --radius-3xl: 1rem;
   --radius-4xl: 1.5rem;
   --radius-full: 9999px;
 
-  --color-primary: var(--primary-color);
-  --color-primaryLight: var(--mui-palette-primary-lightOpacity);
-  --color-primaryLighter: var(--mui-palette-primary-lighterOpacity);
-  --color-secondary: var(--mui-palette-secondary-main);
-  --color-error: var(--mui-palette-error-main);
-  --color-errorLight: var(--mui-palette-error-lightOpacity);
-  --color-errorLighter: var(--mui-palette-error-lighterOpacity);
-  --color-warning: var(--mui-palette-warning-main);
-  --color-info: var(--mui-palette-info-main);
-  --color-success: var(--mui-palette-success-main);
-  --color-textPrimary: var(--mui-palette-text-primary);
-  --color-textSecondary: var(--mui-palette-text-secondary);
-  --color-textDisabled: var(--mui-palette-text-disabled);
-  --color-actionActive: var(--mui-palette-action-active);
-  --color-actionHover: var(--mui-palette-action-hover);
-  --color-actionSelected: var(--mui-palette-action-selected);
-  --color-actionFocus: var(--mui-palette-action-focus);
-  --color-backgroundPaper: var(--mui-palette-background-paper);
-  --color-backgroundDefault: var(--mui-palette-background-default);
-  --color-backgroundChat: var(--mui-palette-customColors-chatBg);
-  --color-backdrop: var(--backdrop-color);
-  --color-facebook: #4267b2;
-  --color-twitter: #1da1f2;
-  --color-linkedin: #007bb6;
+  /* Al Madina brand palette — static values, sourced from src/configs/palette.ts.
+     No CSS-variable indirection, no light/dark switching: this is the single
+     permanent visual identity (light ivory/pearl content, dark obsidian+gold
+     sidebar — see Sidebar component). */
+  --color-primary: #d4af37;
+  --color-primaryLight: #e5c158;
+  --color-primaryLighter: #f0e6cc;
+  --color-primaryDark: #9a7b33;
+  --color-secondary: #9a7b33;
+  --color-secondaryLight: #c8a24b;
+  --color-secondaryDark: #6e5722;
+  --color-error: #b23a48;
+  --color-errorLight: #f2dadd;
+  --color-errorDark: #8e2d38;
+  --color-warning: #c9912e;
+  --color-warningLight: #f6ead0;
+  --color-warningDark: #6e5722;
+  --color-info: #3a6b8c;
+  --color-infoLight: #dce7ef;
+  --color-infoDark: #2c5169;
+  --color-success: #2e7d54;
+  --color-successLight: #d8ebe0;
+  --color-successDark: #0f5132;
+  --color-textPrimary: rgb(11 11 11 / 92%);
+  --color-textSecondary: #60646c;
+  --color-textDisabled: #b8ae97;
+  --color-actionActive: rgb(11 11 11 / 60%);
+  --color-actionHover: rgb(11 11 11 / 6%);
+  --color-actionSelected: rgb(11 11 11 / 8%);
+  --color-actionFocus: rgb(11 11 11 / 10%);
+  --color-backgroundPaper: #f7f3ea;
+  --color-backgroundDefault: #fbf9f3;
+  --color-backgroundChat: #e5ddcb;
+  --color-backdrop: rgb(11 11 11 / 50%);
 
-  --shadow-xs: var(--mui-customShadows-xs);
-  --shadow-sm: var(--mui-customShadows-sm);
-  --shadow-DEFAULT: var(--mui-customShadows-md);
-  --shadow-md: var(--mui-customShadows-md);
-  --shadow-lg: var(--mui-customShadows-lg);
-  --shadow-xl: var(--mui-customShadows-xl);
-  --shadow-primarySm: var(--mui-customShadows-primary-sm);
-  --shadow-primaryMd: var(--mui-customShadows-primary-md);
-  --shadow-primaryLg: var(--mui-customShadows-primary-lg);
-  --shadow-secondarySm: var(--mui-customShadows-secondary-sm);
-  --shadow-secondaryMd: var(--mui-customShadows-secondary-md);
-  --shadow-secondaryLg: var(--mui-customShadows-secondary-lg);
-  --shadow-errorSm: var(--mui-customShadows-error-sm);
-  --shadow-errorMd: var(--mui-customShadows-error-md);
-  --shadow-errorLg: var(--mui-customShadows-error-lg);
-  --shadow-warningSm: var(--mui-customShadows-warning-sm);
-  --shadow-warningMd: var(--mui-customShadows-warning-md);
-  --shadow-warningLg: var(--mui-customShadows-warning-lg);
-  --shadow-infoSm: var(--mui-customShadows-info-sm);
-  --shadow-infoMd: var(--mui-customShadows-info-md);
-  --shadow-infoLg: var(--mui-customShadows-info-lg);
-  --shadow-successSm: var(--mui-customShadows-success-sm);
-  --shadow-successMd: var(--mui-customShadows-success-md);
-  --shadow-successLg: var(--mui-customShadows-success-lg);
+  /* Dark surfaces — semi-dark sidebar + auth screens (never switched at runtime). */
+  --color-richBlack: #0b0b0b;
+  --color-obsidian: #141414;
+  --color-charcoal: #1c1c1e;
+  --color-ivory: #f7f3ea;
+  --color-ivoryDim: #eee8d9;
+
+  --shadow-xs: 0 1px 2px rgb(11 11 11 / 6%);
+  --shadow-sm: 0 1px 3px rgb(11 11 11 / 8%);
+  --shadow-DEFAULT: 0 4px 10px rgb(11 11 11 / 10%);
+  --shadow-md: 0 4px 10px rgb(11 11 11 / 10%);
+  --shadow-lg: 0 8px 24px rgb(11 11 11 / 12%);
+  --shadow-xl: 0 16px 40px rgb(11 11 11 / 16%);
+  --shadow-primarySm: 0 2px 8px rgb(212 175 55 / 20%);
+  --shadow-primaryMd: 0 6px 16px rgb(212 175 55 / 24%);
+  --shadow-primaryLg: 0 12px 28px rgb(212 175 55 / 28%);
 
   --breakpoint-sm: 600px;
   --breakpoint-md: 900px;
@@ -72,11 +74,10 @@
   --breakpoint-xl: 1536px;
   --breakpoint-2xl: 1920px;
 
-  --z-header: var(--header-z-index);
-  --z-footer: var(--footer-z-index);
-  --z-customizer: var(--customizer-z-index);
-  --z-search: var(--search-z-index);
-  --z-drawer: var(--drawer-z-index);
+  --z-header: 1100;
+  --z-footer: 10;
+  --z-search: 1300;
+  --z-drawer: 1200;
 }
 
 :root {
