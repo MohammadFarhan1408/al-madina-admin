@@ -8,10 +8,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -19,7 +15,9 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import OptionMenu from '@core/components/option-menu'
+import RowActions from '@/components/shared/RowActions'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useRoles, useDeleteRole } from '@/features/roles/hooks/useRoles'
@@ -51,8 +49,8 @@ const RolesView = () => {
         header: 'Role',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex items-center gap-2 cursor-pointer' onClick={() => router.push(`/roles/${row.original.id}`)}>
-            <Typography variant='subtitle2'>{row.original.name}</Typography>
+          <div className='flex cursor-pointer items-center gap-2' onClick={() => router.push(`/roles/${row.original.id}`)}>
+            <span className='text-sm font-medium'>{row.original.name}</span>
             {row.original.isSystem && <StatusChip value='system' color='secondary' />}
           </div>
         )
@@ -75,29 +73,23 @@ const RolesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton
-              size='small'
+            <button
+              type='button'
               aria-label={`View ${row.original.name}`}
               onClick={() => router.push(`/roles/${row.original.id}`)}
+              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </IconButton>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
+            </button>
+            <RowActions
               options={[
-                {
-                  text: 'Edit',
-                  icon: 'tabler-edit',
-                  menuItemProps: { onClick: () => router.push(`/roles/${row.original.id}/edit`) }
-                },
+                { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/roles/${row.original.id}/edit`) },
                 {
                   text: 'Delete',
                   icon: 'tabler-trash',
-                  menuItemProps: {
-                    disabled: row.original.isSystem,
-                    onClick: () => setToDelete(row.original)
-                  }
+                  danger: true,
+                  disabled: row.original.isSystem,
+                  onClick: () => setToDelete(row.original)
                 }
               ]}
             />
@@ -115,13 +107,17 @@ const RolesView = () => {
         title='Roles & Permissions'
         subtitle='Manage admin role definitions and their permission sets'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/roles/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/roles/new')}>
             Add Role
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load roles.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load roles.'}
+        </Alert>
+      )}
 
       <DataTable manualPagination={false} data={roles ?? []} columns={columns} isLoading={isLoading} emptyMessage='No roles yet.' />
 

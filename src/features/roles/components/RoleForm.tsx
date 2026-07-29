@@ -5,19 +5,14 @@
 // Users/Coupons/Settings/Reports/Profile).
 import { useEffect, useMemo } from 'react'
 
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import Checkbox from '@mui/material/Checkbox'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import FormGroup from '@mui/material/FormGroup'
-import Typography from '@mui/material/Typography'
-import Divider from '@mui/material/Divider'
-import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import CustomTextField from '@core/components/mui/TextField'
+import Card, { CardBody } from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
+import Checkbox from '@/components/ui/Checkbox'
+import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { roleSchema, defaultRoleValues, type RoleFormValues } from '../schema'
@@ -110,33 +105,30 @@ const RoleForm = ({ role, onSuccess, onCancel }: Props) => {
 
   return (
     <Card>
-      <CardContent>
+      <CardBody>
         <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='name'
             control={control}
             render={({ field }) => (
-              <CustomTextField
+              <Input
                 {...field}
-                fullWidth
                 required
                 label='Name'
                 disabled={role?.isSystem}
-                error={!!errors.name}
-                helperText={errors.name?.message ?? (role?.isSystem ? 'System role names cannot be changed' : undefined)}
+                error={errors.name?.message}
+                helperText={role?.isSystem ? 'System role names cannot be changed' : undefined}
               />
             )}
           />
           <Controller
             name='description'
             control={control}
-            render={({ field }) => <CustomTextField {...field} fullWidth multiline minRows={2} label='Description' />}
+            render={({ field }) => <Textarea {...field} rows={2} label='Description' />}
           />
 
-          <Divider />
-          <Typography variant='overline' color='text.secondary'>
-            Permissions
-          </Typography>
+          <hr className='border-secondary/20' />
+          <span className='text-xs font-semibold uppercase tracking-widest text-textSecondary'>Permissions</span>
           <div className='flex flex-col gap-4'>
             {Array.from(grouped.entries()).map(([module, perms]) => {
               const moduleSelectedCount = (perms ?? []).filter(perm => selected.includes(perm.id)).length
@@ -146,51 +138,40 @@ const RoleForm = ({ role, onSuccess, onCancel }: Props) => {
               return (
                 <div key={module} className='flex flex-col gap-1'>
                   <div className='flex items-center justify-between'>
-                    <Typography variant='subtitle2'>{module}</Typography>
-                    <FormControlLabel
-                      className='mie-0'
-                      control={
-                        <Checkbox
-                          size='small'
-                          checked={allSelected}
-                          indeterminate={someSelected}
-                          onChange={e => toggleModuleAll(perms ?? [], e.target.checked)}
-                        />
-                      }
+                    <span className='text-sm font-medium'>{module}</span>
+                    <Checkbox
                       label='Select all'
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onChange={e => toggleModuleAll(perms ?? [], e.target.checked)}
                     />
                   </div>
-                  <FormGroup className='flex flex-row flex-wrap gap-x-4'>
+                  <div className='flex flex-row flex-wrap gap-x-4 gap-y-1'>
                     {perms?.map(perm => (
-                      <FormControlLabel
+                      <Checkbox
                         key={perm.id}
-                        control={
-                          <Checkbox
-                            size='small'
-                            checked={selected.includes(perm.id)}
-                            onChange={e => togglePermission(perm.id, e.target.checked)}
-                          />
-                        }
                         label={perm.label}
+                        checked={selected.includes(perm.id)}
+                        onChange={e => togglePermission(perm.id, e.target.checked)}
                       />
                     ))}
-                  </FormGroup>
+                  </div>
                 </div>
               )
             })}
           </div>
 
-          <Divider />
+          <hr className='border-secondary/20' />
           <div className='flex items-center justify-end gap-4'>
-            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel
             </Button>
-            <Button type='submit' variant='contained' disabled={submitting}>
-              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            <Button type='submit' loading={submitting}>
+              {isEdit ? 'Save changes' : 'Create'}
             </Button>
           </div>
         </form>
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }
