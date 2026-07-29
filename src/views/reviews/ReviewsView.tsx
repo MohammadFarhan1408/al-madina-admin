@@ -3,12 +3,6 @@
 // Reviews moderation — server-paginated table, rating filter, delete action.
 import { useMemo, useState } from 'react'
 
-import Box from '@mui/material/Box'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Rating from '@mui/material/Rating'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -16,6 +10,8 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import Alert from '@/components/ui/Alert'
+import Rating from '@/components/ui/Rating'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
@@ -61,9 +57,15 @@ const ReviewsView = () => {
         enableSorting: false,
         cell: ({ row }) => (
           <div className='flex items-center gap-3'>
-            <Avatar src={row.original.avatar}>{row.original.author?.charAt(0)}</Avatar>
+            {row.original.avatar ? (
+              <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
+            ) : (
+              <span className='flex size-10 items-center justify-center rounded-full bg-secondary/15 text-sm font-medium'>
+                {row.original.author?.charAt(0)}
+              </span>
+            )}
             <div className='flex items-center gap-2'>
-              <Typography variant='subtitle2'>{row.original.author}</Typography>
+              <span className='text-sm font-medium'>{row.original.author}</span>
               {row.original.verified && <StatusChip value='verified' />}
             </div>
           </div>
@@ -72,18 +74,16 @@ const ReviewsView = () => {
       {
         header: 'Rating',
         accessorKey: 'rating',
-        cell: ({ getValue }) => <Rating value={getValue() as number} readOnly size='small' />
+        cell: ({ getValue }) => <Rating value={getValue() as number} size='sm' />
       },
       {
         header: 'Review',
         accessorKey: 'title',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className='flex flex-col max-is-[360px]'>
-            <Typography variant='subtitle2'>{row.original.title}</Typography>
-            <Typography variant='caption' color='text.secondary' className='truncate'>
-              {row.original.body}
-            </Typography>
+          <div className='flex max-w-[360px] flex-col'>
+            <span className='text-sm font-medium'>{row.original.title}</span>
+            <span className='truncate text-xs text-textSecondary'>{row.original.body}</span>
           </div>
         )
       },
@@ -98,14 +98,14 @@ const ReviewsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex justify-end'>
-            <IconButton
-              size='small'
-              color='error'
+            <button
+              type='button'
               aria-label={`Delete review by ${row.original.author}`}
               onClick={() => setToDelete(row.original)}
+              className='rounded-md p-1.5 text-error hover:bg-error/10'
             >
               <i className='tabler-trash' />
-            </IconButton>
+            </button>
           </div>
         )
       }
@@ -118,7 +118,11 @@ const ReviewsView = () => {
       <Breadcrumbs />
       <PageHeader title='Reviews' subtitle='Moderate customer product reviews' />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load reviews.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load reviews.'}
+        </Alert>
+      )}
 
       <DataTable
         data={data?.items ?? []}
@@ -132,20 +136,20 @@ const ReviewsView = () => {
         isRefetching={isFetching && !isLoading}
         emptyMessage='No reviews found'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-3 p-6'>
-            <Typography variant='body2' color='text.secondary'>
-              Filter by rating:
-            </Typography>
-            <Rating
-              value={rating || 0}
-              onChange={(_, value) => resetOnChange(setRating)(value ?? '')}
-            />
+          <div className='flex flex-wrap items-center gap-3 p-6'>
+            <span className='text-sm text-textSecondary'>Filter by rating:</span>
+            <Rating value={rating || 0} onChange={value => resetOnChange(setRating)(value || '')} />
             {rating !== '' && (
-              <IconButton size='small' aria-label='Clear rating filter' onClick={() => resetOnChange(setRating)('')}>
+              <button
+                type='button'
+                aria-label='Clear rating filter'
+                onClick={() => resetOnChange(setRating)('')}
+                className='rounded-md p-1 text-textSecondary hover:bg-primary/10'
+              >
                 <i className='tabler-x text-[16px]' />
-              </IconButton>
+              </button>
             )}
-          </Box>
+          </div>
         }
       />
 
