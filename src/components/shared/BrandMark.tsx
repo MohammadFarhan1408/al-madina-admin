@@ -1,11 +1,10 @@
-// React Imports
 import type { SVGAttributes } from 'react'
 
 /**
  * Al Madina brand mark — a Moorish pointed-arch (mihrab) frame enclosing an
- * ittar droplet. Uses `currentColor` so it inherits the theme's gold primary.
+ * ittar droplet. Uses `currentColor` so it inherits the surrounding text colour.
  */
-const Logo = (props: SVGAttributes<SVGElement>) => {
+const BrandMark = (props: SVGAttributes<SVGElement>) => {
   return (
     <svg width='1em' height='1em' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg' {...props}>
       {/* Arch frame (outer boundary minus inner opening) */}
@@ -26,4 +25,4 @@ const Logo = (props: SVGAttributes<SVGElement>) => {
   )
 }
 
-export default Logo
+export default BrandMark
