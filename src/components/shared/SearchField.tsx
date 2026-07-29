@@ -4,10 +4,7 @@
 // ad-hoc search fields that were previously reimplemented per page.
 import { useEffect, useState } from 'react'
 
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-
-import CustomTextField from '@core/components/mui/TextField'
+import Input from '@/components/ui/Input'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 type SearchFieldProps = {
@@ -15,20 +12,11 @@ type SearchFieldProps = {
   onChange: (value: string) => void
   placeholder?: string
   debounceMs?: number
-  size?: 'small' | 'medium'
   fullWidth?: boolean
   className?: string
 }
 
-const SearchField = ({
-  value,
-  onChange,
-  placeholder = 'Search…',
-  debounceMs = 400,
-  size = 'small',
-  fullWidth,
-  className
-}: SearchFieldProps) => {
+const SearchField = ({ value, onChange, placeholder = 'Search…', debounceMs = 400, fullWidth, className }: SearchFieldProps) => {
   const [draft, setDraft] = useState(value)
   const debounced = useDebouncedValue(draft, debounceMs)
 
@@ -45,36 +33,27 @@ const SearchField = ({
   }, [debounced])
 
   return (
-    <CustomTextField
-      size={size}
-      fullWidth={fullWidth}
-      className={className}
+    <Input
+      containerClassName={fullWidth ? `w-full ${className ?? ''}` : className}
       placeholder={placeholder}
       value={draft}
       onChange={e => setDraft(e.target.value)}
-      slotProps={{
-        input: {
-          startAdornment: (
-            <InputAdornment position='start'>
-              <i className='tabler-search text-[20px] text-textSecondary' />
-            </InputAdornment>
-          ),
-          endAdornment: draft ? (
-            <InputAdornment position='end'>
-              <IconButton
-                size='small'
-                aria-label='Clear search'
-                onClick={() => {
-                  setDraft('')
-                  onChange('')
-                }}
-              >
-                <i className='tabler-x text-[16px]' />
-              </IconButton>
-            </InputAdornment>
-          ) : undefined
-        }
-      }}
+      startAdornment={<i className='tabler-search text-[20px] text-textSecondary' />}
+      endAdornment={
+        draft ? (
+          <button
+            type='button'
+            aria-label='Clear search'
+            onClick={() => {
+              setDraft('')
+              onChange('')
+            }}
+            className='rounded p-1 hover:bg-black/5'
+          >
+            <i className='tabler-x text-[16px]' />
+          </button>
+        ) : undefined
+      }
     />
   )
 }
