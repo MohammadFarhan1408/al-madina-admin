@@ -1,29 +1,11 @@
-// Type Imports
-import type { ChildrenType } from '@core/types'
+import type { ReactNode } from 'react'
 
-// Component Imports
-import Providers from '@components/Providers'
-import BlankLayout from '@layouts/BlankLayout'
+import Providers from '@/components/Providers'
 
-// Util Imports
-import { getSystemMode } from '@core/utils/serverHelpers'
-
-type Props = ChildrenType
-
-const Layout = async (props: Props) => {
-  const { children } = props
-
-  // Type guard to ensure lang is a valid Locale
-
-  // Vars
-  const direction = 'ltr'
-  const systemMode = await getSystemMode()
-
-  return (
-    <Providers direction={direction}>
-      <BlankLayout systemMode={systemMode}>{children}</BlankLayout>
-    </Providers>
-  )
-}
+const Layout = ({ children }: { children: ReactNode }) => (
+  <Providers direction='ltr'>
+    <div className='h-full w-full'>{children}</div>
+  </Providers>
+)
 
 export default Layout
