@@ -6,12 +6,9 @@
 // different value shapes that all happen to share these four field names.
 import { Controller } from 'react-hook-form'
 
-import Divider from '@mui/material/Divider'
-import Typography from '@mui/material/Typography'
-import Autocomplete from '@mui/material/Autocomplete'
-import Chip from '@mui/material/Chip'
-
-import CustomTextField from '@core/components/mui/TextField'
+import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
+import Combobox from '@/components/ui/Combobox'
 
 type SeoFieldsSectionProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +18,7 @@ type SeoFieldsSectionProps = {
   /** What the slug auto-generates from, for the helper label — 'name' | 'title'. */
   sourceFieldLabel?: string
 
-  /** Skip the leading Divider + "SEO" label — pass true when the caller already wraps this in a Card with its own CardHeader title. */
+  /** Skip the leading divider + "SEO" label — pass true when the caller already wraps this in a Card with its own header title. */
   bare?: boolean
 }
 
@@ -29,51 +26,32 @@ const SeoFieldsSection = ({ control, metaKeywords, sourceFieldLabel = 'name', ba
   <div className='flex flex-col gap-5'>
     {!bare && (
       <>
-        <Divider />
-        <Typography variant='overline' color='text.secondary'>
-          SEO
-        </Typography>
+        <hr className='border-secondary/20' />
+        <span className='text-xs font-semibold uppercase tracking-widest text-textSecondary'>SEO</span>
       </>
     )}
     <Controller
       name='slug'
       control={control}
-      render={({ field }) => (
-        <CustomTextField {...field} fullWidth label={`Slug (optional — auto-generated from ${sourceFieldLabel})`} />
-      )}
+      render={({ field }) => <Input {...field} label={`Slug (optional — auto-generated from ${sourceFieldLabel})`} />}
     />
-    <Controller
-      name='metaTitle'
-      control={control}
-      render={({ field }) => <CustomTextField {...field} fullWidth label='Meta title (optional)' />}
-    />
+    <Controller name='metaTitle' control={control} render={({ field }) => <Input {...field} label='Meta title (optional)' />} />
     <Controller
       name='metaDescription'
       control={control}
-      render={({ field }) => (
-        <CustomTextField {...field} fullWidth multiline minRows={2} label='Meta description (optional)' />
-      )}
+      render={({ field }) => <Textarea {...field} rows={2} label='Meta description (optional)' />}
     />
     <Controller
       name='metaKeywords'
       control={control}
       render={({ field }) => (
-        <Autocomplete
-          multiple
+        <Combobox
           freeSolo
+          label='Meta keywords (optional)'
+          placeholder='Type a keyword and press Enter'
           options={[]}
           value={metaKeywords ?? []}
-          onChange={(_, next) => field.onChange(next)}
-          renderTags={(tagValue, getTagProps) =>
-            tagValue.map((option, index) => {
-              const { key, ...rest } = getTagProps({ index })
-
-              return <Chip key={key} variant='tonal' label={option} size='small' {...rest} />
-            })
-          }
-          renderInput={params => (
-            <CustomTextField {...params} label='Meta keywords (optional)' placeholder='Type a keyword and press Enter' />
-          )}
+          onChange={next => field.onChange(next)}
         />
       )}
     />
