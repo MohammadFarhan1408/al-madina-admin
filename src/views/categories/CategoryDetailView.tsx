@@ -5,17 +5,14 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
-import Alert from '@mui/material/Alert'
-import Avatar from '@mui/material/Avatar'
-
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import ZoomableImage from '@/components/shared/ZoomableImage'
+import QueryState from '@/components/shared/QueryState'
+import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useCategory, useDeleteCategory } from '@/features/categories/hooks/useCategories'
@@ -47,13 +44,7 @@ const CategoryDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Category' />
-        {isError ? (
-          <Alert severity='error'>{(error as Error)?.message || 'Failed to load category.'}</Alert>
-        ) : (
-          <div className='flex justify-center p-8'>
-            <CircularProgress />
-          </div>
-        )}
+        <QueryState isError={isError} error={error} fallbackMessage='Failed to load category.' />
       </>
     )
   }
@@ -66,13 +57,22 @@ const CategoryDetailView = ({ id }: Props) => {
         subtitle={category.tagline}
         action={
           <div className='flex items-center gap-3'>
-            <Button variant='tonal' color='secondary' onClick={() => router.push('/categories')}>
+            <Button variant='outlined' color='secondary' onClick={() => router.push('/categories')}>
               Back
             </Button>
-            <Button variant='tonal' startIcon={<i className='tabler-edit' />} onClick={() => router.push(`/categories/${id}/edit`)}>
+            <Button
+              variant='outlined'
+              startIcon={<i className='tabler-edit' />}
+              onClick={() => router.push(`/categories/${id}/edit`)}
+            >
               Edit
             </Button>
-            <Button variant='tonal' color='error' startIcon={<i className='tabler-trash' />} onClick={() => setConfirmDelete(true)}>
+            <Button
+              variant='outlined'
+              color='error'
+              startIcon={<i className='tabler-trash' />}
+              onClick={() => setConfirmDelete(true)}
+            >
               Delete
             </Button>
           </div>
@@ -86,7 +86,7 @@ const CategoryDetailView = ({ id }: Props) => {
             stacked
             value={
               <ZoomableImage src={category.image} alt={category.name}>
-                <Avatar variant='rounded' src={category.image} sx={{ width: 96, height: 96 }} />
+                <img src={category.image} alt='' className='size-24 rounded-md object-cover' />
               </ZoomableImage>
             }
           />
