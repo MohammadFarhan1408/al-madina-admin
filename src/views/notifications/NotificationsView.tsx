@@ -4,14 +4,6 @@
 // plus a history of past broadcasts (read from the admin audit trail).
 import { useMemo, useState } from 'react'
 
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import CardHeader from '@mui/material/CardHeader'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Typography from '@mui/material/Typography'
-import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
@@ -21,7 +13,11 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CustomTextField from '@core/components/mui/TextField'
+import Button from '@/components/ui/Button'
+import Card, { CardBody, CardHeader } from '@/components/ui/Card'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import Textarea from '@/components/ui/Textarea'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatDateTime, humanize } from '@/libs/format'
@@ -94,91 +90,70 @@ const NotificationsView = () => {
       <Breadcrumbs />
       <PageHeader title='Notifications' subtitle='Send an announcement to your customers' />
 
-      <Grid container spacing={6}>
-        <Grid size={{ xs: 12, md: 8, lg: 6 }}>
+      <div className='flex flex-col gap-6'>
+        <div className='md:w-2/3 lg:w-1/2'>
           <Card>
-            <CardContent>
+            <CardBody>
               <form onSubmit={handleSubmit(values => setPending(values))} className='flex flex-col gap-5'>
                 <Controller
                   name='kind'
                   control={control}
                   render={({ field }) => (
-                    <CustomTextField {...field} select fullWidth label='Type' error={!!errors.kind} helperText={errors.kind?.message}>
-                      {NOTIFICATION_KINDS.map(kind => (
-                        <MenuItem key={kind} value={kind}>
-                          {humanize(kind)}
-                        </MenuItem>
-                      ))}
-                    </CustomTextField>
+                    <Select
+                      {...field}
+                      label='Type'
+                      error={errors.kind?.message}
+                      options={NOTIFICATION_KINDS.map(kind => ({ label: humanize(kind), value: kind }))}
+                    />
                   )}
                 />
                 <Controller
                   name='tier'
                   control={control}
                   render={({ field }) => (
-                    <CustomTextField
+                    <Select
                       {...field}
-                      select
-                      fullWidth
                       label='Audience'
-                      error={!!errors.tier}
-                      helperText={errors.tier?.message ?? 'Leave as "All customers" to broadcast to everyone.'}
-                    >
-                      <MenuItem value=''>All customers</MenuItem>
-                      {USER_TIERS.map(tier => (
-                        <MenuItem key={tier} value={tier}>
-                          {tier}
-                        </MenuItem>
-                      ))}
-                    </CustomTextField>
+                      error={errors.tier?.message}
+                      helperText='Leave as "All customers" to broadcast to everyone.'
+                      options={[
+                        { label: 'All customers', value: '' },
+                        ...USER_TIERS.map(tier => ({ label: tier, value: tier }))
+                      ]}
+                    />
                   )}
                 />
                 <Controller
                   name='title'
                   control={control}
-                  render={({ field }) => (
-                    <CustomTextField
-                      {...field}
-                      fullWidth
-                      required
-                      label='Title'
-                      error={!!errors.title}
-                      helperText={errors.title?.message}
-                    />
-                  )}
+                  render={({ field }) => <Input {...field} required label='Title' error={errors.title?.message} />}
                 />
                 <Controller
                   name='body'
                   control={control}
                   render={({ field }) => (
-                    <CustomTextField
-                      {...field}
-                      fullWidth
-                      required
-                      multiline
-                      minRows={4}
-                      label='Message'
-                      error={!!errors.body}
-                      helperText={errors.body?.message}
-                    />
+                    <Textarea {...field} required rows={4} label='Message' error={errors.body?.message} />
                   )}
                 />
                 <div className='flex items-center gap-4'>
-                  <Button type='submit' variant='contained' disabled={broadcast.isPending}>
-                    {broadcast.isPending ? <CircularProgress size={20} color='inherit' /> : 'Send broadcast'}
+                  <Button type='submit' loading={broadcast.isPending}>
+                    Send broadcast
                   </Button>
-                  <Typography variant='caption' color='text.secondary'>
-                    Delivery is queued and processed in the background.
-                  </Typography>
+                  <span className='text-xs text-textSecondary'>Delivery is queued and processed in the background.</span>
                 </div>
               </form>
-            </CardContent>
+            </CardBody>
           </Card>
-        </Grid>
+        </div>
 
-        <Grid size={{ xs: 12 }}>
+        <div>
           <Card>
-            <CardHeader title='Broadcast history' subheader='Past announcements sent from this panel' />
+            <CardHeader>
+              <div className='flex flex-col'>
+                <h2 className='text-base font-semibold text-textPrimary'>Broadcast history</h2>
+                <span className='text-sm text-textSecondary'>Past announcements sent from this panel</span>
+              </div>
+            </CardHeader>
             <DataTable
               data={history?.items ?? []}
               columns={columns}
@@ -191,8 +166,8 @@ const NotificationsView = () => {
               emptyMessage='No broadcasts sent yet.'
             />
           </Card>
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={!!pending}
