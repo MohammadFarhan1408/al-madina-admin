@@ -3,16 +3,13 @@
 // Create/edit collection form (doc §5.4). RHF + Zod; accent enum + image.
 import { useEffect, useState } from 'react'
 
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Divider from '@mui/material/Divider'
-import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import CustomTextField from '@core/components/mui/TextField'
+import Card, { CardBody } from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
 import { useToast } from '@/contexts/ToastContext'
@@ -98,53 +95,39 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
 
   return (
     <Card>
-      <CardContent>
+      <CardBody>
         <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='title'
             control={control}
-            render={({ field }) => (
-              <CustomTextField {...field} fullWidth label='Title' error={!!errors.title} helperText={errors.title?.message} />
-            )}
+            render={({ field }) => <Input {...field} label='Title' error={errors.title?.message} />}
           />
           <Controller
             name='subtitle'
             control={control}
-            render={({ field }) => (
-              <CustomTextField
-                {...field}
-                fullWidth
-                label='Subtitle'
-                error={!!errors.subtitle}
-                helperText={errors.subtitle?.message}
-              />
-            )}
+            render={({ field }) => <Input {...field} label='Subtitle' error={errors.subtitle?.message} />}
           />
           <Controller
             name='accent'
             control={control}
             render={({ field }) => (
-              <CustomTextField {...field} select fullWidth label='Accent'>
-                {COLLECTION_ACCENTS.map(accent => (
-                  <MenuItem key={accent} value={accent}>
-                    {humanize(accent)}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
+              <Select
+                {...field}
+                label='Accent'
+                options={COLLECTION_ACCENTS.map(accent => ({ label: humanize(accent), value: accent }))}
+              />
             )}
           />
           <Controller
             name='sortOrder'
             control={control}
             render={({ field }) => (
-              <CustomTextField
+              <Input
                 {...field}
                 onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                 type='number'
-                fullWidth
                 label='Sort order'
-                error={!!errors.sortOrder}
-                helperText={errors.sortOrder?.message}
+                error={errors.sortOrder?.message}
               />
             )}
           />
@@ -157,20 +140,20 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
             error={errors.image?.message}
           />
 
-          <Divider />
+          <hr className='border-secondary/20' />
           <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' />
 
-          <Divider />
+          <hr className='border-secondary/20' />
           <div className='flex items-center justify-end gap-4'>
-            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel
             </Button>
-            <Button type='submit' variant='contained' disabled={submitting}>
-              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            <Button type='submit' loading={submitting}>
+              {isEdit ? 'Save changes' : 'Create'}
             </Button>
           </div>
         </form>
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }

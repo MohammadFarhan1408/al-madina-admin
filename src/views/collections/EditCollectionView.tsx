@@ -2,11 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 
-import CircularProgress from '@mui/material/CircularProgress'
-import Alert from '@mui/material/Alert'
-
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
+import QueryState from '@/components/shared/QueryState'
 import CollectionForm from '@/features/collections/components/CollectionForm'
 import { useCollection } from '@/features/collections/hooks/useCollections'
 
@@ -21,13 +19,7 @@ const EditCollectionView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Collection' />
-        {isError ? (
-          <Alert severity='error'>{(error as Error)?.message || 'Failed to load collection.'}</Alert>
-        ) : (
-          <div className='flex justify-center p-8'>
-            <CircularProgress />
-          </div>
-        )}
+        <QueryState isError={isError} error={error} fallbackMessage='Failed to load collection.' />
       </>
     )
   }
