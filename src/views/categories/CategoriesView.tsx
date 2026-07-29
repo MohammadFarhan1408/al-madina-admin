@@ -6,12 +6,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -19,7 +13,9 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import OptionMenu from '@core/components/option-menu'
+import RowActions from '@/components/shared/RowActions'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useCategories, useDeleteCategory } from '@/features/categories/hooks/useCategories'
@@ -62,9 +58,13 @@ const CategoriesView = () => {
         header: 'Category',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex items-center gap-3 cursor-pointer' onClick={() => router.push(`/categories/${row.original.id}`)}>
-            <Avatar variant='rounded' src={row.original.image} />
-            <Typography variant='subtitle2'>{row.original.name}</Typography>
+          <div className='flex cursor-pointer items-center gap-3' onClick={() => router.push(`/categories/${row.original.id}`)}>
+            {row.original.image ? (
+              <img src={row.original.image} alt='' className='size-10 rounded-md object-cover' />
+            ) : (
+              <span className='size-10 rounded-md bg-secondary/15' />
+            )}
+            <span className='text-sm font-medium'>{row.original.name}</span>
           </div>
         )
       },
@@ -82,23 +82,18 @@ const CategoriesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton
-              size='small'
+            <button
+              type='button'
               aria-label={`View ${row.original.name}`}
               onClick={() => router.push(`/categories/${row.original.id}`)}
+              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </IconButton>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
+            </button>
+            <RowActions
               options={[
-                {
-                  text: 'Edit',
-                  icon: 'tabler-edit',
-                  menuItemProps: { onClick: () => router.push(`/categories/${row.original.id}/edit`) }
-                },
-                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+                { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/categories/${row.original.id}/edit`) },
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
               ]}
             />
           </div>
@@ -115,13 +110,17 @@ const CategoriesView = () => {
         title='Categories'
         subtitle='Organize your fragrance catalogue'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/categories/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/categories/new')}>
             Add Category
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load categories.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load categories.'}
+        </Alert>
+      )}
 
       <DataTable
         manualPagination={false}
@@ -130,9 +129,9 @@ const CategoriesView = () => {
         isLoading={isLoading}
         emptyMessage={search ? 'No categories match your search' : 'No categories yet.'}
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <SearchField value={search} onChange={setSearch} placeholder='Search categories' className='min-is-[220px]' />
-          </Box>
+          <div className='flex flex-wrap items-center gap-4 p-6'>
+            <SearchField value={search} onChange={setSearch} placeholder='Search categories' className='min-w-[220px]' />
+          </div>
         }
       />
 
