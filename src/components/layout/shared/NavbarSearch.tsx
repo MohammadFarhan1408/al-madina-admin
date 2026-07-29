@@ -1,16 +1,13 @@
 'use client'
 
-// Enter-to-navigate product search shared by both navbar layouts (vertical +
-// horizontal). Distinct from the shared `SearchField` (which live-filters via
-// debounce) — this one submits on Enter and routes to /products?q=.
+// Enter-to-navigate product search shown in the navbar. Distinct from the
+// shared `SearchField` (which live-filters via debounce) — this one submits
+// on Enter and routes to /products?q=.
 import { useState, type KeyboardEvent } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import InputAdornment from '@mui/material/InputAdornment'
-import IconButton from '@mui/material/IconButton'
-
-import CustomTextField from '@core/components/mui/TextField'
+import Input from '@/components/ui/Input'
 
 type NavbarSearchProps = {
   className?: string
@@ -31,29 +28,20 @@ const NavbarSearch = ({ className }: NavbarSearchProps) => {
   }
 
   return (
-    <CustomTextField
-      size='small'
+    <Input
       placeholder='Search products…'
       value={query}
       onChange={e => setQuery(e.target.value)}
       onKeyDown={handleKeyDown}
-      className={className}
-      slotProps={{
-        input: {
-          startAdornment: (
-            <InputAdornment position='start'>
-              <i className='tabler-search text-textSecondary' />
-            </InputAdornment>
-          ),
-          endAdornment: query ? (
-            <InputAdornment position='end'>
-              <IconButton size='small' aria-label='Clear search' onClick={() => setQuery('')}>
-                <i className='tabler-x text-[16px]' />
-              </IconButton>
-            </InputAdornment>
-          ) : undefined
-        }
-      }}
+      containerClassName={className}
+      startAdornment={<i className='tabler-search text-textSecondary' />}
+      endAdornment={
+        query ? (
+          <button type='button' aria-label='Clear search' onClick={() => setQuery('')} className='rounded p-1 hover:bg-black/5'>
+            <i className='tabler-x text-[16px]' />
+          </button>
+        ) : undefined
+      }
     />
   )
 }
