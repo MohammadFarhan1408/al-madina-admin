@@ -1,32 +1,18 @@
 'use client'
 
-// React Imports
 import { useState } from 'react'
 
-// Next Imports
 import { useRouter, useSearchParams } from 'next/navigation'
 
-// MUI Imports
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-
-// Third-party Imports
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-// Component Imports
 import Link from '@components/Link'
-import CustomTextField from '@core/components/mui/TextField'
-import AuthShell, { authInputSx, authButtonSx } from '@components/shared/AuthShell'
+import AuthShell from '@components/shared/AuthShell'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 
-// Config Imports
-import { Palette } from '@configs/palette'
-
-// Auth Imports
 import { authApi } from '@/features/auth/api/authApi'
 import { resetPasswordSchema, type ResetPasswordValues } from '@/features/auth/schema'
 import { ApiError } from '@/libs/api/types'
@@ -60,35 +46,37 @@ const ResetPassword = () => {
     }
   }
 
+  const revealButton = (shown: boolean, toggle: () => void) => (
+    <button
+      type='button'
+      onClick={toggle}
+      onMouseDown={e => e.preventDefault()}
+      aria-label={shown ? 'Hide password' : 'Show password'}
+      className='text-stone hover:text-primary'
+    >
+      <i className={shown ? 'tabler-eye-off' : 'tabler-eye'} />
+    </button>
+  )
+
   return (
     <AuthShell subtitle='Reset Password' tagline='The Art of Arabian Perfumery'>
       <div className='flex flex-col gap-1'>
-        <Typography variant='h5' sx={{ color: Palette.ivory }}>
-          Set a new password
-        </Typography>
-        <Typography variant='body2' sx={{ color: Palette.stone }}>
-          Your new password must be different from previously used passwords
-        </Typography>
+        <h1 className='text-xl font-semibold text-ivory'>Set a new password</h1>
+        <p className='text-sm text-stone'>Your new password must be different from previously used passwords</p>
       </div>
-      {formError && (
-        <Alert severity='error' sx={{ backgroundColor: Palette.errorSoft }}>
-          {formError}
-        </Alert>
-      )}
+      {formError && <Alert severity='error'>{formError}</Alert>}
       <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
         {!tokenFromUrl && (
           <Controller
             name='token'
             control={control}
             render={({ field }) => (
-              <CustomTextField
+              <Input
                 {...field}
-                fullWidth
+                tone='dark'
                 label='Reset token'
                 placeholder='Paste the token from your email'
-                error={!!errors.token}
-                helperText={errors.token?.message}
-                sx={authInputSx}
+                error={errors.token?.message}
               />
             )}
           />
@@ -97,32 +85,14 @@ const ResetPassword = () => {
           name='password'
           control={control}
           render={({ field }) => (
-            <CustomTextField
+            <Input
               {...field}
-              fullWidth
+              tone='dark'
               label='New password'
               placeholder='············'
               type={isPasswordShown ? 'text' : 'password'}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              sx={authInputSx}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton
-                        edge='end'
-                        onClick={() => setIsPasswordShown(s => !s)}
-                        onMouseDown={e => e.preventDefault()}
-                        aria-label={isPasswordShown ? 'Hide password' : 'Show password'}
-                        sx={{ color: Palette.stone }}
-                      >
-                        <i className={isPasswordShown ? 'tabler-eye-off' : 'tabler-eye'} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
+              error={errors.password?.message}
+              endAdornment={revealButton(isPasswordShown, () => setIsPasswordShown(s => !s))}
             />
           )}
         />
@@ -130,50 +100,24 @@ const ResetPassword = () => {
           name='confirmPassword'
           control={control}
           render={({ field }) => (
-            <CustomTextField
+            <Input
               {...field}
-              fullWidth
+              tone='dark'
               label='Confirm password'
               placeholder='············'
               type={isConfirmShown ? 'text' : 'password'}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword?.message}
-              sx={authInputSx}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton
-                        edge='end'
-                        onClick={() => setIsConfirmShown(s => !s)}
-                        onMouseDown={e => e.preventDefault()}
-                        aria-label={isConfirmShown ? 'Hide password' : 'Show password'}
-                        sx={{ color: Palette.stone }}
-                      >
-                        <i className={isConfirmShown ? 'tabler-eye-off' : 'tabler-eye'} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
+              error={errors.confirmPassword?.message}
+              endAdornment={revealButton(isConfirmShown, () => setIsConfirmShown(s => !s))}
             />
           )}
         />
-        <Button
-          fullWidth
-          variant='contained'
-          type='submit'
-          disabled={isSubmitting}
-          sx={authButtonSx}
-        >
-          {isSubmitting ? <CircularProgress size={22} sx={{ color: Palette.richBlack }} /> : 'Set new password'}
+        <Button fullWidth type='submit' loading={isSubmitting} className='shadow-primaryMd'>
+          Set new password
         </Button>
-        <Typography className='flex justify-center items-center' sx={{ color: Palette.gold }}>
-          <Link href='/login' className='flex items-center gap-1.5'>
-            <i className='tabler-chevron-left' />
-            <span>Back to login</span>
-          </Link>
-        </Typography>
+        <Link href='/login' className='flex items-center justify-center gap-1.5 text-primary hover:text-primaryLight'>
+          <i className='tabler-chevron-left' />
+          <span>Back to login</span>
+        </Link>
       </form>
     </AuthShell>
   )
