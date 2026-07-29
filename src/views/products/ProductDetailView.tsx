@@ -5,18 +5,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
-import Alert from '@mui/material/Alert'
-import Avatar from '@mui/material/Avatar'
-import Chip from '@mui/material/Chip'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import Typography from '@mui/material/Typography'
-
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
@@ -24,6 +12,10 @@ import DetailRow from '@/components/shared/DetailRow'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import ZoomableImage from '@/components/shared/ZoomableImage'
 import StatusChip from '@/components/shared/StatusChip'
+import QueryState from '@/components/shared/QueryState'
+import Badge from '@/components/ui/Badge'
+import Button from '@/components/ui/Button'
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, humanize } from '@/libs/format'
@@ -78,13 +70,7 @@ const ProductDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Product' />
-        {isError ? (
-          <Alert severity='error'>{(error as Error)?.message || 'Failed to load product.'}</Alert>
-        ) : (
-          <div className='flex justify-center p-8'>
-            <CircularProgress />
-          </div>
-        )}
+        <QueryState isError={isError} error={error} fallbackMessage='Failed to load product.' />
       </>
     )
   }
@@ -99,13 +85,22 @@ const ProductDetailView = ({ id }: Props) => {
         subtitle={`${product.brand} · ${humanize(product.scentFamily)}`}
         action={
           <div className='flex items-center gap-3'>
-            <Button variant='tonal' color='secondary' onClick={() => router.push('/products')}>
+            <Button variant='outlined' color='secondary' onClick={() => router.push('/products')}>
               Back
             </Button>
-            <Button variant='tonal' startIcon={<i className='tabler-edit' />} onClick={() => router.push(`/products/${id}/edit`)}>
+            <Button
+              variant='outlined'
+              startIcon={<i className='tabler-edit' />}
+              onClick={() => router.push(`/products/${id}/edit`)}
+            >
               Edit
             </Button>
-            <Button variant='tonal' color='error' startIcon={<i className='tabler-trash' />} onClick={() => setConfirmDelete(true)}>
+            <Button
+              variant='outlined'
+              color='error'
+              startIcon={<i className='tabler-trash' />}
+              onClick={() => setConfirmDelete(true)}
+            >
               Delete
             </Button>
           </div>
@@ -118,13 +113,11 @@ const ProductDetailView = ({ id }: Props) => {
             {product.images?.length ? (
               product.images.map((src, index) => (
                 <ZoomableImage key={src + index} src={src} alt={product.name}>
-                  <Avatar variant='rounded' src={src} sx={{ width: 96, height: 96 }} />
+                  <img src={src} alt='' className='size-24 rounded-md object-cover' />
                 </ZoomableImage>
               ))
             ) : (
-              <Typography variant='body2' color='text.secondary'>
-                No gallery images.
-              </Typography>
+              <p className='text-sm text-textSecondary'>No gallery images.</p>
             )}
           </div>
         </DetailSection>
@@ -149,13 +142,13 @@ const ProductDetailView = ({ id }: Props) => {
 
         {product.variants.length > 0 && (
           <DetailSection title='Variants'>
-            <Table size='small'>
+            <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Size</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>SKU</TableCell>
-                  <TableCell align='right'>Stock</TableCell>
+                  <TableHeaderCell>Size</TableHeaderCell>
+                  <TableHeaderCell>Price</TableHeaderCell>
+                  <TableHeaderCell>SKU</TableHeaderCell>
+                  <TableHeaderCell align='right'>Stock</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -180,7 +173,9 @@ const ProductDetailView = ({ id }: Props) => {
               productTags.length ? (
                 <div className='flex flex-wrap gap-2'>
                   {productTags.map(tag => (
-                    <Chip key={tag.id} variant='tonal' size='small' label={tag.name} />
+                    <Badge key={tag.id} color='secondary'>
+                      {tag.name}
+                    </Badge>
                   ))}
                 </div>
               ) : (
@@ -195,7 +190,9 @@ const ProductDetailView = ({ id }: Props) => {
               activeMerchandisingFlags.length ? (
                 <div className='flex flex-wrap gap-2'>
                   {activeMerchandisingFlags.map(flag => (
-                    <Chip key={flag.key} variant='tonal' color='primary' size='small' label={flag.label} />
+                    <Badge key={flag.key} color='primary'>
+                      {flag.label}
+                    </Badge>
                   ))}
                 </div>
               ) : (

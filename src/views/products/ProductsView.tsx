@@ -6,13 +6,6 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Avatar from '@mui/material/Avatar'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -21,8 +14,10 @@ import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CustomTextField from '@core/components/mui/TextField'
-import OptionMenu from '@core/components/option-menu'
+import RowActions from '@/components/shared/RowActions'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
+import Select from '@/components/ui/Select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
@@ -104,17 +99,15 @@ const ProductsView = () => {
         enableSorting: false,
         cell: ({ row }) => (
           <div
-            className='flex items-center gap-3 min-is-0 cursor-pointer'
+            className='flex min-w-0 cursor-pointer items-center gap-3'
             onClick={() => router.push(`/products/${row.original.id}`)}
           >
-            <Avatar variant='rounded' src={row.original.images?.[0]} />
-            <div className='flex flex-col min-is-0'>
-              <Typography variant='subtitle2' noWrap>
-                {row.original.name}
-              </Typography>
-              <Typography variant='caption' color='text.secondary' noWrap>
+            <img src={row.original.images?.[0]} alt='' className='size-10 shrink-0 rounded-md object-cover' />
+            <div className='flex min-w-0 flex-col'>
+              <span className='truncate text-sm font-medium'>{row.original.name}</span>
+              <span className='truncate text-xs text-textSecondary'>
                 {row.original.brand} · {row.original.volumeMl}ml
-              </Typography>
+              </span>
             </div>
           </div>
         )
@@ -156,19 +149,18 @@ const ProductsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <IconButton
-              size='small'
+            <button
+              type='button'
               aria-label={`View ${row.original.name}`}
               onClick={() => router.push(`/products/${row.original.id}`)}
+              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </IconButton>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
+            </button>
+            <RowActions
               options={[
-                { text: 'Edit', icon: 'tabler-edit', menuItemProps: { onClick: () => router.push(`/products/${row.original.id}/edit`) } },
-                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+                { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/products/${row.original.id}/edit`) },
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
               ]}
             />
           </div>
@@ -185,13 +177,17 @@ const ProductsView = () => {
         title='Products'
         subtitle='Manage your fragrance catalogue'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
             Add Product
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load products.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load products.'}
+        </Alert>
+      )}
 
       <DataTable
         data={data?.items ?? []}
@@ -205,47 +201,39 @@ const ProductsView = () => {
         isRefetching={isFetching && !isLoading}
         emptyMessage='No products match your filters'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
+          <div className='flex flex-wrap items-center gap-4 p-6'>
             <SearchField
               value={search}
               onChange={resetOnChange(setSearch)}
               placeholder='Search products'
-              className='min-is-[220px]'
+              className='min-w-[220px]'
             />
-            <CustomTextField
-              select
+            <Select
+              label='Category'
               value={categoryId}
               onChange={e => resetOnChange(setCategoryId)(e.target.value)}
-              className='min-is-[180px]'
-              label='Category'
-            >
-              <MenuItem value=''>All categories</MenuItem>
-              {(categories ?? []).map(category => (
-                <MenuItem key={category.id} value={category.id}>
-                  {category.name}
-                </MenuItem>
-              ))}
-            </CustomTextField>
-            <CustomTextField
-              select
+              containerClassName='min-w-[180px]'
+              options={[
+                { label: 'All categories', value: '' },
+                ...(categories ?? []).map(category => ({ label: category.name, value: category.id }))
+              ]}
+            />
+            <Select
+              label='Scent family'
               value={family}
               onChange={e => resetOnChange(setFamily)(e.target.value as ScentFamily | '')}
-              className='min-is-[160px]'
-              label='Scent family'
-            >
-              <MenuItem value=''>All families</MenuItem>
-              {SCENT_FAMILIES.map(f => (
-                <MenuItem key={f} value={f}>
-                  {humanize(f)}
-                </MenuItem>
-              ))}
-            </CustomTextField>
+              containerClassName='min-w-[160px]'
+              options={[
+                { label: 'All families', value: '' },
+                ...SCENT_FAMILIES.map(f => ({ label: humanize(f), value: f }))
+              ]}
+            />
             {hasFilters && (
-              <Button size='small' color='secondary' onClick={clearFilters}>
+              <Button size='sm' variant='text' color='secondary' onClick={clearFilters}>
                 Clear filters
               </Button>
             )}
-          </Box>
+          </div>
         }
       />
 
