@@ -2,8 +2,7 @@
 
 // Derives a breadcrumb trail from the sidebar's own section grouping
 // (Catalogue/Commerce/Engagement) and the current route, so navigation
-// structure isn't duplicated in a second place. Activates the
-// @core/theme/overrides/breadcrumbs.ts styling, previously unused.
+// structure isn't duplicated in a second place.
 //
 // The nav-derived trail only ever knows about the 3 levels the sidebar
 // itself models (Dashboard / Section / Module). Dynamic routes one level
@@ -16,43 +15,31 @@ import type { ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import NextLink from 'next/link'
 
-import MuiBreadcrumbs from '@mui/material/Breadcrumbs'
-import Typography from '@mui/material/Typography'
-
-import verticalMenuData from '@/data/navigation/verticalMenuData'
-import type { VerticalMenuDataType, VerticalSectionDataType, VerticalMenuItemDataType } from '@/types/menuTypes'
+import sidebarNavData from '@/data/navigation/sidebarNavData'
 
 export type Crumb = { label: ReactNode; href?: string }
 
-const isSection = (item: VerticalMenuDataType): item is VerticalSectionDataType => 'isSection' in item && Boolean(item.isSection)
-const isLeaf = (item: VerticalMenuDataType): item is VerticalMenuItemDataType => 'href' in item
-
-const matches = (pathname: string, href?: string) => Boolean(href) && (pathname === href || pathname.startsWith(`${href}/`))
+const matches = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
 function findTrail(pathname: string): Crumb[] {
-  const menu = verticalMenuData()
+  for (const section of sidebarNavData) {
+    const item = section.items.find(i => matches(pathname, i.href))
 
-  for (const item of menu) {
-    if (isLeaf(item) && matches(pathname, item.href)) {
-      return item.href === '/dashboard'
-        ? [{ label: item.label, href: item.href }]
-        : [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label, href: item.href }]
-    }
+    if (!item) continue
 
-    if (isSection(item)) {
-      const child = item.children.filter(isLeaf).find(c => matches(pathname, c.href))
+    if (item.href === '/dashboard') return [{ label: item.label, href: item.href }]
 
-      if (child) {
-        return [{ label: 'Dashboard', href: '/dashboard' }, { label: item.label }, { label: child.label, href: child.href }]
-      }
-    }
+    return [
+      { label: 'Dashboard', href: '/dashboard' },
+      ...(section.title ? [{ label: section.title }] : []),
+      { label: item.label, href: item.href }
+    ]
   }
 
   return []
 }
 
 type BreadcrumbsProps = {
-
   /** Trailing crumbs appended after the nav-derived trail, e.g. a record's
    *  name on a Detail page, or `[{label: 'Royal Oud', href: '/products/1'}, {label: 'Edit'}]` on its Edit page. */
   extra?: Crumb[]
@@ -65,25 +52,24 @@ const Breadcrumbs = ({ extra = [] }: BreadcrumbsProps) => {
   if (trail.length === 0) return null
 
   return (
-    <MuiBreadcrumbs className='mbe-2' separator={<i className='tabler-chevron-right text-[14px]' />}>
+    <nav aria-label='Breadcrumb' className='mb-2 flex flex-wrap items-center gap-1.5 text-sm'>
       {trail.map((crumb, index) => {
         const isLast = index === trail.length - 1
 
-        if (crumb.href && !isLast) {
-          return (
-            <NextLink key={index} href={crumb.href}>
-              {crumb.label}
-            </NextLink>
-          )
-        }
-
         return (
-          <Typography key={index} variant='body2' color={isLast ? 'text.primary' : 'text.secondary'}>
-            {crumb.label}
-          </Typography>
+          <span key={index} className='flex items-center gap-1.5'>
+            {index > 0 && <i className='tabler-chevron-right text-[14px] text-textDisabled' />}
+            {crumb.href && !isLast ? (
+              <NextLink href={crumb.href} className='text-textSecondary hover:text-primary'>
+                {crumb.label}
+              </NextLink>
+            ) : (
+              <span className={isLast ? 'text-textPrimary' : 'text-textSecondary'}>{crumb.label}</span>
+            )}
+          </span>
         )
       })}
-    </MuiBreadcrumbs>
+    </nav>
   )
 }
 
