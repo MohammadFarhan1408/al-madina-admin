@@ -1,7 +1,6 @@
 @layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme) important;
 @import 'tailwindcss/utilities.css' layer(utilities) important;
-@plugin 'tailwindcss-logical';
 
 @theme {
   --radius-none: 0px;
@@ -16,10 +15,12 @@
   --radius-4xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Al Madina brand palette — static values, sourced from src/configs/palette.ts.
-     No CSS-variable indirection, no light/dark switching: this is the single
-     permanent visual identity (light ivory/pearl content, dark obsidian+gold
-     sidebar — see Sidebar component). */
+  /* Al Madina brand palette — the single source of truth for colour. Static
+     values only: no CSS-variable indirection, no light/dark switching. This is
+     one permanent visual identity (light ivory/pearl content, dark
+     obsidian+gold sidebar — see components/ui/Sidebar.tsx). Consume these via
+     Tailwind utilities (bg-primary, text-textSecondary, …) rather than
+     hardcoding hex in components. */
   --color-primary: #d4af37;
   --color-primaryLight: #e5c158;
   --color-primaryLighter: #f0e6cc;
@@ -83,24 +84,7 @@
 }
 
 :root {
-  --border-radius: var(--mui-shape-borderRadius);
-  --border-color: var(--mui-palette-divider);
-  --primary-color: var(--mui-palette-primary-main);
-  --background-color: var(--mui-palette-background-default);
-  --background-color-rgb: var(--mui-palette-background-paperChannel);
   --header-height: 54px;
-  --header-z-index: var(--mui-zIndex-appBar);
-  --footer-z-index: 10;
-  --customizer-z-index: var(--mui-zIndex-drawer);
-  --search-z-index: var(--mui-zIndex-tooltip);
-  --drawer-z-index: var(--mui-zIndex-drawer);
-  --backdrop-color: rgb(var(--mui-mainColorChannels-light) / 0.5);
-  --mui-mainColorChannels-shadow: var(--mui-mainColorChannels-lightShadow);
-}
-
-[data-dark] {
-  --backdrop-color: rgb(23 25 37 / 0.6);
-  --mui-mainColorChannels-shadow: var(--mui-mainColorChannels-darkShadow);
 }
 
 @layer base {
@@ -111,14 +95,14 @@
     padding: 0;
     margin: 0;
     border: 0 solid;
-    border-color: var(--border-color, currentColor);
+    border-color: rgb(154 123 51 / 18%);
   }
 }
 
-html {
-  display: flex;
-  inline-size: 100%;
-  min-block-size: 100%;
+html,
+body {
+  min-height: 100%;
+  width: 100%;
 }
 
 a {
@@ -131,84 +115,8 @@ ul:not([class]) {
   padding-inline-start: 40px;
 }
 
-/*! Do not remove the following styles */
-/*
-  Fix the popout / submenu closing issue when using hover trigger to open the menu and using
-  perfectscrollbar where the bridge create with safe polygon by floating ui was not working
-*/
-[data-floating-ui-safe-polygon] .scrollbar-container {
-  pointer-events: auto;
-}
-
-[data-floating-ui-safe-polygon] .scrollbar-container .ps__rail-y {
-  pointer-events: none;
-}
-
-.ps__rail-y {
-  inset-inline-end: 0 !important;
-  inset-inline-start: auto !important;
-
-  & .ps__thumb-y {
-    inset-inline-end: 3px !important;
-    inset-inline-start: auto !important;
-    background-color: var(--mui-palette-divider);
-    inline-size: 6px;
-
-    &:hover,
-    &:focus,
-    &.ps--clicking {
-      background-color: var(--mui-palette-action-disabled) !important;
-    }
-  }
-
-  &:hover,
-  &:focus,
-  &.ps--clicking {
-    background-color: var(--mui-palette-action-hover) !important;
-  }
-
-  &:hover,
-  &:focus,
-  &.ps--clicking {
-    .ps__thumb-y {
-      background-color: var(--mui-palette-action-disabled) !important;
-    }
-  }
-}
-
-.ts-vertical-nav-root {
-  .ps__thumb-y {
-    inline-size: 4px;
-
-    &:hover,
-    &:focus,
-    &.ps--clicking {
-      inline-size: 6px;
-    }
-  }
-
-  .ps__rail-y {
-    inline-size: 10px;
-
-    &:hover,
-    &:focus,
-    &.ps--clicking {
-      background-color: transparent !important;
-
-      .ps__thumb-y {
-        inline-size: 6px;
-      }
-    }
-  }
-}
-
 :where([class^='tabler-']) {
   font-size: 1.5rem;
-}
-
-/* Fix width issue for the input-otp component */
-input[autocomplete='one-time-code'][data-input-otp='true'] {
-  inline-size: 100% !important;
 }
 
 code {
@@ -217,83 +125,15 @@ code {
   padding-inline: 4px;
   border-radius: 4px;
   font-size: 90%;
-  color: var(--mui-palette-info-main);
-  background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
+  color: #3a6b8c;
+  background-color: rgb(58 107 140 / 8%);
   border: 0;
 }
 
-/* =====================================================================
-   Al Madina brand polish — bronze borders, gold accents.
-   Targets stable MUI class names so the component theme (mergedTheme.ts)
-   doesn't need to replace @core's style functions wholesale.
-
-   Colours here are built from MUI's OWN generated CSS variables
-   (--mui-palette-*-mainChannel etc.) rather than custom variables scoped to
-   `[data-mui-color-scheme]`. That attribute is set by InitColorSchemeScript
-   at runtime (not present in the initial server HTML), and custom rules
-   scoped to it were resolving as undefined in practice — MUI's native
-   variables are the proven-reliable mechanism (they already drive every
-   other correctly-themed surface in the app), so we reuse those directly
-   instead of re-deriving our own scheme-scoped tokens.
-   ===================================================================== */
-
-/* Cards — thin bronze border + smooth hover elevation (never flat). */
-.MuiCard-root {
-  border: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.25s ease,
-    border-color 0.25s ease;
-}
-.MuiCard-root:hover {
-  border-color: rgb(var(--mui-palette-primary-mainChannel) / 0.35);
-}
-
-/* Dialogs / Drawers / Popovers / Menus / Autocomplete / Selects — solid raised
-   surface + bronze border. Covers every MUI overlay built on Popover/Modal
-   (Select and context menus render via Menu; Autocomplete uses its own Paper
-   class). Must be opaque: these float above real page content and a
-   transparent background makes that content bleed through and hurts
-   readability. Kept as a backstop alongside the equivalent theme overrides
-   in @core/theme/overrides/{dialog,drawer,popover,menu,autocomplete}. */
-.MuiDialog-paper,
-.MuiDrawer-paper,
-.MuiPopover-paper,
-.MuiMenu-paper,
-.MuiAutocomplete-paper {
-  background-color: var(--mui-palette-background-paper) !important;
-  border: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
-}
-
-/* Tables — bronze header separator, ivory tracked header type, gold row states. */
-.MuiTableHead-root .MuiTableCell-root {
-  border-block-end: 1px solid rgb(var(--mui-palette-secondary-mainChannel) / 0.35);
-  color: var(--mui-palette-text-primary);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-}
-.MuiTableBody-root .MuiTableRow-root:hover {
-  background-color: rgb(var(--mui-palette-primary-mainChannel) / 0.06);
-}
-.MuiTableBody-root .MuiTableRow-root.Mui-selected {
-  background-color: rgb(var(--mui-palette-primary-mainChannel) / 0.12) !important;
-}
-
-/* Chips — outlined pills (filters) get letter-spaced uppercase treatment; the
-   mobile app pairs these with solid gold "badge" chips (StatusChip variant='tonal'). */
-.MuiChip-outlined {
-  background-color: transparent;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
 /* Focus rings — gold, not the browser default. */
-.MuiButtonBase-root:focus-visible,
+button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgb(var(--mui-palette-primary-mainChannel) / 0.6);
+  outline: 2px solid rgb(212 175 55 / 60%);
   outline-offset: 2px;
 }
 
@@ -303,36 +143,36 @@ a:focus-visible {
 }
 .am-corner {
   position: absolute;
-  inline-size: 18px;
-  block-size: 18px;
-  border-color: var(--mui-palette-primary-main);
+  width: 18px;
+  height: 18px;
+  border-color: #d4af37;
   opacity: 0.85;
   pointer-events: none;
   z-index: 1;
 }
 .am-corner-tl {
-  inset-block-start: 10px;
-  inset-inline-start: 10px;
-  border-block-start: 2px solid;
-  border-inline-start: 2px solid;
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid;
+  border-left: 2px solid;
 }
 .am-corner-tr {
-  inset-block-start: 10px;
-  inset-inline-end: 10px;
-  border-block-start: 2px solid;
-  border-inline-end: 2px solid;
+  top: 10px;
+  right: 10px;
+  border-top: 2px solid;
+  border-right: 2px solid;
 }
 .am-corner-bl {
-  inset-block-end: 10px;
-  inset-inline-start: 10px;
-  border-block-end: 2px solid;
-  border-inline-start: 2px solid;
+  bottom: 10px;
+  left: 10px;
+  border-bottom: 2px solid;
+  border-left: 2px solid;
 }
 .am-corner-br {
-  inset-block-end: 10px;
-  inset-inline-end: 10px;
-  border-block-end: 2px solid;
-  border-inline-end: 2px solid;
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
 }
 
 /* Art Deco auth-screen background — dark gradient + diamond lattice, no image
