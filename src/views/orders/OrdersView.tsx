@@ -7,18 +7,15 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Box from '@mui/material/Box'
-import MenuItem from '@mui/material/MenuItem'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
-import CustomTextField from '@core/components/mui/TextField'
+import Alert from '@/components/ui/Alert'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate, humanize } from '@/libs/format'
 import { useOrders } from '@/features/orders/hooks/useOrders'
@@ -49,13 +46,13 @@ const OrdersView = () => {
         header: 'Reference',
         accessorKey: 'reference',
         cell: ({ row }) => (
-          <Typography
-            variant='subtitle2'
-            className='cursor-pointer'
+          <button
+            type='button'
+            className='text-sm font-medium hover:text-primary'
             onClick={() => router.push(`/orders/${row.original.id}`)}
           >
             {row.original.reference}
-          </Typography>
+          </button>
         )
       },
       {
@@ -96,13 +93,14 @@ const OrdersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex justify-end'>
-            <IconButton
-              size='small'
+            <button
+              type='button'
               aria-label={`View order ${row.original.reference}`}
               onClick={() => router.push(`/orders/${row.original.id}`)}
+              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </IconButton>
+            </button>
           </div>
         )
       }
@@ -115,7 +113,11 @@ const OrdersView = () => {
       <Breadcrumbs />
       <PageHeader title='Orders' subtitle='Track and fulfil customer orders' />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load orders.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load orders.'}
+        </Alert>
+      )}
 
       <DataTable
         data={data?.items ?? []}
@@ -129,36 +131,20 @@ const OrdersView = () => {
         isRefetching={isFetching && !isLoading}
         emptyMessage='No orders match your filters'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <CustomTextField
-              select
+          <div className='flex flex-wrap items-center gap-4 p-6'>
+            <Select
+              label='Status'
               value={status}
               onChange={e => resetOnChange(setStatus)(e.target.value as OrderStatus | '')}
-              className='min-is-[160px]'
-              label='Status'
-            >
-              <MenuItem value=''>All statuses</MenuItem>
-              {ORDER_STATUSES.map(s => (
-                <MenuItem key={s} value={s}>
-                  {humanize(s)}
-                </MenuItem>
-              ))}
-            </CustomTextField>
-            <CustomTextField
-              type='date'
-              label='From'
-              value={from}
-              onChange={e => resetOnChange(setFrom)(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
+              containerClassName='min-w-[160px]'
+              options={[
+                { label: 'All statuses', value: '' },
+                ...ORDER_STATUSES.map(s => ({ label: humanize(s), value: s }))
+              ]}
             />
-            <CustomTextField
-              type='date'
-              label='To'
-              value={to}
-              onChange={e => resetOnChange(setTo)(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Box>
+            <Input type='date' label='From' value={from} onChange={e => resetOnChange(setFrom)(e.target.value)} />
+            <Input type='date' label='To' value={to} onChange={e => resetOnChange(setTo)(e.target.value)} />
+          </div>
         }
       />
     </>

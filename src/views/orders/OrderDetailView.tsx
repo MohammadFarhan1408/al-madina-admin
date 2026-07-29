@@ -8,26 +8,16 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Typography from '@mui/material/Typography'
-import Avatar from '@mui/material/Avatar'
-import CircularProgress from '@mui/material/CircularProgress'
-import Alert from '@mui/material/Alert'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-
-import CustomTextField from '@core/components/mui/TextField'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import QueryState from '@/components/shared/QueryState'
+import Button from '@/components/ui/Button'
+import Select from '@/components/ui/Select'
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDateTime, humanize } from '@/libs/format'
@@ -79,13 +69,7 @@ const OrderDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Order' />
-        {isError ? (
-          <Alert severity='error'>{(fetchError as Error)?.message || 'Failed to load order.'}</Alert>
-        ) : (
-          <div className='flex justify-center p-8'>
-            <CircularProgress />
-          </div>
-        )}
+        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load order.' />
       </>
     )
   }
@@ -99,191 +83,152 @@ const OrderDetailView = ({ id }: Props) => {
           <div className='flex items-center gap-3'>
             <StatusChip value={order.status} />
             <StatusChip value={order.paymentStatus} />
-            <Button variant='tonal' color='secondary' onClick={() => router.push('/orders')}>
+            <Button variant='outlined' color='secondary' onClick={() => router.push('/orders')}>
               Back
             </Button>
           </div>
         }
       />
 
-      <Grid container spacing={6}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12 }}>
-              <DetailSection title='Line items'>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Product</TableCell>
-                      <TableCell align='right'>Qty</TableCell>
-                      <TableCell align='right'>Unit price</TableCell>
-                      <TableCell align='right'>Line total</TableCell>
+      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+        <div className='flex flex-col gap-6 md:col-span-2'>
+          <DetailSection title='Line items'>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>Product</TableHeaderCell>
+                  <TableHeaderCell align='right'>Qty</TableHeaderCell>
+                  <TableHeaderCell align='right'>Unit price</TableHeaderCell>
+                  <TableHeaderCell align='right'>Line total</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {order.items.map((item, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <div className='flex items-center gap-3'>
+                        <img src={item.productImage} alt='' className='size-9 rounded-md object-cover' />
+                        <div className='flex flex-col'>
+                          <span className='text-sm'>{item.productName}</span>
+                          <span className='text-xs text-textSecondary'>{item.volumeMl}ml</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell align='right'>{item.quantity}</TableCell>
+                    <TableCell align='right'>{formatCurrency(item.price, order.currency)}</TableCell>
+                    <TableCell align='right'>{formatCurrency(item.price * item.quantity, order.currency)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className='flex flex-col items-end gap-1'>
+              <span className='text-sm text-textSecondary'>
+                Subtotal: {formatCurrency(order.subtotal, order.currency)}
+              </span>
+              <span className='text-sm text-textSecondary'>
+                Shipping: {formatCurrency(order.shipping, order.currency)}
+              </span>
+              {!!order.discountAmount && (
+                <span className='text-sm text-success'>
+                  Discount ({order.couponCode}): -{formatCurrency(order.discountAmount, order.currency)}
+                </span>
+              )}
+              <span className='text-base font-semibold'>Total: {formatCurrency(order.total, order.currency)}</span>
+            </div>
+          </DetailSection>
+
+          <DetailSection title='Payment'>
+            <DetailRow label='Status' value={<StatusChip value={order.paymentStatus} />} />
+            {latestTransaction && (
+              <>
+                <DetailRow label='Provider' value={humanize(latestTransaction.provider)} />
+                <DetailRow label='Amount' value={formatCurrency(latestTransaction.amount, latestTransaction.currency)} />
+                {latestTransaction.providerReference && (
+                  <DetailRow label='Transaction ref' value={latestTransaction.providerReference} />
+                )}
+                {latestTransaction.failureReason && (
+                  <DetailRow label='Failure reason' value={latestTransaction.failureReason} />
+                )}
+              </>
+            )}
+
+            {transactions && transactions.length > 1 && (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>When</TableHeaderCell>
+                    <TableHeaderCell>Provider</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {transactions.map(txn => (
+                    <TableRow key={txn.id}>
+                      <TableCell>{formatDateTime(txn.createdAt)}</TableCell>
+                      <TableCell>{humanize(txn.provider)}</TableCell>
+                      <TableCell>
+                        <StatusChip value={txn.status} />
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {order.items.map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          <div className='flex items-center gap-3'>
-                            <Avatar variant='rounded' src={item.productImage} sx={{ width: 36, height: 36 }} />
-                            <div className='flex flex-col'>
-                              <Typography variant='body2'>{item.productName}</Typography>
-                              <Typography variant='caption' color='text.secondary'>
-                                {item.volumeMl}ml
-                              </Typography>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell align='right'>{item.quantity}</TableCell>
-                        <TableCell align='right'>{formatCurrency(item.price, order.currency)}</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(item.price * item.quantity, order.currency)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                <div className='flex flex-col gap-1 items-end'>
-                  <Typography variant='body2' color='text.secondary'>
-                    Subtotal: {formatCurrency(order.subtotal, order.currency)}
-                  </Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    Shipping: {formatCurrency(order.shipping, order.currency)}
-                  </Typography>
-                  {!!order.discountAmount && (
-                    <Typography variant='body2' color='success.main'>
-                      Discount ({order.couponCode}): -{formatCurrency(order.discountAmount, order.currency)}
-                    </Typography>
-                  )}
-                  <Typography variant='h6'>Total: {formatCurrency(order.total, order.currency)}</Typography>
-                </div>
-              </DetailSection>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <DetailSection title='Payment'>
-                <DetailRow label='Status' value={<StatusChip value={order.paymentStatus} />} />
-                {latestTransaction && (
-                  <>
-                    <DetailRow label='Provider' value={humanize(latestTransaction.provider)} />
-                    <DetailRow
-                      label='Amount'
-                      value={formatCurrency(latestTransaction.amount, latestTransaction.currency)}
-                    />
-                    {latestTransaction.providerReference && (
-                      <DetailRow label='Transaction ref' value={latestTransaction.providerReference} />
-                    )}
-                    {latestTransaction.failureReason && (
-                      <DetailRow label='Failure reason' value={latestTransaction.failureReason} />
-                    )}
-                  </>
-                )}
-
-                {transactions && transactions.length > 1 && (
-                  <Table size='small'>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>When</TableCell>
-                        <TableCell>Provider</TableCell>
-                        <TableCell>Status</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {transactions.map(txn => (
-                        <TableRow key={txn.id}>
-                          <TableCell>{formatDateTime(txn.createdAt)}</TableCell>
-                          <TableCell>{humanize(txn.provider)}</TableCell>
-                          <TableCell>
-                            <StatusChip value={txn.status} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-
-                {order.paymentStatus === 'paid' && latestTransaction && (
-                  <Button
-                    variant='tonal'
-                    color='error'
-                    onClick={() => setRefundTransactionId(latestTransaction.id)}
-                    className='is-fit'
-                  >
-                    Refund payment
-                  </Button>
-                )}
-              </DetailSection>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <DetailSection title='Status'>
-                <CustomTextField
-                  select
-                  fullWidth
-                  label='Update status'
-                  value={order.status}
-                  onChange={e => setPendingStatus(e.target.value as OrderStatus)}
-                  disabled={updateStatus.isPending}
-                  slotProps={{
-                    input: {
-                      endAdornment: updateStatus.isPending ? <CircularProgress size={18} className='mie-6' /> : null
-                    }
-                  }}
-                >
-                  {ORDER_STATUSES.map(status => (
-                    <MenuItem key={status} value={status}>
-                      {humanize(status)}
-                    </MenuItem>
                   ))}
-                </CustomTextField>
-              </DetailSection>
-            </Grid>
-          </Grid>
-        </Grid>
+                </TableBody>
+              </Table>
+            )}
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12 }}>
-              <DetailSection title='Customer'>
-                <DetailRow label='Placed' value={formatDateTime(order.placedAt)} />
-                <DetailRow
-                  label='Payment method / Delivery'
-                  value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
-                  stacked
-                />
-                <DetailRow
-                  label='Contact'
-                  stacked
-                  value={
-                    <div className='flex flex-col'>
-                      <Typography variant='body2'>{order.shippingAddress.fullName}</Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        {order.shippingAddress.phone}
-                      </Typography>
-                      {order.guestEmail && (
-                        <Typography variant='caption' color='text.secondary'>
-                          {order.guestEmail} (guest)
-                        </Typography>
-                      )}
-                    </div>
-                  }
-                />
-              </DetailSection>
-            </Grid>
+            {order.paymentStatus === 'paid' && latestTransaction && (
+              <Button
+                variant='outlined'
+                color='error'
+                onClick={() => setRefundTransactionId(latestTransaction.id)}
+                className='w-fit'
+              >
+                Refund payment
+              </Button>
+            )}
+          </DetailSection>
 
-            <Grid size={{ xs: 12 }}>
-              <DetailSection title='Shipping address'>
-                <DetailRow
-                  label='Ship to'
-                  value={`${order.shippingAddress.address}, ${order.shippingAddress.city}`}
-                  stacked
-                />
-              </DetailSection>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+          <DetailSection title='Status'>
+            <Select
+              label='Update status'
+              value={order.status}
+              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
+              disabled={updateStatus.isPending}
+              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
+            />
+          </DetailSection>
+        </div>
+
+        <div className='flex flex-col gap-6'>
+          <DetailSection title='Customer'>
+            <DetailRow label='Placed' value={formatDateTime(order.placedAt)} />
+            <DetailRow
+              label='Payment method / Delivery'
+              value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
+              stacked
+            />
+            <DetailRow
+              label='Contact'
+              stacked
+              value={
+                <div className='flex flex-col'>
+                  <span className='text-sm'>{order.shippingAddress.fullName}</span>
+                  <span className='text-xs text-textSecondary'>{order.shippingAddress.phone}</span>
+                  {order.guestEmail && <span className='text-xs text-textSecondary'>{order.guestEmail} (guest)</span>}
+                </div>
+              }
+            />
+          </DetailSection>
+
+          <DetailSection title='Shipping address'>
+            <DetailRow
+              label='Ship to'
+              value={`${order.shippingAddress.address}, ${order.shippingAddress.city}`}
+              stacked
+            />
+          </DetailSection>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={!!pendingStatus}
