@@ -7,16 +7,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import FormHelperText from '@mui/material/FormHelperText'
-import IconButton from '@mui/material/IconButton'
-import CircularProgress from '@mui/material/CircularProgress'
-import Avatar from '@mui/material/Avatar'
+import classnames from 'classnames'
 
-import CustomAvatar from '@core/components/mui/Avatar'
-
+import Button from '@/components/ui/Button'
+import Spinner from '@/components/ui/Spinner'
 import { uploadImage, type UploadType } from '@/libs/api/upload'
 import { ApiError } from '@/libs/api/types'
 import ZoomableImage from './ZoomableImage'
@@ -125,11 +119,12 @@ const ImageUpload = ({
 
   return (
     <div className='flex flex-col gap-3'>
-      <Typography variant='body2' color='text.secondary'>
-        {label}
-      </Typography>
-      <Box
-        className='flex flex-col items-center justify-center gap-4 rounded-xl p-8 text-center cursor-pointer'
+      <span className='text-sm text-textSecondary'>{label}</span>
+      <div
+        className={classnames(
+          'flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-8 text-center transition-colors',
+          isDragging ? 'border-primary bg-actionHover' : 'border-secondary/30 bg-transparent'
+        )}
         onClick={() => inputRef.current?.click()}
         onDragOver={e => {
           e.preventDefault()
@@ -141,58 +136,51 @@ const ImageUpload = ({
           setIsDragging(false)
           void handleFiles(e.dataTransfer.files)
         }}
-        sx={{
-          border: '1px dashed',
-          borderColor: isDragging ? 'primary.main' : 'divider',
-          bgcolor: isDragging ? 'action.hover' : 'transparent',
-          transition: 'border-color 0.15s, background-color 0.15s'
-        }}
       >
-        <CustomAvatar variant='rounded' skin='light' color='primary'>
+        <span className='flex size-10 items-center justify-center rounded-md bg-primary/15 text-primaryDark'>
           <i className='tabler-upload text-[22px]' />
-        </CustomAvatar>
-        <Typography variant='h6'>Drag and drop image{multiple ? 's' : ''} here</Typography>
-        <Typography variant='body2' color='text.secondary'>
-          or
-        </Typography>
+        </span>
+        <p className='text-base font-medium text-textPrimary'>Drag and drop image{multiple ? 's' : ''} here</p>
+        <p className='text-sm text-textSecondary'>or</p>
         <Button
-          variant='tonal'
+          type='button'
+          variant='outlined'
           color='secondary'
           onClick={e => {
             e.stopPropagation()
             inputRef.current?.click()
           }}
           disabled={uploading}
-          startIcon={uploading ? <CircularProgress size={16} color='inherit' /> : <i className='tabler-upload' />}
+          loading={uploading}
+          startIcon={<i className='tabler-upload' />}
         >
           {uploading ? 'Uploading…' : 'Browse image'}
         </Button>
-      </Box>
+      </div>
       {(value.length > 0 || pending.length > 0) && (
         <div className='flex flex-wrap items-center gap-3'>
           {value.map((url, index) => (
-            <Box key={url + index} className='relative'>
+            <div key={url + index} className='relative'>
               <ZoomableImage src={url} alt={`Image ${index + 1}`}>
-                <Avatar variant='rounded' src={url} sx={{ width: 72, height: 72 }} />
+                <img src={url} alt='' className='size-[72px] rounded-md object-cover' />
               </ZoomableImage>
-              <IconButton
-                size='small'
-                color='error'
+              <button
+                type='button'
                 aria-label={`Remove image ${index + 1}`}
                 onClick={() => removeAt(index)}
-                sx={{ position: 'absolute', top: -10, insetInlineEnd: -10, bgcolor: 'background.paper' }}
+                className='absolute -right-2.5 -top-2.5 rounded-full bg-backgroundPaper p-1 text-error shadow hover:bg-error/10'
               >
                 <i className='tabler-x text-[16px]' />
-              </IconButton>
-            </Box>
+              </button>
+            </div>
           ))}
           {pending.map((p, index) => (
-            <Box key={p.localUrl + index} className='relative'>
-              <Avatar variant='rounded' src={p.localUrl} sx={{ width: 72, height: 72, opacity: 0.6 }} />
-              <Box className='absolute inset-0 flex items-center justify-center'>
-                <CircularProgress size={20} />
-              </Box>
-            </Box>
+            <div key={p.localUrl + index} className='relative'>
+              <img src={p.localUrl} alt='' className='size-[72px] rounded-md object-cover opacity-60' />
+              <div className='absolute inset-0 flex items-center justify-center'>
+                <Spinner size='sm' />
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -204,9 +192,7 @@ const ImageUpload = ({
         hidden
         onChange={e => handleFiles(e.target.files)}
       />
-      {(uploadError || externalError) && (
-        <FormHelperText error>{uploadError ?? externalError}</FormHelperText>
-      )}
+      {(uploadError || externalError) && <span className='text-xs text-error'>{uploadError ?? externalError}</span>}
     </div>
   )
 }
