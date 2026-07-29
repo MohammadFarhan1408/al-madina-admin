@@ -102,6 +102,7 @@ const SearchSelect = <T,>({
                 key={getOptionKey(option)}
                 type='button'
                 role='option'
+                aria-selected={Boolean(value) && getOptionKey(option) === getOptionKey(value as T)}
                 onClick={() => {
                   onChange(option)
                   setQuery('')

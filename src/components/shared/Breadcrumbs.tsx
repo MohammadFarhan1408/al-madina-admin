@@ -40,6 +40,7 @@ function findTrail(pathname: string): Crumb[] {
 }
 
 type BreadcrumbsProps = {
+
   /** Trailing crumbs appended after the nav-derived trail, e.g. a record's
    *  name on a Detail page, or `[{label: 'Royal Oud', href: '/products/1'}, {label: 'Edit'}]` on its Edit page. */
   extra?: Crumb[]

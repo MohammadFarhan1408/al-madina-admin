@@ -13,6 +13,7 @@ export type ComboboxProps<T> = {
   onChange: (next: T[]) => void
   getOptionLabel?: (option: T) => string
   isOptionEqualToValue?: (a: T, b: T) => boolean
+
   /** Allow adding typed text as a new value even if it's not in `options`. */
   freeSolo?: boolean
   placeholder?: string
@@ -117,6 +118,7 @@ const Combobox = <T,>({
               key={index}
               type='button'
               role='option'
+              aria-selected={false}
               onClick={() => addValue(option)}
               className='block w-full px-3 py-2 text-left text-sm text-textPrimary hover:bg-primary/10'
             >
