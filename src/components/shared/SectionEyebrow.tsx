@@ -1,19 +1,16 @@
-'use client'
-
 // Small-caps gold letter-spaced label used above page/section titles — the
 // "AL MADINA" / "Browse" / "EXPLORE BY FAMILY" pattern from the mobile app.
-import Typography from '@mui/material/Typography'
-import type { TypographyProps } from '@mui/material/Typography'
+import type { HTMLAttributes } from 'react'
 
-const SectionEyebrow = ({ children, ...rest }: TypographyProps) => (
-  <Typography
-    variant='overline'
-    color='primary.main'
+import classnames from 'classnames'
+
+const SectionEyebrow = ({ className, children, ...rest }: HTMLAttributes<HTMLSpanElement>) => (
+  <span
+    className={classnames('block text-xs font-semibold uppercase leading-tight tracking-widest text-primary', className)}
     {...rest}
-    sx={{ display: 'block', lineHeight: 1.2, ...rest.sx }}
   >
     {children}
-  </Typography>
+  </span>
 )
 
 export default SectionEyebrow
