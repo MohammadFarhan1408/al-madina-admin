@@ -1,6 +1,6 @@
 'use client'
 
-// Generic table built on TanStack Table + MUI, in two modes:
+// Generic table built on TanStack Table, in two modes:
 // - manual (default): pagination/sorting state is owned by the caller and
 //   forwarded to the backend (page/limit≤50 per doc §7).
 // - client (`manualPagination={false}`): the full dataset is already loaded
@@ -8,20 +8,6 @@
 //   own pagination + sorting row models run entirely in the browser.
 
 import { type ReactNode, useState } from 'react'
-
-import Card from '@mui/material/Card'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import Pagination from '@mui/material/Pagination'
-import MenuItem from '@mui/material/MenuItem'
-import LinearProgress from '@mui/material/LinearProgress'
-import Typography from '@mui/material/Typography'
-import Skeleton from '@mui/material/Skeleton'
-import { useTheme } from '@mui/material/styles'
 
 import {
   flexRender,
@@ -34,8 +20,10 @@ import {
   type SortingState
 } from '@tanstack/react-table'
 
-import CustomTextField from '@core/components/mui/TextField'
-
+import Card from '@/components/ui/Card'
+import Pagination from '@/components/ui/Pagination'
+import Select from '@/components/ui/Select'
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -83,8 +71,6 @@ function DataTable<T>({
   sorting: controlledSorting,
   onSortingChange
 }: DataTableProps<T>) {
-  const theme = useTheme()
-
   // Uncontrolled fallbacks for client mode.
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -128,86 +114,85 @@ function DataTable<T>({
     ...(sortingEnabled ? { getSortedRowModel: getSortedRowModel() } : {})
   })
 
-  const rows = manualPagination ? table.getRowModel().rows : table.getRowModel().rows
+  const rows = table.getRowModel().rows
   const showSkeleton = isLoading && data.length === 0
   const showEmpty = !isLoading && rows.length === 0
 
   return (
     <Card>
       {toolbar}
-      {(isLoading || isRefetching) && <LinearProgress />}
-      <TableContainer>
-        <Table>
-          <TableHead sx={{ bgcolor: theme.palette.customColors.tableHeaderBg }}>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  const align = header.column.columnDef.meta?.align ?? 'left'
-                  const canSort = sortingEnabled && header.column.getCanSort()
-                  const sortDir = header.column.getIsSorted()
+      {(isLoading || isRefetching) && (
+        <div className='h-1 w-full overflow-hidden bg-primary/15'>
+          <div className='h-full w-1/3 animate-pulse bg-primary' />
+        </div>
+      )}
+      <Table>
+        <TableHead>
+          {table.getHeaderGroups().map(headerGroup => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map(header => {
+                const align = header.column.columnDef.meta?.align ?? 'left'
+                const canSort = sortingEnabled && header.column.getCanSort()
+                const sortDir = header.column.getIsSorted()
 
-                  return (
-                    <TableCell
-                      key={header.id}
-                      align={align}
-                      sx={{
-                        whiteSpace: 'nowrap',
-                        ...(header.column.columnDef.size !== undefined ? { width: header.column.columnDef.size } : {}),
-                        ...(canSort ? { cursor: 'pointer', userSelect: 'none' } : {})
-                      }}
-                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                    >
-                      <span className='inline-flex items-center gap-1'>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                        {canSort && (
-                          <i
-                            className={
-                              sortDir === 'asc'
-                                ? 'tabler-chevron-up text-[14px]'
-                                : sortDir === 'desc'
-                                  ? 'tabler-chevron-down text-[14px]'
-                                  : 'tabler-selector text-[14px] opacity-40'
-                            }
-                          />
-                        )}
-                      </span>
-                    </TableCell>
-                  )
-                })}
+                return (
+                  <TableHeaderCell
+                    key={header.id}
+                    align={align}
+                    style={header.column.columnDef.size !== undefined ? { width: header.column.columnDef.size } : undefined}
+                    className={canSort ? 'cursor-pointer select-none' : undefined}
+                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                  >
+                    <span className='inline-flex items-center gap-1'>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {canSort && (
+                        <i
+                          className={
+                            sortDir === 'asc'
+                              ? 'tabler-chevron-up text-[14px]'
+                              : sortDir === 'desc'
+                                ? 'tabler-chevron-down text-[14px]'
+                                : 'tabler-selector text-[14px] opacity-40'
+                          }
+                        />
+                      )}
+                    </span>
+                  </TableHeaderCell>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableHead>
+        <TableBody>
+          {showSkeleton ? (
+            Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 5) }).map((_, i) => (
+              <TableRow key={`skeleton-${i}`}>
+                {columns.map((_, ci) => (
+                  <TableCell key={ci}>
+                    <span className='block h-4 w-full animate-pulse rounded bg-textDisabled/20' />
+                  </TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>
-            {showSkeleton ? (
-              Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 5) }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {columns.map((_, ci) => (
-                    <TableCell key={ci}>
-                      <Skeleton variant='text' />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : showEmpty ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} align='center' sx={{ py: 8 }}>
-                  <Typography color='text.secondary'>{emptyMessage}</Typography>
-                </TableCell>
+            ))
+          ) : showEmpty ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} align='center' className='py-16 text-textSecondary'>
+                {emptyMessage}
+              </TableCell>
+            </TableRow>
+          ) : (
+            rows.map(row => (
+              <TableRow key={row.id} hover className={isRefetching ? 'opacity-50 transition-opacity' : undefined}>
+                {row.getVisibleCells().map(cell => (
+                  <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
-            ) : (
-              rows.map(row => (
-                <TableRow key={row.id} hover sx={isRefetching ? { opacity: 0.5, transition: 'opacity 0.15s' } : undefined}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            ))
+          )}
+        </TableBody>
+      </Table>
       {(() => {
         const rowCount = manualPagination ? (total ?? 0) : data.length
         const pageCount = Math.max(1, Math.ceil(rowCount / activePagination.pageSize))
@@ -229,35 +214,18 @@ function DataTable<T>({
         }
 
         return (
-          <div className='flex flex-wrap items-center justify-between gap-4 p-4 border-bs'>
+          <div className='flex flex-wrap items-center justify-between gap-4 border-t border-secondary/20 p-4'>
             <div className='flex items-center gap-4'>
-              <Typography color='text.disabled'>
-                {`Showing ${from} to ${to} of ${rowCount} entries`}
-              </Typography>
-              <CustomTextField
-                select
-                size='small'
+              <span className='text-sm text-textDisabled'>{`Showing ${from} to ${to} of ${rowCount} entries`}</span>
+              <Select
+                aria-label='Rows per page'
                 value={activePagination.pageSize}
                 onChange={e => setPageSize(Number(e.target.value))}
-                className='is-[70px]'
-              >
-                {pageSizeOptions.map(size => (
-                  <MenuItem key={size} value={size}>
-                    {size}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
+                options={pageSizeOptions.map(size => ({ label: String(size), value: size }))}
+                className='h-9 w-[70px]'
+              />
             </div>
-            <Pagination
-              shape='rounded'
-              color='primary'
-              variant='tonal'
-              count={pageCount}
-              page={activePagination.pageIndex + 1}
-              onChange={(_, page) => setPage(page - 1)}
-              showFirstButton
-              showLastButton
-            />
+            <Pagination count={pageCount} page={activePagination.pageIndex + 1} onChange={page => setPage(page - 1)} />
           </div>
         )
       })()}
