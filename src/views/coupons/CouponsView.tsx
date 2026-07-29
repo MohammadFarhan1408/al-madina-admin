@@ -7,11 +7,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import MenuItem from '@mui/material/MenuItem'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -19,8 +14,10 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CustomTextField from '@core/components/mui/TextField'
-import OptionMenu from '@core/components/option-menu'
+import RowActions from '@/components/shared/RowActions'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
+import Select from '@/components/ui/Select'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
@@ -63,10 +60,8 @@ const CouponsView = () => {
         accessorKey: 'code',
         cell: ({ row }) => (
           <div className='flex flex-col'>
-            <Typography variant='subtitle2'>{row.original.code}</Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {row.original.description}
-            </Typography>
+            <span className='text-sm font-medium'>{row.original.code}</span>
+            <span className='text-xs text-textSecondary'>{row.original.description}</span>
           </div>
         )
       },
@@ -97,16 +92,10 @@ const CouponsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
+            <RowActions
               options={[
-                {
-                  text: 'Edit',
-                  icon: 'tabler-edit',
-                  menuItemProps: { onClick: () => router.push(`/coupons/${row.original.id}/edit`) }
-                },
-                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+                { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/coupons/${row.original.id}/edit`) },
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
               ]}
             />
           </div>
@@ -123,13 +112,17 @@ const CouponsView = () => {
         title='Coupons'
         subtitle='Discount codes for campaigns and promotions'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>
             Add Coupon
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load coupons.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load coupons.'}
+        </Alert>
+      )}
 
       <DataTable
         data={data?.items ?? []}
@@ -141,19 +134,19 @@ const CouponsView = () => {
         isRefetching={isFetching && !isLoading}
         emptyMessage='No coupons found'
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <CustomTextField
-              select
+          <div className='flex flex-wrap items-center gap-4 p-6'>
+            <Select
+              label='Status'
               value={isActive}
               onChange={e => resetOnChange(setIsActive)(e.target.value as '' | 'true' | 'false')}
-              className='min-is-[160px]'
-              label='Status'
-            >
-              <MenuItem value=''>All</MenuItem>
-              <MenuItem value='true'>Active</MenuItem>
-              <MenuItem value='false'>Inactive</MenuItem>
-            </CustomTextField>
-          </Box>
+              containerClassName='min-w-[160px]'
+              options={[
+                { label: 'All', value: '' },
+                { label: 'Active', value: 'true' },
+                { label: 'Inactive', value: 'false' }
+              ]}
+            />
+          </div>
         }
       />
 
