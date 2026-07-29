@@ -1,13 +1,9 @@
-'use client'
-
 // Shared read-only key/value layout for Detail pages — a titled section
 // containing a stack of DetailRows. Extracted from what OrderDetailDialog /
 // CustomerDetailDialog were each hand-rolling slightly differently.
 import type { ReactNode } from 'react'
 
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
+import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 
 type DetailSectionProps = {
   title?: string
@@ -17,8 +13,13 @@ type DetailSectionProps = {
 
 export const DetailSection = ({ title, action, children }: DetailSectionProps) => (
   <Card>
-    {title && <CardHeader title={title} action={action} />}
-    <CardContent className='flex flex-col gap-4'>{children}</CardContent>
+    {title && (
+      <CardHeader>
+        <h2 className='text-base font-semibold text-textPrimary'>{title}</h2>
+        {action}
+      </CardHeader>
+    )}
+    <CardBody className='flex flex-col gap-4'>{children}</CardBody>
   </Card>
 )
 
