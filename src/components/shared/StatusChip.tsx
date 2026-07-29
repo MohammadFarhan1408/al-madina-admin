@@ -1,14 +1,8 @@
-'use client'
-
-import type { ChipProps } from '@mui/material/Chip'
-
-import CustomChip from '@core/components/mui/Chip'
+import Badge, { type BadgeColor } from '@/components/ui/Badge'
 import { humanize } from '@/libs/format'
 
-type ChipColor = ChipProps['color']
-
 // Central colour mapping for the domain enums used across tables (doc §5, §15).
-const COLOR_MAP: Record<string, ChipColor> = {
+const COLOR_MAP: Record<string, BadgeColor> = {
   // Order status
   processing: 'warning',
   shipped: 'info',
@@ -49,16 +43,21 @@ type StatusChipProps = {
   value?: string | null
 
   /** Explicit colour override; otherwise derived from the value. */
-  color?: ChipColor
-} & Omit<ChipProps, 'color' | 'label'>
+  color?: BadgeColor
+  className?: string
+}
 
 /** Renders a domain enum (status/tier/badge) as a coloured brand chip. */
-const StatusChip = ({ value, color, ...rest }: StatusChipProps) => {
+const StatusChip = ({ value, color, className }: StatusChipProps) => {
   if (!value) return <>—</>
 
   const resolved = color ?? COLOR_MAP[value.toLowerCase()] ?? 'secondary'
 
-  return <CustomChip size='small' round='true' variant='tonal' color={resolved} label={humanize(value)} {...rest} />
+  return (
+    <Badge color={resolved} className={className}>
+      {humanize(value)}
+    </Badge>
+  )
 }
 
 export default StatusChip
