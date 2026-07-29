@@ -2,7 +2,7 @@ import Providers from '@/components/Providers'
 import NotFound from '@views/NotFound'
 
 const NotFoundPage = () => (
-  <Providers direction='ltr'>
+  <Providers>
     <NotFound />
   </Providers>
 )

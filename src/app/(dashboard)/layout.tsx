@@ -5,7 +5,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 
 const Layout = ({ children }: { children: ReactNode }) => {
   return (
-    <Providers direction='ltr'>
+    <Providers>
       <DashboardShell>{children}</DashboardShell>
     </Providers>
   )

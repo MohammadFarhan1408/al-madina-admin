@@ -1,14 +1,4 @@
-// MUI Imports
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
-
-// Third-party Imports
-import 'react-perfect-scrollbar/dist/css/styles.css'
-
-// Type Imports
-import type { ChildrenType } from '@core/types'
-
-// Util Imports
-import { getSystemMode } from '@core/utils/serverHelpers'
+import type { ReactNode } from 'react'
 
 // Style Imports
 import '@/app/globals.css'
@@ -21,24 +11,10 @@ export const metadata = {
   description: 'Administration panel for the Al Madina Ittar luxury perfume storefront.'
 }
 
-const RootLayout = async (props: ChildrenType) => {
-  const { children } = props
-
-  // Type guard to ensure lang is a valid Locale
-
-  // Vars
-
-  const systemMode = await getSystemMode()
-  const direction = 'ltr'
-
-  return (
-    <html id='__next' lang='en' dir={direction} suppressHydrationWarning>
-      <body className='flex is-full min-bs-full flex-auto flex-col'>
-        <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
-        {children}
-      </body>
-    </html>
-  )
-}
+const RootLayout = ({ children }: { children: ReactNode }) => (
+  <html lang='en'>
+    <body className='flex min-h-full w-full flex-auto flex-col bg-backgroundDefault text-textPrimary'>{children}</body>
+  </html>
+)
 
 export default RootLayout
