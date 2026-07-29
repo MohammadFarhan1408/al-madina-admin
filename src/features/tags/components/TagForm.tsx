@@ -3,14 +3,12 @@
 // Create/edit (rename) tag form. RHF + Zod.
 import { useEffect } from 'react'
 
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import CustomTextField from '@core/components/mui/TextField'
+import Card, { CardBody } from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { tagSchema, defaultTagValues, type TagFormValues } from '../schema'
@@ -66,26 +64,24 @@ const TagForm = ({ tag, onSuccess, onCancel }: Props) => {
 
   return (
     <Card>
-      <CardContent>
+      <CardBody>
         <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='name'
             control={control}
-            render={({ field }) => (
-              <CustomTextField {...field} fullWidth required label='Name' error={!!errors.name} helperText={errors.name?.message} />
-            )}
+            render={({ field }) => <Input {...field} required label='Name' error={errors.name?.message} />}
           />
 
           <div className='flex items-center justify-end gap-4'>
-            <Button color='secondary' variant='tonal' onClick={onCancel} disabled={submitting}>
+            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel
             </Button>
-            <Button type='submit' variant='contained' disabled={submitting}>
-              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            <Button type='submit' loading={submitting}>
+              {isEdit ? 'Save changes' : 'Create'}
             </Button>
           </div>
         </form>
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }

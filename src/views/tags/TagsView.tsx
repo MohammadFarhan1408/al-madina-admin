@@ -6,10 +6,6 @@ import { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import Button from '@mui/material/Button'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -17,7 +13,9 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import OptionMenu from '@core/components/option-menu'
+import RowActions from '@/components/shared/RowActions'
+import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useTags, useDeleteTag } from '@/features/tags/hooks/useTags'
@@ -52,7 +50,11 @@ const TagsView = () => {
 
   const columns = useMemo<ColumnDef<Tag, any>[]>(
     () => [
-      { header: 'Name', accessorKey: 'name', cell: ({ getValue }) => <Typography variant='subtitle2'>{getValue() as string}</Typography> },
+      {
+        header: 'Name',
+        accessorKey: 'name',
+        cell: ({ getValue }) => <span className='text-sm font-medium'>{getValue() as string}</span>
+      },
       { header: 'Slug', accessorKey: 'slug', enableSorting: false },
       {
         header: 'Actions',
@@ -60,16 +62,10 @@ const TagsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
+            <RowActions
               options={[
-                {
-                  text: 'Rename',
-                  icon: 'tabler-edit',
-                  menuItemProps: { onClick: () => router.push(`/tags/${row.original.id}/edit`) }
-                },
-                { text: 'Delete', icon: 'tabler-trash', menuItemProps: { onClick: () => setToDelete(row.original) } }
+                { text: 'Rename', icon: 'tabler-edit', onClick: () => router.push(`/tags/${row.original.id}/edit`) },
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
               ]}
             />
           </div>
@@ -86,13 +82,17 @@ const TagsView = () => {
         title='Tags'
         subtitle='Reusable labels for product merchandising'
         action={
-          <Button variant='contained' startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
             Add Tag
           </Button>
         }
       />
 
-      {isError && <Alert severity='error' className='mbe-4'>{(error as Error)?.message || 'Failed to load tags.'}</Alert>}
+      {isError && (
+        <Alert severity='error' className='mb-4'>
+          {(error as Error)?.message || 'Failed to load tags.'}
+        </Alert>
+      )}
 
       <DataTable
         manualPagination={false}
@@ -101,9 +101,9 @@ const TagsView = () => {
         isLoading={isLoading}
         emptyMessage={search ? 'No tags match your search' : 'No tags yet.'}
         toolbar={
-          <Box className='flex flex-wrap items-center gap-4 p-6'>
-            <SearchField value={search} onChange={setSearch} placeholder='Search tags' className='min-is-[220px]' />
-          </Box>
+          <div className='flex flex-wrap items-center gap-4 p-6'>
+            <SearchField value={search} onChange={setSearch} placeholder='Search tags' className='min-w-[220px]' />
+          </div>
         }
       />
 
