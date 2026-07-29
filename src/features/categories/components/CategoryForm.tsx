@@ -5,14 +5,12 @@
 // Dialog chrome, that's the page shell's job now.
 import { useEffect, useState } from 'react'
 
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import CustomTextField from '@core/components/mui/TextField'
+import Card, { CardBody } from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
 import { useToast } from '@/contexts/ToastContext'
@@ -95,32 +93,24 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
 
   return (
     <Card>
-      <CardContent>
+      <CardBody>
         <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
           <Controller
             name='name'
             control={control}
-            render={({ field }) => (
-              <CustomTextField {...field} fullWidth required label='Name' error={!!errors.name} helperText={errors.name?.message} />
-            )}
+            render={({ field }) => <Input {...field} required label='Name' error={errors.name?.message} />}
           />
-          <Controller
-            name='tagline'
-            control={control}
-            render={({ field }) => <CustomTextField {...field} fullWidth label='Tagline' />}
-          />
+          <Controller name='tagline' control={control} render={({ field }) => <Input {...field} label='Tagline' />} />
           <Controller
             name='sortOrder'
             control={control}
             render={({ field }) => (
-              <CustomTextField
+              <Input
                 {...field}
                 onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                 type='number'
-                fullWidth
                 label='Sort order'
-                error={!!errors.sortOrder}
-                helperText={errors.sortOrder?.message}
+                error={errors.sortOrder?.message}
               />
             )}
           />
@@ -136,15 +126,15 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
           <SeoFieldsSection control={control} metaKeywords={metaKeywords} />
 
           <div className='flex items-center justify-end gap-4'>
-            <Button variant='tonal' color='secondary' onClick={onCancel} disabled={submitting}>
+            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel
             </Button>
-            <Button type='submit' variant='contained' disabled={submitting}>
-              {submitting ? <CircularProgress size={20} color='inherit' /> : isEdit ? 'Save changes' : 'Create'}
+            <Button type='submit' loading={submitting}>
+              {isEdit ? 'Save changes' : 'Create'}
             </Button>
           </div>
         </form>
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }
