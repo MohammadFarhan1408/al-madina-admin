@@ -1,12 +1,10 @@
 'use client'
 
-// Wraps a thumbnail (Avatar, img, etc.) so clicking it opens a larger view in
+// Wraps a thumbnail (avatar, img, etc.) so clicking it opens a larger view in
 // a lightbox dialog. No-op if there's no src to zoom into.
 import { useState, type ReactNode } from 'react'
 
-import Dialog from '@mui/material/Dialog'
-import Box from '@mui/material/Box'
-import IconButton from '@mui/material/IconButton'
+import Modal from '@/components/ui/Modal'
 
 type ZoomableImageProps = {
   src?: string
@@ -21,7 +19,7 @@ const ZoomableImage = ({ src, alt = '', children }: ZoomableImageProps) => {
 
   return (
     <>
-      <Box
+      <div
         onClick={() => setOpen(true)}
         role='button'
         tabIndex={0}
@@ -29,29 +27,23 @@ const ZoomableImage = ({ src, alt = '', children }: ZoomableImageProps) => {
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') setOpen(true)
         }}
-        className='inline-flex'
-        sx={{ cursor: 'zoom-in' }}
+        className='inline-flex cursor-zoom-in'
       >
         {children}
-      </Box>
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth='md'>
-        <Box className='relative'>
-          <IconButton
+      </div>
+      <Modal open={open} onClose={() => setOpen(false)} size='xl' className='w-auto max-w-none bg-transparent'>
+        <div className='relative'>
+          <button
+            type='button'
             aria-label='Close preview'
             onClick={() => setOpen(false)}
-            size='small'
-            sx={{ position: 'absolute', top: 8, insetInlineEnd: 8, bgcolor: 'background.paper' }}
+            className='absolute right-2 top-2 rounded-full bg-backgroundPaper p-1.5 shadow hover:bg-primary/10'
           >
             <i className='tabler-x' />
-          </IconButton>
-          <Box
-            component='img'
-            src={src}
-            alt={alt}
-            sx={{ display: 'block', maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain' }}
-          />
-        </Box>
-      </Dialog>
+          </button>
+          <img src={src} alt={alt} className='block max-h-[85vh] max-w-[90vw] object-contain' />
+        </div>
+      </Modal>
     </>
   )
 }
