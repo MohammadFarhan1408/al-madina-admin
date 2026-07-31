@@ -15,12 +15,11 @@ import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
-import DateInput from '@/components/ui/form/DateInput'
-import Select from '@/components/ui/form/Select'
 import { useFilterReset } from '@/hooks/useFilterReset'
-import { formatCurrency, formatDate, humanize } from '@/libs/format'
+import { formatCurrency, formatDate } from '@/libs/format'
+import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
 import { useOrders } from '@/features/orders/hooks/useOrders'
-import { ORDER_STATUSES, type Order, type OrderStatus } from '@/features/orders/types'
+import type { Order, OrderStatus } from '@/features/orders/types'
 
 const OrdersView = () => {
   const router = useRouter()
@@ -29,7 +28,15 @@ const OrdersView = () => {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
+  const hasFilters = Boolean(status || from || to)
   const resetOnChange = useFilterReset(setPagination)
+
+  const clearFilters = () => {
+    setStatus('')
+    setFrom('')
+    setTo('')
+    setPagination(p => ({ ...p, pageIndex: 0 }))
+  }
 
   const { data, isLoading, isFetching, isError, error } = useOrders({
     page: pagination.pageIndex + 1,
@@ -130,41 +137,23 @@ const OrdersView = () => {
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
         emptyIcon='tabler-shopping-cart-off'
-        emptyMessage={status || from || to ? 'No orders match these filters' : 'No orders yet'}
+        emptyMessage={hasFilters ? 'No orders match these filters' : 'No orders yet'}
         emptyDescription={
-          status || from || to
+          hasFilters
             ? 'Try a wider date range, or clear the status filter.'
             : 'Orders placed in the mobile app will appear here.'
         }
         toolbar={
-          <>
-            <Select
-              label='Status'
-              value={status}
-              onChange={e => resetOnChange(setStatus)(e.target.value as OrderStatus | '')}
-              containerClassName='min-w-40'
-              options={[
-                { label: 'All statuses', value: '' },
-                ...ORDER_STATUSES.map(s => ({ label: humanize(s), value: s }))
-              ]}
-            />
-            <DateInput
-              clearable
-              label='From'
-              value={from}
-              max={to || undefined}
-              onChange={e => resetOnChange(setFrom)(e.target.value)}
-              containerClassName='min-w-44'
-            />
-            <DateInput
-              clearable
-              label='To'
-              value={to}
-              min={from || undefined}
-              onChange={e => resetOnChange(setTo)(e.target.value)}
-              containerClassName='min-w-44'
-            />
-          </>
+          <OrdersFilterBar
+            status={status}
+            onStatusChange={resetOnChange(setStatus)}
+            from={from}
+            onFromChange={resetOnChange(setFrom)}
+            to={to}
+            onToChange={resetOnChange(setTo)}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+          />
         }
       />
     </>
