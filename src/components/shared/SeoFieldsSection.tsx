@@ -22,11 +22,16 @@ type SeoFieldsSectionProps = {
   bare?: boolean
 }
 
-const SeoFieldsSection = ({ control, metaKeywords, sourceFieldLabel = 'name', bare = false }: SeoFieldsSectionProps) => (
+const SeoFieldsSection = ({
+  control,
+  metaKeywords,
+  sourceFieldLabel = 'name',
+  bare = false
+}: SeoFieldsSectionProps) => (
   <div className='flex flex-col gap-5'>
     {!bare && (
       <>
-        <hr className='border-secondary/20' />
+        <hr className='border-border' />
         <span className='text-xs font-semibold uppercase tracking-widest text-textSecondary'>SEO</span>
       </>
     )}
@@ -35,7 +40,11 @@ const SeoFieldsSection = ({ control, metaKeywords, sourceFieldLabel = 'name', ba
       control={control}
       render={({ field }) => <Input {...field} label={`Slug (optional — auto-generated from ${sourceFieldLabel})`} />}
     />
-    <Controller name='metaTitle' control={control} render={({ field }) => <Input {...field} label='Meta title (optional)' />} />
+    <Controller
+      name='metaTitle'
+      control={control}
+      render={({ field }) => <Input {...field} label='Meta title (optional)' />}
+    />
     <Controller
       name='metaDescription'
       control={control}

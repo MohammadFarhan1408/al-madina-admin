@@ -15,6 +15,8 @@ import type { ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import NextLink from 'next/link'
 
+import classnames from 'classnames'
+
 import sidebarNavData from '@/data/navigation/sidebarNavData'
 
 export type Crumb = { label: ReactNode; href?: string }
@@ -53,23 +55,35 @@ const Breadcrumbs = ({ extra = [] }: BreadcrumbsProps) => {
   if (trail.length === 0) return null
 
   return (
-    <nav aria-label='Breadcrumb' className='mb-2 flex flex-wrap items-center gap-1.5 text-sm'>
-      {trail.map((crumb, index) => {
-        const isLast = index === trail.length - 1
+    <nav aria-label='Breadcrumb' className='mb-3'>
+      <ol className='flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs'>
+        {trail.map((crumb, index) => {
+          const isLast = index === trail.length - 1
 
-        return (
-          <span key={index} className='flex items-center gap-1.5'>
-            {index > 0 && <i className='tabler-chevron-right text-[14px] text-textDisabled' />}
-            {crumb.href && !isLast ? (
-              <NextLink href={crumb.href} className='text-textSecondary hover:text-primary'>
-                {crumb.label}
-              </NextLink>
-            ) : (
-              <span className={isLast ? 'text-textPrimary' : 'text-textSecondary'}>{crumb.label}</span>
-            )}
-          </span>
-        )
-      })}
+          return (
+            <li key={index} className='flex min-w-0 items-center gap-1'>
+              {index > 0 && <i aria-hidden className='tabler-chevron-right shrink-0 text-[13px] text-textDisabled' />}
+              {crumb.href && !isLast ? (
+                <NextLink
+                  href={crumb.href}
+                  className='truncate rounded-xs px-0.5 text-textMuted transition-colors hover:text-primaryInk hover:underline hover:underline-offset-2'
+                >
+                  {crumb.label}
+                </NextLink>
+              ) : (
+                <span
+
+                  // The current page is the accessible endpoint of the trail.
+                  aria-current={isLast ? 'page' : undefined}
+                  className={classnames('truncate px-0.5', isLast ? 'font-medium text-textPrimary' : 'text-textMuted')}
+                >
+                  {crumb.label}
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ol>
     </nav>
   )
 }

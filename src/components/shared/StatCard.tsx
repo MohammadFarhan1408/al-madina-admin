@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 
 import Card from '@/components/ui/Card'
+import Skeleton from '@/components/ui/Skeleton'
 
 export type StatCardColor = 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'
 
@@ -12,35 +13,49 @@ type StatCardProps = {
   subtitle?: string
 }
 
-const accentClasses: Record<StatCardColor, string> = {
-  primary: 'border-b-primary/40 hover:border-b-primary',
-  secondary: 'border-b-secondary/40 hover:border-b-secondary',
-  error: 'border-b-error/40 hover:border-b-error',
-  warning: 'border-b-warning/40 hover:border-b-warning',
-  info: 'border-b-info/40 hover:border-b-info',
-  success: 'border-b-success/40 hover:border-b-success'
-}
-
+/* Icon tints pair each family's soft background with its ink, so the glyph
+   clears 4.5:1 on the tint — mid-gold and mid-amber do not. */
 const iconClasses: Record<StatCardColor, string> = {
-  primary: 'bg-primary/15 text-primaryDark',
-  secondary: 'bg-secondary/15 text-secondaryDark',
-  error: 'bg-error/15 text-error',
-  warning: 'bg-warning/15 text-warningDark',
-  info: 'bg-info/15 text-info',
-  success: 'bg-success/15 text-success'
+  primary: 'bg-primary/16 text-primaryInk',
+  secondary: 'bg-secondary/14 text-secondaryDark',
+  error: 'bg-error/14 text-errorDark',
+  warning: 'bg-warning/18 text-warningInk',
+  info: 'bg-info/14 text-infoDark',
+  success: 'bg-success/14 text-successDark'
 }
 
-/** Compact KPI card used on the dashboard. */
+/** Compact KPI card. The value leads at the largest size on the card because
+ *  it's what the user came for; the label sits under it in muted text.
+ *
+ *  Tabular figures (set globally on `body`) keep a row of these optically
+ *  aligned as the numbers change. */
 const StatCard = ({ title, value, icon, color = 'primary', subtitle }: StatCardProps) => (
-  <Card className={classnames('border-b-2 transition-[border-color,box-shadow] hover:shadow-lg', accentClasses[color])}>
-    <div className='flex items-center gap-4 p-4'>
-      <span className={classnames('flex size-11 shrink-0 items-center justify-center rounded-md', iconClasses[color])}>
-        <i className={classnames(icon, 'text-[26px]')} />
+  <Card hoverable>
+    <div className='flex items-start gap-3.5 px-4 py-4'>
+      <span
+        aria-hidden
+        className={classnames('flex size-10 shrink-0 items-center justify-center rounded-md', iconClasses[color])}
+      >
+        <i className={classnames(icon, 'text-[20px]')} />
       </span>
-      <div className='flex flex-col'>
-        <span className='text-xl font-semibold text-textPrimary'>{value}</span>
-        <span className='text-sm text-textSecondary'>{title}</span>
-        {subtitle && <span className='text-xs text-textDisabled'>{subtitle}</span>}
+      <div className='flex min-w-0 flex-col gap-0.5'>
+        <span className='truncate text-xl font-semibold tracking-[-0.01em] text-textPrimary'>{value}</span>
+        <span className='truncate text-sm text-textSecondary'>{title}</span>
+        {subtitle && <span className='truncate text-xs text-textMuted'>{subtitle}</span>}
+      </div>
+    </div>
+  </Card>
+)
+
+/** Loading twin of StatCard — identical box model, so the grid doesn't reflow
+ *  when the real numbers arrive. */
+export const StatCardSkeleton = () => (
+  <Card>
+    <div className='flex items-start gap-3.5 px-4 py-4'>
+      <Skeleton variant='block' className='size-10' />
+      <div className='flex flex-1 flex-col gap-1.5 pt-0.5'>
+        <Skeleton className='h-5 w-24' />
+        <Skeleton className='h-3.5 w-32' />
       </div>
     </div>
   </Card>

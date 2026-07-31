@@ -3,6 +3,7 @@
 // Row-level "⋮" action menu used by the list views — replaces @core's
 // OptionMenu with the same shape (a list of label/icon/onClick options).
 import Dropdown, { DropdownItem } from '@/components/ui/Dropdown'
+import IconButton from '@/components/ui/IconButton'
 
 export type RowAction = {
   text: string
@@ -12,13 +13,23 @@ export type RowAction = {
   onClick: () => void
 }
 
-const RowActions = ({ options }: { options: RowAction[] }) => (
+type RowActionsProps = {
+  options: RowAction[]
+
+  /** Names the record the menu belongs to, e.g. "Royal Oud" — so a screen
+   *  reader user hears which row's menu they're on instead of twenty
+   *  identical "More actions" buttons. */
+  label?: string
+}
+
+const RowActions = ({ options, label }: RowActionsProps) => (
   <Dropdown
     align='end'
+    itemLabels={options.map(option => option.text)}
     trigger={
-      <button type='button' aria-label='More actions' className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'>
-        <i className='tabler-dots-vertical text-lg' />
-      </button>
+      <IconButton size='sm' aria-label={label ? `Actions for ${label}` : 'More actions'}>
+        <i className='tabler-dots-vertical' />
+      </IconButton>
     }
   >
     {options.map(option => (

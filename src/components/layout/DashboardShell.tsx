@@ -4,15 +4,22 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import classnames from 'classnames'
 
 import Sidebar from '@/components/ui/Sidebar'
 import Navbar from '@/components/ui/Navbar'
+import IconButton from '@/components/ui/IconButton'
 import Logo from '@/components/layout/shared/Logo'
 import NavbarSearch from '@/components/layout/shared/NavbarSearch'
 import UserDropdown from '@/components/layout/shared/UserDropdown'
 import sidebarNavData from '@/data/navigation/sidebarNavData'
+
+const COLLAPSE_KEY = 'am-admin:sidebar-collapsed'
+
+const logoLinkClass =
+  'flex items-center rounded-lg p-1 transition-opacity duration-150 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70'
 
 const ScrollToTopButton = () => {
   const [visible, setVisible] = useState(false)
@@ -20,55 +27,126 @@ const ScrollToTopButton = () => {
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400)
 
-    window.addEventListener('scroll', onScroll)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
 
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Hidden means hidden: without the tabIndex/aria-hidden pair the button stays
+  // in the tab order while invisible, so keyboard users land on a control they
+  // cannot see.
   return (
-    <button
-      type='button'
+    <IconButton
+      color='primary'
+      variant='filled'
+      size='lg'
+      rounded
       aria-label='Scroll to top'
+      tabIndex={visible ? 0 : -1}
+      aria-hidden={!visible}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       className={classnames(
-        'fixed bottom-6 right-6 z-50 flex size-10 items-center justify-center rounded-full bg-primary text-black shadow-lg transition-opacity',
-        visible ? 'opacity-100' : 'pointer-events-none opacity-0'
+        'fixed bottom-5 right-5 z-(--z-sticky) shadow-lg transition-[opacity,transform] duration-200 ease-out-quart',
+        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
       )}
     >
-      <i className='tabler-arrow-up text-lg' />
-    </button>
+      <i className='tabler-arrow-up' />
+    </IconButton>
   )
 }
 
 const DashboardShell = ({ children }: { children: ReactNode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname()
+
+  // Read the saved rail state after mount — reading localStorage during render
+  // would desync the server and client markup.
+  useEffect(() => {
+    setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === '1')
+  }, [])
+
+  const toggleCollapse = () =>
+    setCollapsed(prev => {
+      window.localStorage.setItem(COLLAPSE_KEY, prev ? '0' : '1')
+
+      return !prev
+    })
+
+  // A route change should always leave the mobile drawer closed, including
+  // back/forward navigation that doesn't pass through a nav link's onClick.
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [pathname])
+
+  // Esc closes the drawer, matching the dismiss behaviour of every other
+  // overlay in the admin.
+  useEffect(() => {
+    if (!drawerOpen) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false)
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [drawerOpen])
 
   return (
-    <div className='min-h-screen bg-backgroundDefault'>
-      <Sidebar sections={sidebarNavData} open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} logo={<Link href='/dashboard'><Logo /></Link>} />
+    <div className='min-h-dvh bg-backgroundDefault'>
+      <Sidebar
+        sections={sidebarNavData}
+        open={drawerOpen}
 
-      {sidebarOpen && (
-        <div className='fixed inset-0 z-30 bg-backdrop lg:hidden' onClick={() => setSidebarOpen(false)} aria-hidden />
-      )}
+        // The rail state is a desktop preference; a collapsed rail opened as a
+        // mobile drawer would be a 68px strip of icons over a dimmed page.
+        collapsed={collapsed && !drawerOpen}
+        onToggleCollapse={toggleCollapse}
+        onNavigate={() => setDrawerOpen(false)}
+        onClose={() => setDrawerOpen(false)}
+        logo={
+          <Link href='/dashboard' aria-label='Al Madina Ittar — Dashboard' className={logoLinkClass}>
+            <Logo />
+          </Link>
+        }
+      />
 
-      <div className='flex min-h-screen flex-col lg:pl-64'>
-        <Navbar
-          onMenuToggle={() => setSidebarOpen(prev => !prev)}
-          actions={
-            <>
-              <NavbarSearch className='hidden w-full max-w-[320px] sm:block' />
-              <UserDropdown />
-            </>
-          }
-        />
-        <main className='flex-1 p-6'>{children}</main>
-        <footer className='flex flex-wrap items-center justify-between gap-4 border-t border-secondary/20 px-6 py-4 text-sm'>
-          <p>
-            <span className='text-textSecondary'>{`© ${new Date().getFullYear()} `}</span>
-            <span className='font-medium text-primary'>Al Madina Ittar</span>
-            <span className='text-textSecondary'>{` · Admin Panel`}</span>
-          </p>
-          <p className='text-textSecondary max-md:hidden'>Luxury Arabian Perfumery</p>
+      <div
+        aria-hidden
+        onClick={() => setDrawerOpen(false)}
+        className={classnames(
+          'fixed inset-0 z-(--z-drawer-backdrop) bg-backdrop backdrop-blur-sm transition-opacity duration-200 ease-out-quart lg:hidden',
+          drawerOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      />
+
+      <div
+        className={classnames(
+          'flex min-h-dvh flex-col transition-[padding] duration-200 ease-out-quart',
+          collapsed ? 'lg:pl-(--sidebar-width-collapsed)' : 'lg:pl-(--sidebar-width)'
+        )}
+      >
+        <Navbar onMenuToggle={() => setDrawerOpen(true)} actions={<UserDropdown />}>
+          <NavbarSearch className='w-full max-w-72 lg:max-w-80' />
+        </Navbar>
+
+        {/* Gutters step up with the viewport instead of sitting at a fixed 24px,
+            which is too tight on phones and too cramped on a 27" display. */}
+        <main className='flex-1 px-4 py-5 md:px-6 md:py-6 xl:px-8'>
+          <div className='mx-auto w-full max-w-[1600px]'>{children}</div>
+        </main>
+
+        <footer className='mt-auto border-t border-border px-4 py-4 md:px-6 xl:px-8'>
+          <div className='mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-2 text-xs'>
+            <p className='text-textMuted'>
+              {`© ${new Date().getFullYear()} `}
+              <span className='font-medium text-primaryInk'>Al Madina Ittar</span>
+              {' · Admin Panel'}
+            </p>
+            <p className='text-textMuted max-sm:hidden'>Luxury Arabian Perfumery</p>
+          </div>
         </footer>
       </div>
 

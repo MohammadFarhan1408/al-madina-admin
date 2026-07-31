@@ -2,11 +2,12 @@
 
 import { useRouter } from 'next/navigation'
 
-import Dropdown from '@/components/ui/Dropdown'
-import Button from '@/components/ui/Button'
+import Badge from '@/components/ui/Badge'
+import Dropdown, { DropdownItem } from '@/components/ui/Dropdown'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
+import { getInitials } from '@/utils/getInitials'
 
 const UserDropdown = () => {
   const router = useRouter()
@@ -15,7 +16,8 @@ const UserDropdown = () => {
 
   const displayName = user?.fullName || 'Al Madina Admin'
   const displayEmail = user?.email || ''
-  const avatarSrc = user?.avatar || '/images/avatars/1.png'
+  const displayRole = user?.role
+  const avatarSrc = user?.avatar
 
   const handleUserLogout = async () => {
     try {
@@ -29,27 +31,70 @@ const UserDropdown = () => {
   return (
     <Dropdown
       align='end'
+      itemLabels={['Notifications', 'Sign out']}
+      className='w-64'
       trigger={
-        <button type='button' className='relative rounded-full'>
-          <img src={avatarSrc} alt={displayName} className='size-[38px] rounded-full object-cover' />
-          <span className='absolute bottom-0 right-0 size-2 rounded-full bg-success ring-2 ring-backgroundPaper' />
+        <button
+          type='button'
+          aria-label={`Account menu for ${displayName}`}
+          className='flex shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primaryInk size-10 ring-2 ring-primary/30'
+        >
+          <Avatar src={avatarSrc} name={displayName} className='size-8' />
         </button>
       }
     >
-      <div className='flex items-center gap-2 px-4 py-3'>
-        <img src={avatarSrc} alt={displayName} className='size-9 rounded-full object-cover' />
-        <div className='flex flex-col items-start'>
-          <span className='text-sm font-medium text-textPrimary'>{displayName}</span>
-          <span className='text-xs text-textSecondary'>{displayEmail}</span>
+      {/* Identity block, not a menu item — it isn't actionable, so it must not
+          be reachable by the menu's arrow-key navigation. */}
+      <div className='flex items-center gap-3 px-3 py-3.5'>
+        <Avatar
+          src={avatarSrc}
+          name={displayName}
+          className='size-10 ring-2 ring-primary/30 ring-offset-2 ring-offset-backgroundPaper'
+        />
+        <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+          <span className='truncate text-[15px] font-semibold leading-5 text-textPrimary'>{displayName}</span>
+          {displayEmail && <span className='truncate text-xs leading-4 text-textMuted'>{displayEmail}</span>}
         </div>
+        {displayRole && (
+          <Badge size='sm' color='primary' variant='filled' className='capitalize'>
+            {displayRole}
+          </Badge>
+        )}
       </div>
-      <div className='border-t border-secondary/20 px-3 py-2'>
-        <Button fullWidth color='error' size='sm' endIcon={<i className='tabler-logout' />} onClick={handleUserLogout}>
-          Logout
-        </Button>
+
+      {/* Dividers are pulled out to the panel edge past the surface's own 1px
+          inset, so they read as section rules rather than short floating lines. */}
+      <div className='-mx-1 border-t border-border' />
+      <DropdownItem className='mt-1' icon={<i className='tabler-bell' />} onClick={() => router.push('/notifications')}>
+        Notifications
+      </DropdownItem>
+      <div className='-mx-1 mt-1 border-t border-border' />
+      <div className='p-2'>
+        <DropdownItem
+          danger
+          className='mt-1 border border-error'
+          icon={<i className='tabler-logout' />}
+          onClick={handleUserLogout}
+        >
+          Sign out
+        </DropdownItem>
       </div>
     </Dropdown>
   )
 }
+
+/** Avatar with an initials fallback, so a missing or broken image degrades to
+ *  the user's initials rather than a torn-image icon or a stock placeholder. */
+const Avatar = ({ src, name, className }: { src?: string; name: string; className?: string }) =>
+  src ? (
+    <img src={src} alt='' className={`shrink-0 rounded-full border border-border object-cover ${className ?? ''}`} />
+  ) : (
+    <span
+      aria-hidden
+      className={`flex shrink-0 items-center justify-center rounded-full bg-primary/18 text-xs font-semibold text-primaryInk ${className ?? ''}`}
+    >
+      {getInitials(name).slice(0, 2)}
+    </span>
+  )
 
 export default UserDropdown

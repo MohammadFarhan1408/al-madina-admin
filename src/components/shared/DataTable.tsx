@@ -9,6 +9,7 @@
 
 import { type ReactNode, useState } from 'react'
 
+import classnames from 'classnames'
 import {
   flexRender,
   getCoreRowModel,
@@ -21,15 +22,15 @@ import {
 } from '@tanstack/react-table'
 
 import Card from '@/components/ui/Card'
+import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Select from '@/components/ui/Select'
+import Skeleton from '@/components/ui/Skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData, TValue> {
-
-    /** Cell/header text alignment; defaults to 'left'. */
     align?: 'left' | 'right' | 'center'
   }
 }
@@ -41,7 +42,22 @@ export type DataTableProps<T> = {
 
   /** True while a background refetch is running and stale rows are still shown — dims rows instead of the "no data" state. */
   isRefetching?: boolean
+
+  /** Headline for the empty state. */
   emptyMessage?: string
+
+  /** Tabler icon for the empty state, e.g. `tabler-package-off`. */
+  emptyIcon?: string
+
+  /** One line telling the user what would appear here, or how to widen a filter. */
+  emptyDescription?: ReactNode
+
+  /** The action that resolves an empty table — "Add product", "Clear filters". */
+  emptyAction?: ReactNode
+
+  /** Filter/search controls. Pass the controls only — DataTable supplies the
+   *  toolbar row, so its padding and alignment match the pagination footer
+   *  instead of every view declaring its own wrapper. */
   toolbar?: ReactNode
   pageSizeOptions?: number[]
 
@@ -54,6 +70,14 @@ export type DataTableProps<T> = {
   /** Controlled sorting (manual mode only) — omit to leave columns unsortable. */
   sorting?: SortingState
   onSortingChange?: (sorting: SortingState) => void
+
+  /** 'grid' swaps the `<table>` body for a card grid built from `renderCard`,
+   *  while the toolbar, loading bar, empty state and pagination footer stay
+   *  exactly the ones the table view already uses — a toggle only needs a
+   *  second renderer for the middle, not a second surface. */
+  view?: 'table' | 'grid'
+  renderCard?: (item: T) => ReactNode
+  gridClassName?: string
 }
 
 function DataTable<T>({
@@ -61,7 +85,10 @@ function DataTable<T>({
   columns,
   isLoading = false,
   isRefetching = false,
-  emptyMessage = 'No records found',
+  emptyMessage = 'Nothing here yet',
+  emptyIcon,
+  emptyDescription,
+  emptyAction,
   toolbar,
   pageSizeOptions = [10, 20, 50],
   manualPagination = true,
@@ -69,7 +96,10 @@ function DataTable<T>({
   pagination,
   onPaginationChange,
   sorting: controlledSorting,
-  onSortingChange
+  onSortingChange,
+  view = 'table',
+  renderCard,
+  gridClassName
 }: DataTableProps<T>) {
   // Uncontrolled fallbacks for client mode.
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
@@ -118,117 +148,147 @@ function DataTable<T>({
   const showSkeleton = isLoading && data.length === 0
   const showEmpty = !isLoading && rows.length === 0
 
+  const rowCount = manualPagination ? (total ?? 0) : data.length
+  const pageCount = Math.max(1, Math.ceil(rowCount / activePagination.pageSize))
+  const from = rowCount === 0 ? 0 : activePagination.pageIndex * activePagination.pageSize + 1
+  const to = Math.min((activePagination.pageIndex + 1) * activePagination.pageSize, rowCount)
+
+  const setPage = (page: number) => {
+    const next = { ...activePagination, pageIndex: page }
+
+    if (manualPagination) onPaginationChange?.(next)
+    else setInternalPagination(next)
+  }
+
+  const setPageSize = (pageSize: number) => {
+    const next = { pageIndex: 0, pageSize }
+
+    if (manualPagination) onPaginationChange?.(next)
+    else setInternalPagination(next)
+  }
+
   return (
-    <Card>
-      {toolbar}
-      {(isLoading || isRefetching) && (
-        <div className='h-1 w-full overflow-hidden bg-primary/15'>
-          <div className='h-full w-1/3 animate-pulse bg-primary' />
-        </div>
-      )}
-      <Table>
-        <TableHead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map(header => {
-                const align = header.column.columnDef.meta?.align ?? 'left'
-                const canSort = sortingEnabled && header.column.getCanSort()
-                const sortDir = header.column.getIsSorted()
+    <Card className='overflow-hidden'>
+      {toolbar && <div className='flex flex-wrap items-end gap-3 border-b border-border px-4 py-3.5'>{toolbar}</div>}
 
-                return (
-                  <TableHeaderCell
-                    key={header.id}
-                    align={align}
-                    style={header.column.columnDef.size !== undefined ? { width: header.column.columnDef.size } : undefined}
-                    className={canSort ? 'cursor-pointer select-none' : undefined}
-                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                  >
-                    <span className='inline-flex items-center gap-1'>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      {canSort && (
-                        <i
-                          className={
-                            sortDir === 'asc'
-                              ? 'tabler-chevron-up text-[14px]'
-                              : sortDir === 'desc'
-                                ? 'tabler-chevron-down text-[14px]'
-                                : 'tabler-selector text-[14px] opacity-40'
-                          }
-                        />
-                      )}
-                    </span>
-                  </TableHeaderCell>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHead>
-        <TableBody>
-          {showSkeleton ? (
-            Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 5) }).map((_, i) => (
-              <TableRow key={`skeleton-${i}`}>
-                {columns.map((_, ci) => (
-                  <TableCell key={ci}>
-                    <span className='block h-4 w-full animate-pulse rounded bg-textDisabled/20' />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : showEmpty ? (
-            <TableRow>
-              <TableCell colSpan={columns.length} align='center' className='py-16 text-textSecondary'>
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          ) : (
-            rows.map(row => (
-              <TableRow key={row.id} hover className={isRefetching ? 'opacity-50 transition-opacity' : undefined}>
-                {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      {(() => {
-        const rowCount = manualPagination ? (total ?? 0) : data.length
-        const pageCount = Math.max(1, Math.ceil(rowCount / activePagination.pageSize))
-        const from = rowCount === 0 ? 0 : activePagination.pageIndex * activePagination.pageSize + 1
-        const to = Math.min((activePagination.pageIndex + 1) * activePagination.pageSize, rowCount)
+      {/* Indeterminate progress bar for background refetches. Fixed height so
+          it never nudges the table when it appears and disappears. */}
+      <div aria-hidden className={isLoading ? 'h-0.5 w-full overflow-hidden bg-transparent' : ''}>
+        {(isLoading || isRefetching) && (
+          <div className='h-full w-full bg-primary/20'>
+            <div className='h-full w-1/4 animate-indeterminate rounded-full bg-primaryDark' />
+          </div>
+        )}
+      </div>
 
-        const setPage = (page: number) => {
-          const next = { ...activePagination, pageIndex: page }
-
-          if (manualPagination) onPaginationChange?.(next)
-          else setInternalPagination(next)
-        }
-
-        const setPageSize = (pageSize: number) => {
-          const next = { pageIndex: 0, pageSize }
-
-          if (manualPagination) onPaginationChange?.(next)
-          else setInternalPagination(next)
-        }
-
-        return (
-          <div className='flex flex-wrap items-center justify-between gap-4 border-t border-secondary/20 p-4'>
-            <div className='flex items-center gap-4'>
-              <span className='text-sm text-textDisabled'>{`Showing ${from} to ${to} of ${rowCount} entries`}</span>
-              <Select
-                aria-label='Rows per page'
-                value={activePagination.pageSize}
-                onChange={e => setPageSize(Number(e.target.value))}
-                options={pageSizeOptions.map(size => ({ label: String(size), value: size }))}
-                className='h-9 w-[70px]'
-              />
-            </div>
-            <Pagination count={pageCount} page={activePagination.pageIndex + 1} onChange={page => setPage(page - 1)} />
+      {view === 'grid' && renderCard ? (
+        showSkeleton ? (
+          <div className={gridClassName ?? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 p-4'}>
+            {Array.from({ length: Math.min(activePagination?.pageSize ?? 8, 8) }).map((_, i) => (
+              <div key={`skeleton-${i}`} className='flex flex-col gap-2 rounded-lg border border-border p-3'>
+                <Skeleton variant='block' className='aspect-square w-full' />
+                <Skeleton className='w-3/4' />
+                <Skeleton className='w-1/2' />
+              </div>
+            ))}
+          </div>
+        ) : showEmpty ? (
+          <EmptyState icon={emptyIcon} title={emptyMessage} description={emptyDescription} action={emptyAction} />
+        ) : (
+          <div
+            aria-busy={isLoading || isRefetching || undefined}
+            className={classnames(
+              gridClassName ?? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 p-4',
+              isRefetching && 'opacity-60 transition-opacity'
+            )}
+          >
+            {rows.map(row => (
+              <div key={row.id}>{renderCard(row.original)}</div>
+            ))}
           </div>
         )
-      })()}
+      ) : (
+        <Table aria-busy={isLoading || isRefetching || undefined}>
+          <TableHead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map(header => {
+                  const canSort = sortingEnabled && header.column.getCanSort()
+
+                  return (
+                    <TableHeaderCell
+                      key={header.id}
+                      align={header.column.columnDef.meta?.align ?? 'left'}
+                      style={
+                        header.column.columnDef.size !== undefined ? { width: header.column.columnDef.size } : undefined
+                      }
+                      sortDirection={header.column.getIsSorted()}
+                      onSort={canSort ? () => header.column.toggleSorting() : undefined}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHeaderCell>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>
+            {showSkeleton ? (
+              Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 6) }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {columns.map((_, ci) => (
+                    <TableCell key={ci}>
+                      <Skeleton className={ci === 0 ? 'w-3/4' : ci % 3 === 0 ? 'w-1/2' : 'w-2/3'} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : showEmpty ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='p-0'>
+                  <EmptyState
+                    icon={emptyIcon}
+                    title={emptyMessage}
+                    description={emptyDescription}
+                    action={emptyAction}
+                  />
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map(row => (
+                <TableRow key={row.id} hover className={isRefetching ? 'opacity-60 transition-opacity' : undefined}>
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      )}
+
+      {/* The footer is dead weight on an empty table — hide it rather than show
+          "Showing 0 to 0 of 0" under an empty state that already says so. */}
+      {!showEmpty && (
+        <div className='flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3'>
+          <div className='flex items-center gap-2'>
+            <Select
+              aria-label='Rows per page'
+              value={activePagination.pageSize}
+              onChange={e => setPageSize(Number(e.target.value))}
+              options={pageSizeOptions.map(size => ({ label: String(size), value: size }))}
+              inputSize='sm'
+              containerClassName='w-19'
+            />
+            <span className='text-xs tabular-nums text-textMuted'>
+              {showSkeleton ? 'Loading…' : `${from}–${to} of ${rowCount}`}
+            </span>
+          </div>
+          <Pagination count={pageCount} page={activePagination.pageIndex + 1} onChange={page => setPage(page - 1)} />
+        </div>
+      )}
     </Card>
   )
 }
