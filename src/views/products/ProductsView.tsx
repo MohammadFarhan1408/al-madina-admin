@@ -12,26 +12,25 @@ import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-t
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
-import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
-import PriceRangeFilter, { type PriceRange } from '@/components/shared/PriceRangeFilter'
+import type { PriceRange } from '@/components/shared/PriceRangeFilter'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import Checkbox from '@/components/ui/form/Checkbox'
 import Rating from '@/components/ui/Rating'
-import Select from '@/components/ui/form/Select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
-import { formatCurrency, humanize } from '@/libs/format'
+import { formatCurrency } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
+import ProductsFilterBar, { type ProductsView as ProductsListView, type StockFilter } from '@/features/products/components/ProductsFilterBar'
 import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
-import { SCENT_FAMILIES, type Product, type ScentFamily } from '@/features/products/types'
+import type { Product, ScentFamily } from '@/features/products/types'
 
 const ProductsView = () => {
   const router = useRouter()
@@ -42,10 +41,10 @@ const ProductsView = () => {
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') ?? '')
   const [family, setFamily] = useState<ScentFamily | ''>(() => (searchParams.get('family') as ScentFamily) ?? '')
-  const [stock, setStock] = useState<'' | 'true' | 'false'>('')
+  const [stock, setStock] = useState<StockFilter>('')
   const [priceRange, setPriceRange] = useState<PriceRange>({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const [view, setView] = useState<'table' | 'grid'>('table')
+  const [view, setView] = useState<ProductsListView>('table')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
@@ -368,79 +367,23 @@ const ProductsView = () => {
         view={view}
         renderCard={renderCard}
         toolbar={
-          <div className='flex w-full flex-wrap items-center justify-between gap-3'>
-            <div className='flex flex-1 flex-wrap items-center gap-2'>
-              <SearchField
-                value={search}
-                onChange={resetOnChange(setSearch)}
-                placeholder='Search product name…'
-                tone='subtle'
-              />
-              <PriceRangeFilter value={priceRange} onChange={resetOnChange(setPriceRange)} />
-
-              <Select
-                value={categoryId}
-                onChange={e => resetOnChange(setCategoryId)(e.target.value)}
-                icon={<i className='tabler-tag' />}
-                placeholder='Category'
-                options={(categories ?? []).map(category => ({ label: category.name, value: category.id }))}
-              />
-              <Select
-                value={family}
-                onChange={e => resetOnChange(setFamily)(e.target.value as ScentFamily | '')}
-                icon={<i className='tabler-droplet' />}
-                placeholder='Scent family'
-                options={SCENT_FAMILIES.map(f => ({ label: humanize(f), value: f }))}
-              />
-              <Select
-                value={stock}
-                onChange={e => resetOnChange(setStock)(e.target.value as 'true' | 'false' | '')}
-                icon={<i className='tabler-adjustments-alt' />}
-                placeholder='Stock'
-                options={[
-                  { label: 'In stock', value: 'true' },
-                  { label: 'Out of stock', value: 'false' }
-                ]}
-              />
-
-              {/* Grid/list toggle. Kept as a two-button group rather than a
-                Switch — the affordance needs to show both states at once, not
-                flip a single icon. */}
-              <div className='flex shrink-0 items-center gap-1 rounded-md border border-border bg-backgroundChat/40 p-0.5'>
-                <IconButton
-                  size='sm'
-                  aria-label='Grid view'
-                  aria-pressed={view === 'grid'}
-                  variant={view === 'grid' ? 'filled' : 'ghost'}
-                  color={view === 'grid' ? 'primary' : 'default'}
-                  onClick={() => setView('grid')}
-                >
-                  <i className='tabler-layout-grid' />
-                </IconButton>
-                <IconButton
-                  size='sm'
-                  aria-label='List view'
-                  aria-pressed={view === 'table'}
-                  variant={view === 'table' ? 'filled' : 'ghost'}
-                  color={view === 'table' ? 'primary' : 'default'}
-                  onClick={() => setView('table')}
-                >
-                  <i className='tabler-list' />
-                </IconButton>
-              </div>
-              {hasFilters && (
-                <Button
-                  startIcon={<i className='tabler-x' />}
-                  size='sm'
-                  variant='text'
-                  color='secondary'
-                  onClick={clearFilters}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </div>
-          </div>
+          <ProductsFilterBar
+            search={search}
+            onSearchChange={resetOnChange(setSearch)}
+            categoryId={categoryId}
+            onCategoryIdChange={resetOnChange(setCategoryId)}
+            categories={categories ?? []}
+            family={family}
+            onFamilyChange={resetOnChange(setFamily)}
+            stock={stock}
+            onStockChange={resetOnChange(setStock)}
+            priceRange={priceRange}
+            onPriceRangeChange={resetOnChange(setPriceRange)}
+            view={view}
+            onViewChange={setView}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+          />
         }
       />
 
