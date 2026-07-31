@@ -23,7 +23,7 @@ const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } 
 
 // ponytail: matches the md:4 (3-per-row) grid below; not breakpoint-aware,
 // bump if the grid's column count changes.
-const SKELETON_COUNT = 3
+const SKELETON_COUNT = 4
 
 const CollectionsView = () => {
   const router = useRouter()
@@ -64,7 +64,7 @@ const CollectionsView = () => {
         </Alert>
       )}
 
-      <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
         {isLoading ? (
           [...Array(SKELETON_COUNT)].map((_, i) => (
             <div key={i} className='h-[280px] animate-pulse rounded-lg bg-textDisabled/20' />
@@ -74,7 +74,7 @@ const CollectionsView = () => {
             <Card key={collection.id} className='flex h-full flex-col'>
               <CornerFrame>
                 <div
-                  className='h-40 rounded-t-lg bg-cover bg-center'
+                  className='h-60 rounded-t-lg bg-cover bg-center'
                   style={{ backgroundImage: `url(${collection.image})` }}
                 />
               </CornerFrame>
