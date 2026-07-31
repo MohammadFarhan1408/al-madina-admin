@@ -81,7 +81,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         htmlFor={selectId}
         className={containerClassName}
       >
-        <div className='relative flex'>
+        <div className='relative flex w-full min-w-0'>
           <select
             ref={ref}
             id={selectId}
@@ -90,6 +90,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-describedby={error || helperText ? `${selectId}-message` : undefined}
             className={classnames(
               controlBase,
+              'w-full min-w-0',
               icon ? iconSizeClasses[inputSize] : sizeClasses[inputSize],
               t.idle,
               t.text,
