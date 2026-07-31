@@ -1,9 +1,15 @@
 import classnames from 'classnames'
 
+import IconButton from './IconButton'
+
 export type PaginationProps = {
   page: number
   count: number
   onChange: (page: number) => void
+
+  /** Hide the numbered buttons and show "Page x of y" instead — for tight
+   *  toolbars and narrow screens. */
+  compact?: boolean
   className?: string
 }
 
@@ -24,64 +30,64 @@ const buildPageList = (page: number, count: number): (number | 'ellipsis')[] => 
   return result
 }
 
-const navButtonClasses =
-  'inline-flex size-8 items-center justify-center rounded-md text-sm text-textPrimary hover:bg-primary/10 disabled:opacity-40 disabled:pointer-events-none'
-
-const Pagination = ({ page, count, onChange, className }: PaginationProps) => {
+/** Page navigation. The numbered buttons are hidden below `sm` and replaced by
+ *  a "Page x of y" readout, so the control never overflows a phone-width
+ *  toolbar — the prev/next arrows stay usable at every size. */
+const Pagination = ({ page, count, onChange, compact = false, className }: PaginationProps) => {
   if (count <= 1) return null
+
+  const atStart = page <= 1
+  const atEnd = page >= count
 
   return (
     <nav aria-label='Pagination' className={classnames('flex items-center gap-1', className)}>
-      <button type='button' aria-label='First page' disabled={page === 1} onClick={() => onChange(1)} className={navButtonClasses}>
-        <i className='tabler-chevrons-left text-base' />
-      </button>
-      <button
-        type='button'
-        aria-label='Previous page'
-        disabled={page === 1}
-        onClick={() => onChange(page - 1)}
-        className={navButtonClasses}
+      <IconButton size='sm' aria-label='First page' disabled={atStart} onClick={() => onChange(1)}>
+        <i className='tabler-chevrons-left' />
+      </IconButton>
+      <IconButton size='sm' aria-label='Previous page' disabled={atStart} onClick={() => onChange(page - 1)}>
+        <i className='tabler-chevron-left' />
+      </IconButton>
+
+      <span className={classnames('items-center gap-1', compact ? 'hidden' : 'hidden sm:flex')}>
+        {buildPageList(page, count).map((p, i) =>
+          p === 'ellipsis' ? (
+            <span key={`ellipsis-${i}`} aria-hidden className='px-1 text-textMuted'>
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              type='button'
+              aria-label={`Page ${p}`}
+              aria-current={p === page ? 'page' : undefined}
+              onClick={() => onChange(p)}
+              className={classnames(
+                'inline-flex size-7 items-center justify-center rounded-md text-sm tabular-nums transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2',
+                p === page
+                  ? 'bg-primary font-semibold text-richBlack'
+                  : 'font-medium text-textSecondary hover:bg-actionHover hover:text-textPrimary'
+              )}
+            >
+              {p}
+            </button>
+          )
+        )}
+      </span>
+
+      <span
+        aria-hidden
+        className={classnames('px-2 text-sm tabular-nums text-textSecondary', compact ? 'block' : 'sm:hidden')}
       >
-        <i className='tabler-chevron-left text-base' />
-      </button>
-      {buildPageList(page, count).map((p, i) =>
-        p === 'ellipsis' ? (
-          <span key={`ellipsis-${i}`} className='px-1 text-textDisabled'>
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            type='button'
-            aria-current={p === page ? 'page' : undefined}
-            onClick={() => onChange(p)}
-            className={classnames(
-              'inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors',
-              p === page ? 'bg-primary text-black' : 'text-textPrimary hover:bg-primary/10'
-            )}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button
-        type='button'
-        aria-label='Next page'
-        disabled={page === count}
-        onClick={() => onChange(page + 1)}
-        className={navButtonClasses}
-      >
-        <i className='tabler-chevron-right text-base' />
-      </button>
-      <button
-        type='button'
-        aria-label='Last page'
-        disabled={page === count}
-        onClick={() => onChange(count)}
-        className={navButtonClasses}
-      >
-        <i className='tabler-chevrons-right text-base' />
-      </button>
+        {`${page} / ${count}`}
+      </span>
+
+      <IconButton size='sm' aria-label='Next page' disabled={atEnd} onClick={() => onChange(page + 1)}>
+        <i className='tabler-chevron-right' />
+      </IconButton>
+      <IconButton size='sm' aria-label='Last page' disabled={atEnd} onClick={() => onChange(count)}>
+        <i className='tabler-chevrons-right' />
+      </IconButton>
     </nav>
   )
 }

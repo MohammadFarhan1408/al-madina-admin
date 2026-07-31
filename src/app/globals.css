@@ -2,7 +2,26 @@
 @import 'tailwindcss/theme.css' layer(theme) important;
 @import 'tailwindcss/utilities.css' layer(utilities) important;
 
+/* ============================================================================
+   Al Madina Ittar — Admin design tokens.
+
+   Single source of truth for colour, radius, elevation, motion and z-order.
+   Static values only: no CSS-variable indirection, no light/dark switching.
+   One permanent identity — light ivory/pearl content with a dark
+   obsidian+gold navigation rail (see components/ui/Sidebar.tsx).
+
+   Consume these through Tailwind utilities (`bg-primary`, `text-textMuted`,
+   `border-borderControl`, …), never as hardcoded hex in components.
+
+   Contrast: every pairing marked AA below was verified against WCAG 2.1 —
+   body text ≥ 4.5:1, large text and UI boundaries ≥ 3:1.
+   ========================================================================= */
+
 @theme {
+  /* ---- Radius -------------------------------------------------------------
+     A deliberate 5-step scale. `md` is the control radius (inputs, buttons,
+     chips), `lg` is the container radius (cards, tables), `xl` is for
+     overlays (modals, popovers). Nothing should invent values between these. */
   --radius-none: 0px;
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -10,81 +29,192 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 0.75rem;
-  --radius-3xl: 1rem;
-  --radius-4xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Al Madina brand palette — the single source of truth for colour. Static
-     values only: no CSS-variable indirection, no light/dark switching. This is
-     one permanent visual identity (light ivory/pearl content, dark
-     obsidian+gold sidebar — see components/ui/Sidebar.tsx). Consume these via
-     Tailwind utilities (bg-primary, text-textSecondary, …) rather than
-     hardcoding hex in components. */
+  /* ---- Brand ----------------------------------------------------------------
+     Gold is a *surface* and *accent* colour, not a text colour. At 1.9:1 on
+     ivory, `primary` must never carry small text on a light background — use
+     `primaryInk` (5.5:1 AA) for that, and keep `primary` for fills, borders,
+     indicators, and text on dark surfaces (9.4:1 on richBlack). */
   --color-primary: #d4af37;
   --color-primaryLight: #e5c158;
   --color-primaryLighter: #f0e6cc;
   --color-primaryDark: #9a7b33;
+  --color-primaryInk: #75601e; /* AA gold text on any light surface */
+
   --color-secondary: #9a7b33;
   --color-secondaryLight: #c8a24b;
-  --color-secondaryDark: #6e5722;
+  --color-secondaryDark: #6e5722; /* AA with white text (6.9:1) */
+
+  /* ---- Semantic state -------------------------------------------------------
+     Each family has a fill (`x`), a tint for soft backgrounds (`xLight`) and
+     an ink (`xDark`) guaranteed AA as text on light surfaces. */
   --color-error: #b23a48;
   --color-errorLight: #f2dadd;
   --color-errorDark: #8e2d38;
   --color-warning: #c9912e;
   --color-warningLight: #f6ead0;
   --color-warningDark: #6e5722;
+  --color-warningInk: #7f5b1d; /* AA warning text on light (5.6:1) */
   --color-info: #3a6b8c;
   --color-infoLight: #dce7ef;
   --color-infoDark: #2c5169;
   --color-success: #2e7d54;
   --color-successLight: #d8ebe0;
   --color-successDark: #0f5132;
+
+  /* ---- Text -----------------------------------------------------------------
+     Four steps only. `textMuted` is the floor for anything a user must be
+     able to read — placeholders, timestamps, counts, helper text (5.2:1 AA).
+     `textDisabled` is reserved for genuinely inert controls, which WCAG
+     exempts; never use it for live content. */
   --color-textPrimary: rgb(11 11 11 / 92%);
   --color-textSecondary: #60646c;
-  --color-textDisabled: #b8ae97;
+  --color-textMuted: #6b6559;
+  --color-textDisabled: #9c9585;
+
+  /* ---- Interaction ---------------------------------------------------------- */
   --color-actionActive: rgb(11 11 11 / 60%);
   --color-actionHover: rgb(11 11 11 / 6%);
   --color-actionSelected: rgb(11 11 11 / 8%);
   --color-actionFocus: rgb(11 11 11 / 10%);
-  --color-backgroundPaper: #f7f3ea;
-  --color-backgroundDefault: #fbf9f3;
-  --color-backgroundChat: #e5ddcb;
+
+  /* ---- Surfaces ------------------------------------------------------------- */
+  --color-backgroundPaper: #f7f3ea; /* cards, popovers, inputs */
+  --color-backgroundDefault: #fbf9f3; /* app canvas */
+  --color-backgroundChat: #e5ddcb; /* sunken: table headers, wells */
   --color-backdrop: rgb(11 11 11 / 50%);
 
-  /* Dark surfaces — semi-dark sidebar + auth screens (never switched at runtime). */
+  /* ---- Borders --------------------------------------------------------------
+     `border` is a decorative hairline (dividers, card edges). `borderControl`
+     is the boundary of an interactive control and clears the 3:1 non-text
+     contrast bar on its own. `borderStrong` is for hover/emphasis. */
+  --color-border: #e3dac6;
+  --color-borderControl: #a68537; /* 3.1:1 on ivory — clears WCAG 1.4.11 */
+  --color-borderStrong: #9a7b33;
+
+  /* ---- Dark surfaces — nav rail + auth screens (never runtime-switched) ---- */
   --color-richBlack: #0b0b0b;
   --color-obsidian: #141414;
   --color-charcoal: #1c1c1e;
   --color-ivory: #f7f3ea;
   --color-ivoryDim: #eee8d9;
   --color-stone: #b8ae97;
-  --color-ash: #8a8377;
+  --color-ash: #9a9284; /* AA on richBlack (6.4:1) */
 
+  /* ---- Elevation ------------------------------------------------------------
+     Tight, low-spread shadows. Depth comes from the border first and the
+     shadow second — heavy blurs read as cheap. */
   --shadow-xs: 0 1px 2px rgb(11 11 11 / 6%);
-  --shadow-sm: 0 1px 3px rgb(11 11 11 / 8%);
-  --shadow-DEFAULT: 0 4px 10px rgb(11 11 11 / 10%);
-  --shadow-md: 0 4px 10px rgb(11 11 11 / 10%);
-  --shadow-lg: 0 8px 24px rgb(11 11 11 / 12%);
-  --shadow-xl: 0 16px 40px rgb(11 11 11 / 16%);
-  --shadow-primarySm: 0 2px 8px rgb(212 175 55 / 20%);
-  --shadow-primaryMd: 0 6px 16px rgb(212 175 55 / 24%);
-  --shadow-primaryLg: 0 12px 28px rgb(212 175 55 / 28%);
+  --shadow-sm: 0 1px 2px rgb(11 11 11 / 5%), 0 1px 3px rgb(11 11 11 / 6%);
+  --shadow-DEFAULT: 0 2px 4px rgb(11 11 11 / 6%), 0 4px 12px rgb(11 11 11 / 8%);
+  --shadow-md: 0 2px 4px rgb(11 11 11 / 6%), 0 4px 12px rgb(11 11 11 / 8%);
+  --shadow-lg: 0 4px 8px rgb(11 11 11 / 6%), 0 12px 28px rgb(11 11 11 / 10%);
+  --shadow-xl: 0 8px 16px rgb(11 11 11 / 8%), 0 24px 56px rgb(11 11 11 / 14%);
+  --shadow-primarySm: 0 1px 3px rgb(117 96 30 / 18%);
+  --shadow-primaryMd: 0 2px 6px rgb(117 96 30 / 20%), 0 8px 20px rgb(117 96 30 / 16%);
+  --shadow-primaryLg: 0 4px 10px rgb(117 96 30 / 22%), 0 16px 36px rgb(117 96 30 / 18%);
+
+  /* ---- Typography -----------------------------------------------------------
+     Geist is the single UI face — loaded in app/layout.tsx via next/font and
+     exposed as `--font-geist`. Everything inherits it from `body`; nothing
+     should declare its own family.
+
+     Tailwind's default rem scale (~1.15 ratio) is right for product UI; the
+     default line-heights are not. These are tightened for dense admin
+     surfaces — headings snug, body comfortable. */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  --text-2xs: 0.6875rem; /* 11px — micro labels, table eyebrows */
+  --text-2xs--line-height: 1rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl--line-height: 2.25rem;
+
+  /* ---- Motion ---------------------------------------------------------------
+     Exponential ease-out only — no bounce, no elastic. 150ms is the product
+     default: users are mid-task and should never wait on choreography. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --animate-toast-in: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-overlay-in: overlay-in 160ms cubic-bezier(0.25, 1, 0.5, 1);
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-indeterminate: indeterminate 1.15s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 
   --breakpoint-sm: 600px;
   --breakpoint-md: 900px;
   --breakpoint-lg: 1200px;
   --breakpoint-xl: 1536px;
   --breakpoint-2xl: 1920px;
+}
 
-  --z-header: 1100;
-  --z-footer: 10;
-  --z-search: 1300;
-  --z-drawer: 1200;
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* No entry animation for anchored surfaces (menus, listboxes) — a dashboard
+   menu should be under the cursor the instant it's clicked, and any animation
+   of `transform` here fights Floating UI's inline `transform: translate(x, y)`
+   positioning. */
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
 }
 
 :root {
-  --header-height: 54px;
+  --header-height: 56px;
+  --sidebar-width: 256px;
+  --sidebar-width-collapsed: 68px; /* 24px nav gutter + 44px row */
+
+  /* Semantic stacking order. Never write a raw z-index in a component —
+     reference these so the layering stays reasoned about in one place. */
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-drawer-backdrop: 30;
+  --z-drawer: 40;
+  --z-popover: 60;
+  --z-modal: 80;
+  --z-toast: 100;
 }
 
 @layer base {
@@ -95,79 +225,346 @@
     padding: 0;
     margin: 0;
     border: 0 solid;
-    border-color: rgb(154 123 51 / 18%);
+    border-color: var(--color-border);
   }
-}
 
-html,
-body {
-  min-height: 100%;
-  width: 100%;
-}
+  /* ---------------------------------------------------------------------------
+     Form-control and media reset.
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+     This project imports `tailwindcss/theme.css` and `tailwindcss/utilities.css`
+     but NOT `tailwindcss/preflight.css`, so none of Tailwind's base resets are
+     present. Without them the user agent's own styles leak through:
 
-ul:not([class]) {
-  margin-block: 1rem;
-  padding-inline-start: 40px;
-}
+       - `<button>` keeps `background-color: buttonface` — the light grey plate
+         that showed up behind every ghost icon button, and which was glaringly
+         visible on the dark auth card;
+       - buttons and inputs do NOT inherit `font-family`, so they rendered in
+         the UA default (13px Arial) instead of the page font;
+       - buttons get `cursor: default`, so nothing in the app felt clickable;
+       - images are `inline`, adding a phantom descender gap under every avatar
+         and thumbnail.
 
-:where([class^='tabler-']) {
-  font-size: 1.5rem;
-}
+     This is the minimal subset of preflight needed to fix those, rather than
+     importing the whole thing and restyling the app. Utilities are imported
+     `important`, so any explicit class still wins over everything here.
+     -------------------------------------------------------------------------- */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    background-color: transparent;
+    background-image: none;
+    opacity: 1;
+  }
 
-code {
-  font-family: inherit;
-  padding-block: 2px;
-  padding-inline: 4px;
-  border-radius: 4px;
-  font-size: 90%;
-  color: #3a6b8c;
-  background-color: rgb(58 107 140 / 8%);
-  border: 0;
-}
+  button,
+  [type='button'],
+  [type='reset'],
+  [type='submit'],
+  [role='button'] {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-/* Focus rings — gold, not the browser default. */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid rgb(212 175 55 / 60%);
-  outline-offset: 2px;
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: default;
+  }
+
+  /* Matches Tailwind v4's own placeholder default, so a control that forgets to
+     set `placeholder:text-*` still reads as a hint rather than a real value.
+     Every control in components/ui sets it explicitly to an AA-safe token. */
+  ::placeholder {
+    opacity: 1;
+    color: color-mix(in oklab, currentColor 50%, transparent);
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
+    display: block;
+    vertical-align: middle;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    width: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv11', 'ss01';
+    /* Tabular figures keep currency columns and counters from jittering as
+       values change. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Headings inherit weight from components; balance keeps them from leaving
+     a single orphaned word on the last line. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Same reason as the form-control reset above: without preflight the UA's
+     own `list-style: disc` + 40px indent leaks into every `<ul>`/`<ol>` used
+     as a layout primitive — nav rails, breadcrumbs, chip rows — so they
+     rendered with bullets and a phantom left gutter. Prose lists (no class)
+     keep their markers. */
+  ul,
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  ul:not([class]) {
+    margin-block: 1rem;
+    padding-inline-start: 40px;
+    list-style: disc;
+  }
+
+  ol:not([class]) {
+    margin-block: 1rem;
+    padding-inline-start: 40px;
+    list-style: decimal;
+  }
+
+  /* Default icon size. Components override with an explicit `text-*` class;
+     zero-specificity :where() means they always win. */
+  :where([class^='tabler-']) {
+    display: inline-block;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  code {
+    font-family: inherit;
+    padding-block: 2px;
+    padding-inline: 4px;
+    border-radius: var(--radius-xs);
+    font-size: 90%;
+    color: var(--color-infoDark);
+    background-color: rgb(58 107 140 / 8%);
+    border: 0;
+  }
+
+  /* Single focus convention: a gold ring, offset from the element. Components
+     that draw their own `focus-visible:ring-*` opt out here so the two never
+     stack into a double outline. */
+  :focus-visible {
+    outline: 2px solid rgb(212 175 55 / 70%);
+    outline-offset: 2px;
+  }
+
+  .ring-focus:focus-visible,
+  [class*='focus-visible:ring']:focus-visible {
+    outline: none;
+  }
+
+  /* Never let a mouse click paint a focus ring, and never remove the keyboard
+     one. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: rgb(212 175 55 / 28%);
+  }
+
+  /* Thin native scrollbars — the platform control, just quieter. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(154 123 51 / 35%) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(154 123 51 / 30%);
+    border: 3px solid transparent;
+    border-radius: var(--radius-full);
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(154 123 51 / 55%);
+  }
+
+  /* Chrome's autofill repaints the field with its own opaque blue, which
+     wrecks both the ivory inputs and the dark auth card. Pin the colours back
+     to ours; the long transition delay is the standard way to outrun it. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: currentColor;
+    caret-color: currentColor;
+    -webkit-background-clip: text;
+    background-clip: text;
+    transition: background-color 8000s ease-in-out 0s;
+  }
+
+  /* Native date/time controls: keep the OS picker and the segment behaviour,
+     drop the browser chrome. The built-in indicator is removed entirely —
+     components/ui/DateInput.tsx renders a styled trigger that calls
+     `showPicker()`, so the same OS calendar opens from a button that matches
+     every other control. Clicking a segment still edits that segment. */
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'] {
+    min-height: 1lh;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator,
+  input[type='datetime-local']::-webkit-calendar-picker-indicator,
+  input[type='month']::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+
+  input[type='date']::-webkit-datetime-edit,
+  input[type='time']::-webkit-datetime-edit,
+  input[type='date']::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  /* Highlight the segment being edited with the brand tint rather than the
+     browser's default blue. */
+  input[type='date']::-webkit-datetime-edit-day-field:focus,
+  input[type='date']::-webkit-datetime-edit-month-field:focus,
+  input[type='date']::-webkit-datetime-edit-year-field:focus,
+  input[type='time']::-webkit-datetime-edit-hour-field:focus,
+  input[type='time']::-webkit-datetime-edit-minute-field:focus {
+    background-color: rgb(212 175 55 / 30%);
+    border-radius: 3px;
+    color: inherit;
+    outline: none;
+  }
+
+  /* An empty date field shows `dd/mm/yyyy`; treat that as placeholder text
+     instead of letting it read as a real value. */
+  input[type='date'][data-empty='true']:not(:focus)::-webkit-datetime-edit,
+  input[type='time'][data-empty='true']:not(:focus)::-webkit-datetime-edit {
+    color: var(--color-textMuted);
+  }
+
+  /* Strip the spinners from quantity/price fields; they're a mis-click waiting
+     to happen at these sizes and the keyboard still steps the value. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+
+  /* Native search reset — we render our own clear affordance. */
+  input[type='search']::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  /* The <dialog> backdrop is outside the element's own cascade, so it can't be
+     reached by a utility class. */
+  dialog::backdrop {
+    background-color: var(--color-backdrop);
+    animation: overlay-in 160ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  dialog:not([open]) {
+    display: none;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
 }
 
 /* Art Deco corner-bracket frame — see components/shared/CornerFrame.tsx */
 .am-corner-frame {
   position: relative;
 }
+
 .am-corner {
   position: absolute;
   width: 18px;
   height: 18px;
-  border-color: #d4af37;
+  border-color: var(--color-primary);
   opacity: 0.85;
   pointer-events: none;
   z-index: 1;
 }
+
 .am-corner-tl {
   top: 10px;
   left: 10px;
   border-top: 2px solid;
   border-left: 2px solid;
 }
+
 .am-corner-tr {
   top: 10px;
   right: 10px;
   border-top: 2px solid;
   border-right: 2px solid;
 }
+
 .am-corner-bl {
   bottom: 10px;
   left: 10px;
   border-bottom: 2px solid;
   border-left: 2px solid;
 }
+
 .am-corner-br {
   bottom: 10px;
   right: 10px;
@@ -189,10 +586,31 @@ a:focus-visible {
     56px 56px,
     56px 56px;
 }
+
 .am-deco-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 50% 30%, rgba(212, 175, 55, 0.08), transparent 60%);
   pointer-events: none;
+}
+
+/* Reduced motion: keep state changes legible, remove the travel. Transitions
+   collapse to a near-instant crossfade rather than vanishing, so feedback is
+   never lost. Spinners stay — they're the only signal that work is happening. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .motion-safe-spin,
+  [class*='animate-spin'] {
+    animation-duration: 900ms !important;
+    animation-iteration-count: infinite !important;
+  }
 }

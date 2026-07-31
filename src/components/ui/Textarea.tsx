@@ -1,42 +1,57 @@
-import { forwardRef } from 'react'
-import type { TextareaHTMLAttributes } from 'react'
+import { forwardRef, useId } from 'react'
+import type { ReactNode, TextareaHTMLAttributes } from 'react'
 
 import classnames from 'classnames'
 
+import Field, { controlBase, controlState, controlTone, type FieldTone } from './Field'
+
 export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
-  label?: string
+  label?: ReactNode
   error?: string
-  helperText?: string
+  helperText?: ReactNode
+  tone?: FieldTone
   containerClassName?: string
 }
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, helperText, containerClassName, className, id, rows = 4, ...props }, ref) => {
-    const textareaId = id ?? props.name
+  (
+    { label, error, helperText, containerClassName, className, id, rows = 4, tone = 'light', required, ...props },
+    ref
+  ) => {
+    const reactId = useId()
+    const textareaId = id ?? props.name ?? reactId
+    const t = controlTone[tone]
 
     return (
-      <div className={classnames('flex flex-col gap-1.5', containerClassName)}>
-        {label && (
-          <label htmlFor={textareaId} className='text-sm font-medium text-textPrimary'>
-            {label}
-          </label>
-        )}
+      <Field
+        label={label}
+        required={required}
+        error={error}
+        helperText={helperText}
+        tone={tone}
+        htmlFor={textareaId}
+        className={containerClassName}
+      >
         <textarea
           ref={ref}
           id={textareaId}
           rows={rows}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || helperText ? `${textareaId}-message` : undefined}
           className={classnames(
-            'w-full resize-y rounded-md border bg-backgroundPaper px-3 py-2 text-sm text-textPrimary transition-colors',
-            'placeholder:text-textDisabled outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50',
-            error ? 'border-error' : 'border-secondary/30 focus:border-primary',
+            controlBase,
+            'block resize-y px-3 py-2.5 leading-relaxed',
+            t.idle,
+            t.text,
+            t.placeholder,
+            controlState(Boolean(error), false),
+            'disabled:cursor-not-allowed disabled:opacity-60',
             className
           )}
           {...props}
         />
-        {(error || helperText) && (
-          <span className={classnames('text-xs', error ? 'text-error' : 'text-textSecondary')}>{error ?? helperText}</span>
-        )}
-      </div>
+      </Field>
     )
   }
 )

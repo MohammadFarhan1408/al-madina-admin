@@ -25,7 +25,10 @@ const Rating = ({ value, max = 5, onChange, size = 'md', className }: RatingProp
     >
       {stars.map(star => {
         const filled = star <= value
-        const icon = <i className={classnames(filled ? 'tabler-star-filled text-primary' : 'tabler-star text-textDisabled')} />
+
+        const icon = (
+          <i className={classnames(filled ? 'tabler-star-filled text-primary' : 'tabler-star text-textDisabled')} />
+        )
 
         if (!onChange) return <span key={star}>{icon}</span>
 

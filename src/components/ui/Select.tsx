@@ -1,59 +1,138 @@
-import { forwardRef } from 'react'
-import type { SelectHTMLAttributes } from 'react'
+import { forwardRef, useId } from 'react'
+import type { ReactNode, SelectHTMLAttributes } from 'react'
 
 import classnames from 'classnames'
+
+import Field, { controlBase, controlState, controlTone, type FieldTone } from './Field'
+import type { InputSize } from './Input'
 
 export type SelectOption = {
   label: string
   value: string | number
+  disabled?: boolean
 }
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> & {
-  label?: string
+  label?: ReactNode
   error?: string
-  helperText?: string
+  helperText?: ReactNode
   options: SelectOption[]
   placeholder?: string
+  inputSize?: InputSize
+  tone?: FieldTone
   containerClassName?: string
+
+  /** Leading icon — for a filter pill (Category, Stock) where the icon carries
+   *  the field's identity instead of a label sitting above it. */
+  icon?: ReactNode
 }
 
+const sizeClasses: Record<InputSize, string> = {
+  sm: 'h-9 pl-2.5 pr-8',
+  md: 'h-10 pl-3 pr-9',
+  lg: 'h-11 pl-3.5 pr-10'
+}
+
+const iconSizeClasses: Record<InputSize, string> = {
+  sm: 'h-9 pl-8 pr-8',
+  md: 'h-10 pl-9 pr-9',
+  lg: 'h-11 pl-10 pr-10'
+}
+
+const leadingIconPosition: Record<InputSize, string> = {
+  sm: 'left-2.5',
+  md: 'left-3',
+  lg: 'left-3.5'
+}
+
+/** Native `<select>` with the platform arrow suppressed and ours drawn on top,
+ *  so it matches Input's height, radius, border and focus ring while keeping
+ *  the OS picker — which is still the best option list on touch devices. */
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, helperText, options, placeholder, containerClassName, className, id, ...props }, ref) => {
-    const selectId = id ?? props.name
+  (
+    {
+      label,
+      error,
+      helperText,
+      options,
+      placeholder,
+      containerClassName,
+      className,
+      id,
+      inputSize = 'md',
+      tone = 'light',
+      required,
+      icon,
+      ...props
+    },
+    ref
+  ) => {
+    const reactId = useId()
+    const selectId = id ?? props.name ?? reactId
+    const t = controlTone[tone]
 
     return (
-      <div className={classnames('flex flex-col gap-1.5', containerClassName)}>
-        {label && (
-          <label htmlFor={selectId} className='text-sm font-medium text-textPrimary'>
-            {label}
-          </label>
-        )}
-        <select
-          ref={ref}
-          id={selectId}
-          className={classnames(
-            'h-10 w-full rounded-md border bg-backgroundPaper px-3 text-sm text-textPrimary transition-colors',
-            'outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50',
-            error ? 'border-error' : 'border-secondary/30 focus:border-primary',
-            className
+      <Field
+        label={label}
+        required={required}
+        error={error}
+        helperText={helperText}
+        tone={tone}
+        htmlFor={selectId}
+        className={containerClassName}
+      >
+        <div className='relative flex'>
+          <select
+            ref={ref}
+            id={selectId}
+            required={required}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? `${selectId}-message` : undefined}
+            className={classnames(
+              controlBase,
+              icon ? iconSizeClasses[inputSize] : sizeClasses[inputSize],
+              t.idle,
+              t.text,
+              controlState(Boolean(error), false),
+              'cursor-pointer appearance-none truncate disabled:cursor-not-allowed disabled:opacity-60',
+              tone === 'dark' && '[&>option]:bg-charcoal [&>option]:text-ivory',
+              className
+            )}
+            {...props}
+          >
+            {placeholder && (
+              <option value='' disabled={required}>
+                {placeholder}
+              </option>
+            )}
+            {options.map(option => (
+              <option key={option.value} value={option.value} disabled={option.disabled}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {icon && (
+            <span
+              aria-hidden
+              className={classnames(
+                'pointer-events-none absolute top-[55%] -translate-y-1/2 text-[16px]',
+                leadingIconPosition[inputSize],
+                tone === 'dark' ? 'text-stone' : 'text-textMuted'
+              )}
+            >
+              {icon}
+            </span>
           )}
-          {...props}
-        >
-          {placeholder && (
-            <option value='' disabled={props.required}>
-              {placeholder}
-            </option>
-          )}
-          {options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {(error || helperText) && (
-          <span className={classnames('text-xs', error ? 'text-error' : 'text-textSecondary')}>{error ?? helperText}</span>
-        )}
-      </div>
+          <i
+            aria-hidden
+            className={classnames(
+              'tabler-chevron-down pointer-events-none absolute top-1/2 -translate-y-1/2 text-[16px]',
+              inputSize === 'sm' ? 'right-2' : 'right-3',
+              tone === 'dark' ? 'text-stone' : 'text-textMuted'
+            )}
+          />
+        </div>
+      </Field>
     )
   }
 )

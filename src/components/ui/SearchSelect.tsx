@@ -1,13 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { autoUpdate, flip, offset, shift, useDismiss, useFloating, useInteractions, useRole } from '@floating-ui/react'
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  size,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useListNavigation,
+  useRole
+} from '@floating-ui/react'
 import classnames from 'classnames'
 
+import Field, { controlBase, controlState, controlTone } from './Field'
+import IconButton from './IconButton'
+import { PopoverMessage, PopoverOption, popoverSurface } from './Popover'
+import Spinner from './Spinner'
+
 export type SearchSelectProps<T> = {
-  label?: string
+  label?: ReactNode
   options: T[]
   value: T | null
   onChange: (next: T | null) => void
@@ -19,10 +35,20 @@ export type SearchSelectProps<T> = {
   renderOption?: (option: T) => ReactNode
   loading?: boolean
   emptyText?: string
+  placeholder?: string
+  required?: boolean
+  error?: string
+  helperText?: ReactNode
+  disabled?: boolean
   containerClassName?: string
 }
 
-/** Single-select typeahead — the caller owns the (usually async) option list. */
+/** Single-select typeahead — the caller owns the (usually async) option list.
+ *
+ *  Arrow keys drive a virtual cursor while focus stays in the input, Enter
+ *  commits the active option and Escape dismisses. The spinner lives inside
+ *  the field rather than replacing the list, so an in-flight query doesn't
+ *  blank out results the user is still reading. */
 const SearchSelect = <T,>({
   label,
   options,
@@ -34,89 +60,164 @@ const SearchSelect = <T,>({
   renderOption,
   loading = false,
   emptyText = 'No matches',
+  placeholder = 'Type to search…',
+  required,
+  error,
+  helperText,
+  disabled = false,
   containerClassName
 }: SearchSelectProps<T>) => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const listRef = useRef<(HTMLElement | null)[]>([])
+  const inputId = useId()
+  const listId = `${inputId}-listbox`
 
-  const { refs, floatingStyles, context } = useFloating({
+  const { refs, floatingStyles, context, isPositioned } = useFloating({
     open,
     onOpenChange: setOpen,
     placement: 'bottom-start',
     whileElementsMounted: autoUpdate,
-    middleware: [offset(4), flip(), shift({ padding: 8 })]
+    middleware: [
+      offset(6),
+      flip({ padding: 8 }),
+      shift({ padding: 8 }),
+      size({
+        apply({ rects, availableHeight, elements }) {
+          Object.assign(elements.floating.style, {
+            width: `${rects.reference.width}px`,
+            maxHeight: `${Math.min(availableHeight - 8, 320)}px`
+          })
+        }
+      })
+    ]
   })
 
-  const { getReferenceProps, getFloatingProps } = useInteractions([useDismiss(context), useRole(context, { role: 'listbox' })])
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions([
+    useDismiss(context),
+    useRole(context, { role: 'listbox' }),
+    useListNavigation(context, {
+      listRef,
+      activeIndex,
+      onNavigate: setActiveIndex,
+      virtual: true,
+      loop: true
+    })
+  ])
 
   const inputValue = value ? getOptionLabel(value) : query
 
+  const select = (option: T) => {
+    onChange(option)
+    setQuery('')
+    setActiveIndex(null)
+    setOpen(false)
+  }
+
+  const clear = () => {
+    onChange(null)
+    setQuery('')
+    onInputChange('')
+    setActiveIndex(null)
+  }
+
+  const t = controlTone.light
+
   return (
-    <div className={classnames('flex flex-col gap-1.5', containerClassName)}>
-      {label && <span className='text-sm font-medium text-textPrimary'>{label}</span>}
+    <Field
+      label={label}
+      required={required}
+      error={error}
+      helperText={helperText}
+      htmlFor={inputId}
+      asLabel
+      className={containerClassName}
+    >
       <div
         ref={refs.setReference}
-        className='flex items-center gap-2 rounded-md border border-secondary/30 bg-backgroundPaper px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40'
+        className={classnames(
+          controlBase,
+          'h-10 px-3',
+          t.idle,
+          controlState(Boolean(error), true),
+          disabled && 'pointer-events-none opacity-60'
+        )}
       >
+        <i aria-hidden className='tabler-search shrink-0 text-[18px] text-textMuted' />
         <input
-          {...getReferenceProps()}
-          value={inputValue}
-          onChange={e => {
-            if (value) onChange(null)
-            setQuery(e.target.value)
-            onInputChange(e.target.value)
-            setOpen(true)
-          }}
-          onFocus={() => setOpen(true)}
-          className='h-10 w-full bg-transparent text-sm text-textPrimary outline-none placeholder:text-textDisabled'
+          {...getReferenceProps({
+            id: inputId,
+            value: inputValue,
+            disabled,
+            placeholder,
+            'aria-invalid': error ? true : undefined,
+            'aria-describedby': error || helperText ? `${inputId}-message` : undefined,
+            'aria-controls': open ? listId : undefined,
+            onChange: e => {
+              const next = (e.target as HTMLInputElement).value
+
+              if (value) onChange(null)
+              setQuery(next)
+              onInputChange(next)
+              setOpen(true)
+            },
+            onFocus: () => setOpen(true),
+            onKeyDown: e => {
+              if (e.key === 'Enter' && activeIndex !== null && options[activeIndex]) {
+                e.preventDefault()
+                select(options[activeIndex])
+              }
+            },
+            className: classnames('h-full min-w-0 flex-1 bg-transparent text-sm outline-none', t.text, t.placeholder)
+          })}
         />
-        {value && (
-          <button
-            type='button'
-            aria-label='Clear selection'
-            onClick={() => {
-              onChange(null)
-              setQuery('')
-              onInputChange('')
-            }}
-            className='text-textSecondary hover:text-error'
-          >
-            <i className='tabler-x text-[16px]' />
-          </button>
+        {loading && <Spinner size='sm' className='shrink-0' />}
+        {!loading && (value || query) && (
+          <IconButton size='sm' aria-label='Clear selection' onClick={clear} className='-mr-1'>
+            <i className='tabler-x' />
+          </IconButton>
         )}
       </div>
       {open && (
         <div
-          ref={refs.setFloating}
-          style={floatingStyles}
-          {...getFloatingProps()}
-          className='z-50 max-h-72 overflow-auto rounded-md border border-secondary/30 bg-backgroundPaper py-1 shadow-lg'
+          {...getFloatingProps({
+            ref: refs.setFloating,
+            id: listId,
+
+            // Hidden until measured — otherwise it paints one frame in the
+            // top-left corner before it is moved under the input.
+            style: { ...floatingStyles, opacity: isPositioned ? 1 : 0 },
+            className: popoverSurface
+          })}
         >
-          {loading ? (
-            <p className='px-3 py-2 text-sm text-textSecondary'>Searching…</p>
+          {loading && options.length === 0 ? (
+            <PopoverMessage>Searching…</PopoverMessage>
           ) : options.length === 0 ? (
-            <p className='px-3 py-2 text-sm text-textSecondary'>{emptyText}</p>
+            <PopoverMessage>{emptyText}</PopoverMessage>
           ) : (
-            options.map(option => (
-              <button
+            options.map((option, index) => (
+              <PopoverOption
                 key={getOptionKey(option)}
-                type='button'
+                {...getItemProps({
+                  ref(node: HTMLButtonElement | null) {
+                    listRef.current[index] = node
+                  },
+                  onClick: () => select(option)
+                })}
                 role='option'
-                aria-selected={Boolean(value) && getOptionKey(option) === getOptionKey(value as T)}
-                onClick={() => {
-                  onChange(option)
-                  setQuery('')
-                  setOpen(false)
-                }}
-                className='block w-full px-3 py-2 text-left text-sm text-textPrimary hover:bg-primary/10'
+                showCheck
+                selected={Boolean(value) && getOptionKey(option) === getOptionKey(value as T)}
+                active={activeIndex === index}
+                tabIndex={-1}
               >
                 {renderOption ? renderOption(option) : getOptionLabel(option)}
-              </button>
+              </PopoverOption>
             ))
           )}
         </div>
       )}
-    </div>
+    </Field>
   )
 }
 

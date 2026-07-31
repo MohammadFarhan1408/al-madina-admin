@@ -1,71 +1,108 @@
-import { forwardRef } from 'react'
+import { forwardRef, useId } from 'react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
 import classnames from 'classnames'
 
-export type InputTone = 'light' | 'dark'
+import Field, { controlBase, controlState, controlTone, type FieldTone } from './Field'
+
+export type InputTone = FieldTone
+export type InputSize = 'sm' | 'md' | 'lg'
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
-  label?: string
+  label?: ReactNode
   error?: string
-  helperText?: string
+  helperText?: ReactNode
+
+  /** Leading slot — an icon, or a static prefix such as `AED`. */
   startAdornment?: ReactNode
+
+  /** Trailing slot — a unit, a clear button, a password reveal. */
   endAdornment?: ReactNode
+  inputSize?: InputSize
   containerClassName?: string
+
+  /** Classes for the control surface itself (the bordered box), for one-off
+   *  geometry like a pill radius. Use `!` on anything that collides with the
+   *  base — there is no tailwind-merge here, so plain classes would be settled
+   *  by stylesheet order rather than by intent. */
+  controlClassName?: string
 
   /** 'dark' targets the dark auth screens; default 'light' for dashboard surfaces. */
   tone?: InputTone
 }
 
-const toneClasses: Record<InputTone, { label: string; field: string; input: string; helper: string }> = {
-  light: {
-    label: 'text-textPrimary',
-    field: 'bg-backgroundPaper border-secondary/30 focus-within:border-primary',
-    input: 'text-textPrimary placeholder:text-textDisabled',
-    helper: 'text-textSecondary'
-  },
-  dark: {
-    label: 'text-stone',
-    field: 'bg-white/5 border-primary/25 focus-within:border-primary',
-    input: 'text-ivory caret-primary placeholder:text-stone',
-    helper: 'text-stone'
-  }
+const sizeClasses: Record<InputSize, string> = {
+  sm: 'h-9 px-2.5',
+  md: 'h-10 px-3',
+  lg: 'h-11 px-3.5'
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helperText, startAdornment, endAdornment, containerClassName, className, id, tone = 'light', ...props },
+    {
+      label,
+      error,
+      helperText,
+      startAdornment,
+      endAdornment,
+      containerClassName,
+      controlClassName,
+      className,
+      id,
+      inputSize = 'md',
+      tone = 'light',
+      required,
+      ...props
+    },
     ref
   ) => {
-    const inputId = id ?? props.name
-    const t = toneClasses[tone]
+    const reactId = useId()
+    const inputId = id ?? props.name ?? reactId
+    const t = controlTone[tone]
 
     return (
-      <div className={classnames('flex flex-col gap-1.5', containerClassName)}>
-        {label && (
-          <label htmlFor={inputId} className={classnames('text-sm font-medium', t.label)}>
-            {label}
-          </label>
-        )}
+      <Field
+        label={label}
+        required={required}
+        error={error}
+        helperText={helperText}
+        tone={tone}
+        htmlFor={inputId}
+        className={containerClassName}
+      >
         <div
           className={classnames(
-            'flex items-center gap-2 rounded-md border px-3 transition-colors focus-within:ring-2 focus-within:ring-primary/40',
-            error ? 'border-error' : t.field
+            controlBase,
+            sizeClasses[inputSize],
+            t.idle,
+            controlState(Boolean(error), true),
+            controlClassName
           )}
         >
-          {startAdornment}
+          {startAdornment && (
+            <span
+              className={classnames('flex shrink-0 items-center', tone === 'dark' ? 'text-stone' : 'text-textMuted')}
+            >
+              {startAdornment}
+            </span>
+          )}
           <input
             ref={ref}
             id={inputId}
-            className={classnames('h-10 w-full bg-transparent text-sm outline-none disabled:opacity-50', t.input, className)}
+            required={required}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? `${inputId}-message` : undefined}
+            className={classnames(
+              'h-full min-w-0 flex-1 bg-transparent outline-none disabled:cursor-not-allowed',
+              t.text,
+              t.placeholder,
+              className
+            )}
             {...props}
           />
-          {endAdornment}
+          {endAdornment && <span className='-mr-1 flex shrink-0 items-center'>{endAdornment}</span>}
         </div>
-        {(error || helperText) && (
-          <span className={classnames('text-xs', error ? 'text-error' : t.helper)}>{error ?? helperText}</span>
-        )}
-      </div>
+      </Field>
     )
   }
 )
