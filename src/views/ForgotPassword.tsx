@@ -9,7 +9,7 @@ import Link from '@components/Link'
 import AuthShell from '@components/shared/AuthShell'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import Input from '@/components/ui/form/Input'
 
 import { authApi } from '@/features/auth/api/authApi'
 import { forgotPasswordSchema, type ForgotPasswordValues } from '@/features/auth/schema'
