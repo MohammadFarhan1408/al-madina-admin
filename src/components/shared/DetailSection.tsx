@@ -25,7 +25,7 @@ type DetailSectionProps = {
 
 /** The `<dl>` lives here rather than in DetailRow, so a section of rows forms
  *  one description list instead of a series of unrelated single-item lists. */
-export const DetailSection = ({
+const DetailSection = ({
   title,
   description,
   action,

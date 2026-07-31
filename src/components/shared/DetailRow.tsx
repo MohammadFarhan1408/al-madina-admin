@@ -20,7 +20,7 @@ type DetailRowProps = {
  *  Values are baseline-aligned to their label and allowed to wrap — a long
  *  email or address breaks onto a second line instead of forcing the panel
  *  wider and introducing a horizontal scrollbar. */
-export const DetailRow = ({ label, value, stacked }: DetailRowProps) => (
+const DetailRow = ({ label, value, stacked }: DetailRowProps) => (
   <div className={classnames('min-w-0', stacked ? 'flex flex-col gap-1' : 'flex items-baseline justify-between gap-4')}>
     <dt className={classnames('text-sm text-textMuted', !stacked && 'shrink-0')}>{label}</dt>
     <dd

@@ -17,7 +17,7 @@ import {
 } from '@floating-ui/react'
 import classnames from 'classnames'
 
-import Field, { controlBase, controlState, controlTone } from './Field'
+import Field, { controlBase, controlHeight, controlState, controlTone } from './Field'
 import IconButton from './IconButton'
 import { PopoverMessage, PopoverOption, popoverSurface } from './Popover'
 import Spinner from './Spinner'
@@ -138,7 +138,8 @@ const SearchSelect = <T,>({
         ref={refs.setReference}
         className={classnames(
           controlBase,
-          'h-10 px-3',
+          controlHeight,
+          'px-3',
           t.idle,
           controlState(Boolean(error), true),
           disabled && 'pointer-events-none opacity-60'
