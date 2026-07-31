@@ -17,6 +17,7 @@ import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatDate } from '@/libs/format'
+import ReviewsFilterBar from '@/features/reviews/components/ReviewsFilterBar'
 import { useDeleteReview, useReviews } from '@/features/reviews/hooks/useReviews'
 import type { Review } from '@/features/reviews/types'
 
@@ -146,19 +147,7 @@ const ReviewsView = () => {
             ? 'Customer reviews appear here once they start rating your fragrances.'
             : 'Clear the rating filter to see all reviews.'
         }
-        toolbar={
-          <div className='flex flex-col gap-1.5'>
-            <span className='text-sm font-medium leading-5 text-textPrimary'>Filter by rating</span>
-            <div className='flex h-10 items-center gap-1'>
-              <Rating value={rating || 0} onChange={value => resetOnChange(setRating)(value || '')} />
-              {rating !== '' && (
-                <IconButton size='sm' aria-label='Clear rating filter' onClick={() => resetOnChange(setRating)('')}>
-                  <i className='tabler-x' />
-                </IconButton>
-              )}
-            </div>
-          </div>
-        }
+        toolbar={<ReviewsFilterBar rating={rating} onRatingChange={resetOnChange(setRating)} />}
       />
 
       <ConfirmDialog
