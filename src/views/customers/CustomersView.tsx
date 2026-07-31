@@ -12,19 +12,18 @@ import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-t
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
-import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
-import Select from '@/components/ui/form/Select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatDate } from '@/libs/format'
+import CustomersFilterBar from '@/features/customers/components/CustomersFilterBar'
 import { useCustomers, useDeactivateCustomer } from '@/features/customers/hooks/useCustomers'
-import { USER_TIERS, type Customer, type UserTier } from '@/features/customers/types'
+import type { Customer, UserTier } from '@/features/customers/types'
 
 const CustomersView = () => {
   const router = useRouter()
@@ -36,6 +35,12 @@ const CustomersView = () => {
   const debouncedSearch = useDebouncedValue(search)
   const hasFilters = Boolean(search || tier)
   const resetOnChange = useFilterReset(setPagination)
+
+  const clearFilters = () => {
+    setSearch('')
+    setTier('')
+    setPagination(p => ({ ...p, pageIndex: 0 }))
+  }
 
   const deactivateMutation = useDeactivateCustomer()
   const { success, error: toastError } = useToast()
@@ -159,21 +164,14 @@ const CustomersView = () => {
             : 'Customers appear here once they register in the mobile app.'
         }
         toolbar={
-          <>
-            <SearchField
-              value={search}
-              onChange={resetOnChange(setSearch)}
-              placeholder='Search name or email'
-              className='min-w-56 flex-1'
-            />
-            <Select
-              label='Tier'
-              value={tier}
-              onChange={e => resetOnChange(setTier)(e.target.value as UserTier | '')}
-              containerClassName='min-w-44'
-              options={[{ label: 'All tiers', value: '' }, ...USER_TIERS.map(t => ({ label: t, value: t }))]}
-            />
-          </>
+          <CustomersFilterBar
+            search={search}
+            onSearchChange={resetOnChange(setSearch)}
+            tier={tier}
+            onTierChange={resetOnChange(setTier)}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+          />
         }
       />
 
