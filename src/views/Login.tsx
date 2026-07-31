@@ -12,17 +12,15 @@ import AuthShell from '@components/shared/AuthShell'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import PasswordInput from '@/components/ui/PasswordInput'
 
 import { useAuth } from '@/contexts/AuthContext'
 import { signInSchema, type SignInValues } from '@/features/auth/schema'
 import { ApiError } from '@/libs/api/types'
 
 const Login = () => {
-  // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Hooks
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signIn } = useAuth()
@@ -35,8 +33,6 @@ const Login = () => {
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' }
   })
-
-  const handleClickShowPassword = () => setIsPasswordShown(show => !show)
 
   const onSubmit = async (values: SignInValues) => {
     setFormError(null)
@@ -60,53 +56,59 @@ const Login = () => {
 
   return (
     <AuthShell subtitle='Admin Portal' tagline='The Art of Arabian Perfumery'>
-      <div className='flex flex-col gap-1'>
-        <h1 className='text-xl font-semibold text-ivory'>Welcome back</h1>
+      <div className='flex flex-col gap-1.5'>
+        <h1 className='text-xl font-semibold tracking-[-0.01em] text-ivory'>Welcome back</h1>
         <p className='text-sm text-stone'>Sign in to manage your boutique</p>
       </div>
 
       {formError && <Alert severity='error'>{formError}</Alert>}
 
-      <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
+      {/* `autoComplete` is on so password managers can fill and save these —
+          switching it off on a login form fights the user's own tooling. */}
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
         <Controller
           name='email'
           control={control}
           render={({ field }) => (
-            <Input {...field} autoFocus tone='dark' label='Email' placeholder='Enter your email' error={errors.email?.message} />
+            <Input
+              {...field}
+              autoFocus
+              tone='dark'
+              type='email'
+              label='Email'
+              placeholder='you@almadina.com'
+              autoComplete='email'
+              startAdornment={<i className='tabler-mail' />}
+              error={errors.email?.message}
+            />
           )}
         />
         <Controller
           name='password'
           control={control}
           render={({ field }) => (
-            <Input
+            <PasswordInput
               {...field}
               tone='dark'
               label='Password'
-              placeholder='············'
-              type={isPasswordShown ? 'text' : 'password'}
+              placeholder='Enter your password'
+              autoComplete='current-password'
               error={errors.password?.message}
-              endAdornment={
-                <button
-                  type='button'
-                  onClick={handleClickShowPassword}
-                  onMouseDown={e => e.preventDefault()}
-                  aria-label={isPasswordShown ? 'Hide password' : 'Show password'}
-                  className='text-stone hover:text-primary'
-                >
-                  <i className={isPasswordShown ? 'tabler-eye-off' : 'tabler-eye'} />
-                </button>
-              }
             />
           )}
         />
+
         <div className='flex justify-end'>
-          <Link href='/forgot-password' className='text-sm text-primary hover:text-primaryLight'>
+          <Link
+            href='/forgot-password'
+            className='rounded-xs text-sm font-medium text-primaryLight transition-colors hover:text-primary hover:underline hover:underline-offset-2'
+          >
             Forgot password?
           </Link>
         </div>
-        <Button fullWidth type='submit' loading={isSubmitting} className='shadow-primaryMd'>
-          Sign In
+
+        <Button fullWidth size='lg' type='submit' loading={isSubmitting} className='mt-1'>
+          Sign in
         </Button>
       </form>
     </AuthShell>

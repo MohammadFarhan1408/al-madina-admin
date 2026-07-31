@@ -86,7 +86,7 @@ const CustomerDetailView = ({ id }: Props) => {
                   <StatusChip value={data.user.tier} />
                 </div>
               </div>
-              <hr className='w-full border-secondary/20' />
+              <hr className='w-full border-border' />
               <Select
                 containerClassName='w-full'
                 label='Loyalty tier'
@@ -116,74 +116,74 @@ const CustomerDetailView = ({ id }: Props) => {
           />
 
           <TabPanel active={activeTab === 'overview'} className='p-0'>
-              <DetailSection title='Recent orders'>
-                {data.recentOrders.length ? (
-                  data.recentOrders.map(order => (
-                    <div key={order.id} className='flex items-center justify-between gap-2'>
-                      <div className='flex flex-col'>
-                        <span className='text-sm font-medium'>{order.reference}</span>
-                        <span className='text-xs text-textSecondary'>{formatDate(order.placedAt)}</span>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <StatusChip value={order.status} />
-                        <span className='text-sm font-medium'>{formatCurrency(order.total, order.currency)}</span>
-                      </div>
+            <DetailSection title='Recent orders'>
+              {data.recentOrders.length ? (
+                data.recentOrders.map(order => (
+                  <div key={order.id} className='flex items-center justify-between gap-2'>
+                    <div className='flex flex-col'>
+                      <span className='text-sm font-medium'>{order.reference}</span>
+                      <span className='text-xs text-textSecondary'>{formatDate(order.placedAt)}</span>
                     </div>
-                  ))
-                ) : (
-                  <p className='text-textSecondary'>No orders yet.</p>
-                )}
-              </DetailSection>
+                    <div className='flex items-center gap-3'>
+                      <StatusChip value={order.status} />
+                      <span className='text-sm font-medium'>{formatCurrency(order.total, order.currency)}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className='text-textSecondary'>No orders yet.</p>
+              )}
+            </DetailSection>
           </TabPanel>
 
           <TabPanel active={activeTab === 'addresses'} className='p-0'>
-              <DetailSection title='Saved addresses'>
-                {data.addresses.length ? (
-                  data.addresses.map(addr => (
-                    <div key={addr.id} className='flex flex-col gap-0.5'>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-sm font-medium'>{addr.fullName}</span>
-                        {addr.isDefault && <StatusChip value='default' color='primary' />}
-                        {addr.label && <span className='text-xs text-textSecondary'>({addr.label})</span>}
-                      </div>
-                      <span className='text-sm text-textSecondary'>{addr.phone}</span>
-                      <span className='text-sm text-textSecondary'>
-                        {[addr.addressLine, addr.city, addr.state, addr.country].filter(Boolean).join(', ')}
-                      </span>
+            <DetailSection title='Saved addresses'>
+              {data.addresses.length ? (
+                data.addresses.map(addr => (
+                  <div key={addr.id} className='flex flex-col gap-0.5'>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-sm font-medium'>{addr.fullName}</span>
+                      {addr.isDefault && <StatusChip value='default' color='primary' />}
+                      {addr.label && <span className='text-xs text-textSecondary'>({addr.label})</span>}
                     </div>
-                  ))
-                ) : (
-                  <p className='text-textSecondary'>No saved addresses.</p>
-                )}
-              </DetailSection>
+                    <span className='text-sm text-textSecondary'>{addr.phone}</span>
+                    <span className='text-sm text-textSecondary'>
+                      {[addr.addressLine, addr.city, addr.state, addr.country].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className='text-textSecondary'>No saved addresses.</p>
+              )}
+            </DetailSection>
           </TabPanel>
 
           <TabPanel active={activeTab === 'cart'} className='p-0'>
-              <DetailSection title='Current cart'>
-                {data.cart.length ? (
-                  data.cart.map((item, idx) => {
-                    const product = typeof item.productId === 'string' ? null : item.productId
+            <DetailSection title='Current cart'>
+              {data.cart.length ? (
+                data.cart.map((item, idx) => {
+                  const product = typeof item.productId === 'string' ? null : item.productId
 
-                    return (
-                      <div key={idx} className='flex items-center justify-between gap-2'>
-                        <div className='flex items-center gap-3'>
-                          {product && (
-                            <ZoomableImage src={product.images?.[0]} alt={product.name}>
-                              <img src={product.images?.[0]} alt='' className='size-10 rounded-md object-cover' />
-                            </ZoomableImage>
-                          )}
-                          <span className='text-sm'>{product?.name ?? 'Unknown product'}</span>
-                        </div>
-                        <span className='text-xs text-textSecondary'>
-                          Qty {item.quantity} · {item.volumeMl}ml
-                        </span>
+                  return (
+                    <div key={idx} className='flex items-center justify-between gap-2'>
+                      <div className='flex items-center gap-3'>
+                        {product && (
+                          <ZoomableImage src={product.images?.[0]} alt={product.name}>
+                            <img src={product.images?.[0]} alt='' className='size-10 rounded-md object-cover' />
+                          </ZoomableImage>
+                        )}
+                        <span className='text-sm'>{product?.name ?? 'Unknown product'}</span>
                       </div>
-                    )
-                  })
-                ) : (
-                  <p className='text-textSecondary'>Cart is empty.</p>
-                )}
-              </DetailSection>
+                      <span className='text-xs text-textSecondary'>
+                        Qty {item.quantity} · {item.volumeMl}ml
+                      </span>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className='text-textSecondary'>Cart is empty.</p>
+              )}
+            </DetailSection>
           </TabPanel>
         </div>
       </div>

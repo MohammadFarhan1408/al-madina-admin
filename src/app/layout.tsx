@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { Geist } from 'next/font/google'
+
 // Style Imports
 import '@/app/globals.css'
 
@@ -11,8 +13,10 @@ export const metadata = {
   description: 'Administration panel for the Al Madina Ittar luxury perfume storefront.'
 }
 
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' })
+
 const RootLayout = ({ children }: { children: ReactNode }) => (
-  <html lang='en'>
+  <html lang='en' className={geist.variable}>
     <body className='flex min-h-full w-full flex-auto flex-col bg-backgroundDefault text-textPrimary'>{children}</body>
   </html>
 )

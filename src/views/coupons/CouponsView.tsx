@@ -132,21 +132,34 @@ const CouponsView = () => {
         onPaginationChange={setPagination}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
-        emptyMessage='No coupons found'
+        emptyIcon='tabler-discount-off'
+        emptyMessage={isActive === '' ? 'No coupons yet' : 'No coupons with this status'}
+        emptyDescription={
+          isActive === ''
+            ? 'Create a discount code to run a promotion.'
+            : 'Switch the status filter to see the rest of your coupons.'
+        }
+        emptyAction={
+          isActive === '' && (
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>
+              Add Coupon
+            </Button>
+          )
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-4 p-6'>
+          <>
             <Select
               label='Status'
               value={isActive}
               onChange={e => resetOnChange(setIsActive)(e.target.value as '' | 'true' | 'false')}
-              containerClassName='min-w-[160px]'
+              containerClassName='min-w-40'
               options={[
                 { label: 'All', value: '' },
                 { label: 'Active', value: 'true' },
                 { label: 'Inactive', value: 'false' }
               ]}
             />
-          </div>
+          </>
         }
       />
 

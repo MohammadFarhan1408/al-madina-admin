@@ -25,7 +25,10 @@ import { useProduct, useDeleteProduct } from '@/features/products/hooks/useProdu
 
 type Props = { id: string }
 
-const MERCHANDISING_FLAGS: { key: 'isFeatured' | 'isNewArrival' | 'isBestSeller' | 'isSignature' | 'isSeasonal'; label: string }[] = [
+const MERCHANDISING_FLAGS: {
+  key: 'isFeatured' | 'isNewArrival' | 'isBestSeller' | 'isSignature' | 'isSeasonal'
+  label: string
+}[] = [
   { key: 'isFeatured', label: 'Featured' },
   { key: 'isNewArrival', label: 'New arrival' },
   { key: 'isBestSeller', label: 'Best seller' },
@@ -47,10 +50,7 @@ const ProductDetailView = ({ id }: Props) => {
     [categories, product]
   )
 
-  const productTags = useMemo(
-    () => (tags ?? []).filter(t => product?.tagIds.includes(t.id)),
-    [tags, product]
-  )
+  const productTags = useMemo(() => (tags ?? []).filter(t => product?.tagIds.includes(t.id)), [tags, product])
 
   const handleDelete = async () => {
     if (!product) return

@@ -14,6 +14,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import ZoomableImage from '@/components/shared/ZoomableImage'
 import QueryState from '@/components/shared/QueryState'
 import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 import SearchSelect from '@/components/ui/SearchSelect'
 import Spinner from '@/components/ui/Spinner'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
@@ -181,7 +182,7 @@ const CollectionDetailView = ({ id }: Props) => {
               <Spinner />
             </div>
           ) : members?.length ? (
-            <ul className='divide-y divide-secondary/15'>
+            <ul className='divide-y divide-border'>
               {members.map(product => (
                 <li key={product.id} className='flex items-center gap-3 py-2'>
                   <img src={product.images?.[0]} alt='' className='size-10 shrink-0 rounded-md object-cover' />
@@ -191,15 +192,15 @@ const CollectionDetailView = ({ id }: Props) => {
                       {formatCurrency(product.price, product.currency)}
                     </span>
                   </div>
-                  <button
-                    type='button'
+                  <IconButton
+                    size='sm'
+                    color='error'
+                    loading={removingId === product.id}
                     aria-label={`Remove ${product.name} from collection`}
-                    disabled={removingId === product.id}
                     onClick={() => handleRemove(product.id)}
-                    className='rounded-md p-1.5 text-error hover:bg-error/10 disabled:opacity-50'
                   >
                     {removingId === product.id ? <Spinner size='sm' /> : <i className='tabler-trash' />}
-                  </button>
+                  </IconButton>
                 </li>
               ))}
             </ul>

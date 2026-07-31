@@ -28,7 +28,11 @@ const EditRoleView = ({ id }: Props) => {
     <>
       <Breadcrumbs extra={[{ label: role.name, href: `/roles/${id}` }, { label: 'Edit' }]} />
       <PageHeader title={`Edit ${role.name}`} />
-      <RoleForm role={role} onSuccess={() => router.push(`/roles/${id}`)} onCancel={() => router.push(`/roles/${id}`)} />
+      <RoleForm
+        role={role}
+        onSuccess={() => router.push(`/roles/${id}`)}
+        onCancel={() => router.push(`/roles/${id}`)}
+      />
     </>
   )
 }

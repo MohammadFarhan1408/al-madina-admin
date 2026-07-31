@@ -49,7 +49,6 @@ const CollectionsView = () => {
     <>
       <Breadcrumbs />
       <PageHeader
-        eyebrow='Catalogue'
         title='Collections'
         subtitle='Curated groupings of your fragrances'
         action={

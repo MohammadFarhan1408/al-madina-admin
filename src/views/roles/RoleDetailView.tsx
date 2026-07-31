@@ -80,7 +80,11 @@ const RoleDetailView = ({ id }: Props) => {
             <Button variant='outlined' color='secondary' onClick={() => router.push('/roles')}>
               Back
             </Button>
-            <Button variant='outlined' startIcon={<i className='tabler-edit' />} onClick={() => router.push(`/roles/${id}/edit`)}>
+            <Button
+              variant='outlined'
+              startIcon={<i className='tabler-edit' />}
+              onClick={() => router.push(`/roles/${id}/edit`)}
+            >
               Edit
             </Button>
             <Button
@@ -99,7 +103,10 @@ const RoleDetailView = ({ id }: Props) => {
 
       <div className='flex flex-col gap-4'>
         <DetailSection title='Overview'>
-          <DetailRow label='System role' value={role.isSystem ? <StatusChip value='system' color='secondary' /> : 'No'} />
+          <DetailRow
+            label='System role'
+            value={role.isSystem ? <StatusChip value='system' color='secondary' /> : 'No'}
+          />
           <DetailRow label='Description' value={role.description || '—'} stacked />
         </DetailSection>
 

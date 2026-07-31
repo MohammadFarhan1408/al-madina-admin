@@ -15,6 +15,7 @@ import SearchField from '@/components/shared/SearchField'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
+import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
@@ -58,7 +59,10 @@ const CategoriesView = () => {
         header: 'Category',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex cursor-pointer items-center gap-3' onClick={() => router.push(`/categories/${row.original.id}`)}>
+          <div
+            className='flex cursor-pointer items-center gap-3'
+            onClick={() => router.push(`/categories/${row.original.id}`)}
+          >
             {row.original.image ? (
               <img src={row.original.image} alt='' className='size-10 rounded-md object-cover' />
             ) : (
@@ -82,17 +86,20 @@ const CategoriesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <button
-              type='button'
+            <IconButton
+              size='sm'
               aria-label={`View ${row.original.name}`}
               onClick={() => router.push(`/categories/${row.original.id}`)}
-              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </button>
+            </IconButton>
             <RowActions
               options={[
-                { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/categories/${row.original.id}/edit`) },
+                {
+                  text: 'Edit',
+                  icon: 'tabler-edit',
+                  onClick: () => router.push(`/categories/${row.original.id}/edit`)
+                },
                 { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
               ]}
             />
@@ -127,11 +134,29 @@ const CategoriesView = () => {
         data={filtered}
         columns={columns}
         isLoading={isLoading}
-        emptyMessage={search ? 'No categories match your search' : 'No categories yet.'}
+        emptyIcon='tabler-category'
+        emptyMessage={search ? 'No categories match your search' : 'No categories yet'}
+        emptyDescription={
+          search
+            ? 'Try a shorter or differently spelled term.'
+            : 'Categories organise the catalogue into the sections customers browse.'
+        }
+        emptyAction={
+          !search && (
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/categories/new')}>
+              Add Category
+            </Button>
+          )
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-4 p-6'>
-            <SearchField value={search} onChange={setSearch} placeholder='Search categories' className='min-w-[220px]' />
-          </div>
+          <>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder='Search categories'
+              className='min-w-56 flex-1'
+            />
+          </>
         }
       />
 

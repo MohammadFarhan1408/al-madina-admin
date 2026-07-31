@@ -16,6 +16,7 @@ import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
+import IconButton from '@/components/ui/IconButton'
 import Select from '@/components/ui/Select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
@@ -33,6 +34,7 @@ const CustomersView = () => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [toDeactivate, setToDeactivate] = useState<Customer | null>(null)
   const debouncedSearch = useDebouncedValue(search)
+  const hasFilters = Boolean(search || tier)
   const resetOnChange = useFilterReset(setPagination)
 
   const deactivateMutation = useDeactivateCustomer()
@@ -65,7 +67,10 @@ const CustomersView = () => {
         header: 'Customer',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <div className='flex cursor-pointer items-center gap-3' onClick={() => router.push(`/customers/${row.original.id}`)}>
+          <div
+            className='flex cursor-pointer items-center gap-3'
+            onClick={() => router.push(`/customers/${row.original.id}`)}
+          >
             {row.original.avatar ? (
               <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
             ) : (
@@ -102,23 +107,22 @@ const CustomersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <button
-              type='button'
+            <IconButton
+              size='sm'
               aria-label={`View ${row.original.fullName}`}
               onClick={() => router.push(`/customers/${row.original.id}`)}
-              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </button>
-            <button
-              type='button'
+            </IconButton>
+            <IconButton
+              size='sm'
+              color='error'
               aria-label={`Deactivate ${row.original.fullName}`}
               disabled={!row.original.isActive}
               onClick={() => setToDeactivate(row.original)}
-              className='rounded-md p-1.5 text-error hover:bg-error/10 disabled:opacity-40'
             >
               <i className='tabler-user-off' />
-            </button>
+            </IconButton>
           </div>
         )
       }
@@ -147,23 +151,29 @@ const CustomersView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
-        emptyMessage='No customers found'
+        emptyIcon='tabler-users-group'
+        emptyMessage={hasFilters ? 'No customers match these filters' : 'No customers yet'}
+        emptyDescription={
+          hasFilters
+            ? 'Try a different name, email or loyalty tier.'
+            : 'Customers appear here once they register in the mobile app.'
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-4 p-6'>
+          <>
             <SearchField
               value={search}
               onChange={resetOnChange(setSearch)}
               placeholder='Search name or email'
-              className='min-w-[220px]'
+              className='min-w-56 flex-1'
             />
             <Select
               label='Tier'
               value={tier}
               onChange={e => resetOnChange(setTier)(e.target.value as UserTier | '')}
-              containerClassName='min-w-[200px]'
+              containerClassName='min-w-44'
               options={[{ label: 'All tiers', value: '' }, ...USER_TIERS.map(t => ({ label: t, value: t }))]}
             />
-          </div>
+          </>
         }
       />
 

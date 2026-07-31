@@ -14,7 +14,8 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
-import Input from '@/components/ui/Input'
+import IconButton from '@/components/ui/IconButton'
+import DateInput from '@/components/ui/DateInput'
 import Select from '@/components/ui/Select'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate, humanize } from '@/libs/format'
@@ -48,7 +49,7 @@ const OrdersView = () => {
         cell: ({ row }) => (
           <button
             type='button'
-            className='text-sm font-medium hover:text-primary'
+            className='rounded-xs text-sm font-medium text-textPrimary transition-colors hover:text-primaryInk hover:underline hover:underline-offset-2'
             onClick={() => router.push(`/orders/${row.original.id}`)}
           >
             {row.original.reference}
@@ -93,14 +94,13 @@ const OrdersView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex justify-end'>
-            <button
-              type='button'
+            <IconButton
+              size='sm'
               aria-label={`View order ${row.original.reference}`}
               onClick={() => router.push(`/orders/${row.original.id}`)}
-              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </button>
+            </IconButton>
           </div>
         )
       }
@@ -129,22 +129,42 @@ const OrdersView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
-        emptyMessage='No orders match your filters'
+        emptyIcon='tabler-shopping-cart-off'
+        emptyMessage={status || from || to ? 'No orders match these filters' : 'No orders yet'}
+        emptyDescription={
+          status || from || to
+            ? 'Try a wider date range, or clear the status filter.'
+            : 'Orders placed in the mobile app will appear here.'
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-4 p-6'>
+          <>
             <Select
               label='Status'
               value={status}
               onChange={e => resetOnChange(setStatus)(e.target.value as OrderStatus | '')}
-              containerClassName='min-w-[160px]'
+              containerClassName='min-w-40'
               options={[
                 { label: 'All statuses', value: '' },
                 ...ORDER_STATUSES.map(s => ({ label: humanize(s), value: s }))
               ]}
             />
-            <Input type='date' label='From' value={from} onChange={e => resetOnChange(setFrom)(e.target.value)} />
-            <Input type='date' label='To' value={to} onChange={e => resetOnChange(setTo)(e.target.value)} />
-          </div>
+            <DateInput
+              clearable
+              label='From'
+              value={from}
+              max={to || undefined}
+              onChange={e => resetOnChange(setFrom)(e.target.value)}
+              containerClassName='min-w-44'
+            />
+            <DateInput
+              clearable
+              label='To'
+              value={to}
+              min={from || undefined}
+              onChange={e => resetOnChange(setTo)(e.target.value)}
+              containerClassName='min-w-44'
+            />
+          </>
         }
       />
     </>

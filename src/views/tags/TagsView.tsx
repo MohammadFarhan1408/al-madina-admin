@@ -99,11 +99,24 @@ const TagsView = () => {
         data={filtered}
         columns={columns}
         isLoading={isLoading}
-        emptyMessage={search ? 'No tags match your search' : 'No tags yet.'}
+        emptyIcon='tabler-tag-off'
+        emptyMessage={search ? 'No tags match your search' : 'No tags yet'}
+        emptyDescription={
+          search
+            ? 'Try a shorter or differently spelled term.'
+            : 'Tags help customers filter the catalogue by note and mood.'
+        }
+        emptyAction={
+          !search && (
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
+              Add Tag
+            </Button>
+          )
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-4 p-6'>
-            <SearchField value={search} onChange={setSearch} placeholder='Search tags' className='min-w-[220px]' />
-          </div>
+          <>
+            <SearchField value={search} onChange={setSearch} placeholder='Search tags' className='min-w-56 flex-1' />
+          </>
         }
       />
 

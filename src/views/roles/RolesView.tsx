@@ -17,6 +17,7 @@ import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
+import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
@@ -49,7 +50,10 @@ const RolesView = () => {
         header: 'Role',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div className='flex cursor-pointer items-center gap-2' onClick={() => router.push(`/roles/${row.original.id}`)}>
+          <div
+            className='flex cursor-pointer items-center gap-2'
+            onClick={() => router.push(`/roles/${row.original.id}`)}
+          >
             <span className='text-sm font-medium'>{row.original.name}</span>
             {row.original.isSystem && <StatusChip value='system' color='secondary' />}
           </div>
@@ -73,14 +77,13 @@ const RolesView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex items-center justify-end'>
-            <button
-              type='button'
+            <IconButton
+              size='sm'
               aria-label={`View ${row.original.name}`}
               onClick={() => router.push(`/roles/${row.original.id}`)}
-              className='rounded-md p-1.5 text-textSecondary hover:bg-primary/10'
             >
               <i className='tabler-eye' />
-            </button>
+            </IconButton>
             <RowActions
               options={[
                 { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/roles/${row.original.id}/edit`) },
@@ -119,7 +122,14 @@ const RolesView = () => {
         </Alert>
       )}
 
-      <DataTable manualPagination={false} data={roles ?? []} columns={columns} isLoading={isLoading} emptyMessage='No roles yet.' />
+      <DataTable
+        manualPagination={false}
+        data={roles ?? []}
+        columns={columns}
+        isLoading={isLoading}
+        emptyIcon='tabler-shield-off'
+        emptyMessage='No roles yet'
+      />
 
       <ConfirmDialog
         open={!!toDelete}

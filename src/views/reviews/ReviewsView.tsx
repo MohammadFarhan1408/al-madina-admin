@@ -11,6 +11,7 @@ import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
+import IconButton from '@/components/ui/IconButton'
 import Rating from '@/components/ui/Rating'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
@@ -58,10 +59,14 @@ const ReviewsView = () => {
         cell: ({ row }) => (
           <div className='flex items-center gap-3'>
             {row.original.avatar ? (
-              <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
+              <img
+                src={row.original.avatar}
+                alt=''
+                className='size-10 shrink-0 rounded-full border border-border object-cover'
+              />
             ) : (
-              <span className='flex size-10 items-center justify-center rounded-full bg-secondary/15 text-sm font-medium'>
-                {row.original.author?.charAt(0)}
+              <span className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/16 text-sm font-semibold text-primaryInk'>
+                {row.original.author?.charAt(0)?.toUpperCase()}
               </span>
             )}
             <div className='flex items-center gap-2'>
@@ -81,9 +86,9 @@ const ReviewsView = () => {
         accessorKey: 'title',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className='flex max-w-[360px] flex-col'>
+          <div className='flex max-w-90 flex-col'>
             <span className='text-sm font-medium'>{row.original.title}</span>
-            <span className='truncate text-xs text-textSecondary'>{row.original.body}</span>
+            <span className='truncate text-xs text-textMuted'>{row.original.body}</span>
           </div>
         )
       },
@@ -98,14 +103,14 @@ const ReviewsView = () => {
         meta: { align: 'right' },
         cell: ({ row }) => (
           <div className='flex justify-end'>
-            <button
-              type='button'
+            <IconButton
+              size='sm'
+              color='error'
               aria-label={`Delete review by ${row.original.author}`}
               onClick={() => setToDelete(row.original)}
-              className='rounded-md p-1.5 text-error hover:bg-error/10'
             >
               <i className='tabler-trash' />
-            </button>
+            </IconButton>
           </div>
         )
       }
@@ -134,21 +139,24 @@ const ReviewsView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
-        emptyMessage='No reviews found'
+        emptyIcon='tabler-star-off'
+        emptyMessage={rating === '' ? 'No reviews yet' : `No ${rating}-star reviews`}
+        emptyDescription={
+          rating === ''
+            ? 'Customer reviews appear here once they start rating your fragrances.'
+            : 'Clear the rating filter to see all reviews.'
+        }
         toolbar={
-          <div className='flex flex-wrap items-center gap-3 p-6'>
-            <span className='text-sm text-textSecondary'>Filter by rating:</span>
-            <Rating value={rating || 0} onChange={value => resetOnChange(setRating)(value || '')} />
-            {rating !== '' && (
-              <button
-                type='button'
-                aria-label='Clear rating filter'
-                onClick={() => resetOnChange(setRating)('')}
-                className='rounded-md p-1 text-textSecondary hover:bg-primary/10'
-              >
-                <i className='tabler-x text-[16px]' />
-              </button>
-            )}
+          <div className='flex flex-col gap-1.5'>
+            <span className='text-sm font-medium leading-5 text-textPrimary'>Filter by rating</span>
+            <div className='flex h-10 items-center gap-1'>
+              <Rating value={rating || 0} onChange={value => resetOnChange(setRating)(value || '')} />
+              {rating !== '' && (
+                <IconButton size='sm' aria-label='Clear rating filter' onClick={() => resetOnChange(setRating)('')}>
+                  <i className='tabler-x' />
+                </IconButton>
+              )}
+            </div>
           </div>
         }
       />

@@ -21,7 +21,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDateTime, humanize } from '@/libs/format'
-import { useOrder, useOrderTransactions, useRefundPayment, useUpdateOrderStatus } from '@/features/orders/hooks/useOrders'
+import {
+  useOrder,
+  useOrderTransactions,
+  useRefundPayment,
+  useUpdateOrderStatus
+} from '@/features/orders/hooks/useOrders'
 import { ORDER_STATUSES, type OrderStatus } from '@/features/orders/types'
 
 type Props = { id: string }
@@ -143,7 +148,10 @@ const OrderDetailView = ({ id }: Props) => {
             {latestTransaction && (
               <>
                 <DetailRow label='Provider' value={humanize(latestTransaction.provider)} />
-                <DetailRow label='Amount' value={formatCurrency(latestTransaction.amount, latestTransaction.currency)} />
+                <DetailRow
+                  label='Amount'
+                  value={formatCurrency(latestTransaction.amount, latestTransaction.currency)}
+                />
                 {latestTransaction.providerReference && (
                   <DetailRow label='Transaction ref' value={latestTransaction.providerReference} />
                 )}

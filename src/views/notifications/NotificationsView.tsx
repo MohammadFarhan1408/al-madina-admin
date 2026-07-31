@@ -47,7 +47,11 @@ const NotificationsView = () => {
     defaultValues: defaultBroadcastValues
   })
 
-  const { data: history, isLoading: historyLoading, isFetching: historyFetching } = useNotificationHistory({
+  const {
+    data: history,
+    isLoading: historyLoading,
+    isFetching: historyFetching
+  } = useNotificationHistory({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize
   })
@@ -139,7 +143,9 @@ const NotificationsView = () => {
                   <Button type='submit' loading={broadcast.isPending}>
                     Send broadcast
                   </Button>
-                  <span className='text-xs text-textSecondary'>Delivery is queued and processed in the background.</span>
+                  <span className='text-xs text-textSecondary'>
+                    Delivery is queued and processed in the background.
+                  </span>
                 </div>
               </form>
             </CardBody>
@@ -148,12 +154,7 @@ const NotificationsView = () => {
 
         <div>
           <Card>
-            <CardHeader>
-              <div className='flex flex-col'>
-                <h2 className='text-base font-semibold text-textPrimary'>Broadcast history</h2>
-                <span className='text-sm text-textSecondary'>Past announcements sent from this panel</span>
-              </div>
-            </CardHeader>
+            <CardHeader title='Broadcast history' description='Past announcements sent from this panel' />
             <DataTable
               data={history?.items ?? []}
               columns={columns}
@@ -163,7 +164,9 @@ const NotificationsView = () => {
               isLoading={historyLoading}
               isRefetching={historyFetching && !historyLoading}
               pageSizeOptions={[10, 20, 50]}
-              emptyMessage='No broadcasts sent yet.'
+              emptyIcon='tabler-bell-off'
+              emptyMessage='No broadcasts sent yet'
+              emptyDescription='Announcements you send to customers will be listed here.'
             />
           </Card>
         </div>

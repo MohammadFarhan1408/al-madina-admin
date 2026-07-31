@@ -34,32 +34,46 @@ const ForgotPassword = () => {
 
   return (
     <AuthShell subtitle='Forgot Password' tagline='The Art of Arabian Perfumery'>
-      <div className='flex flex-col gap-1'>
-        <h1 className='text-xl font-semibold text-ivory'>Reset your password</h1>
+      <div className='flex flex-col gap-1.5'>
+        <h1 className='text-xl font-semibold tracking-[-0.01em] text-ivory'>Reset your password</h1>
         <p className='text-sm text-stone'>Enter your email and we&apos;ll send you instructions</p>
       </div>
 
       {sent ? (
-        <Alert severity='success'>
-          If an account exists for that email, a reset link has been sent. Please check your inbox.
+        <Alert severity='success' title='Check your inbox'>
+          If an account exists for that email, a reset link is on its way. The link expires in one hour.
         </Alert>
       ) : (
-        <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
           <Controller
             name='email'
             control={control}
             render={({ field }) => (
-              <Input {...field} autoFocus tone='dark' label='Email' placeholder='Enter your email' error={errors.email?.message} />
+              <Input
+                {...field}
+                autoFocus
+                required
+                tone='dark'
+                type='email'
+                label='Email'
+                placeholder='you@almadina.com'
+                autoComplete='email'
+                startAdornment={<i className='tabler-mail' />}
+                error={errors.email?.message}
+              />
             )}
           />
-          <Button fullWidth type='submit' loading={isSubmitting} className='shadow-primaryMd'>
+          <Button fullWidth size='lg' type='submit' loading={isSubmitting} className='mt-1'>
             Send reset link
           </Button>
         </form>
       )}
-      <Link href='/login' className='flex items-center justify-center gap-1.5 text-primary hover:text-primaryLight'>
-        <i className='tabler-chevron-left' />
-        <span>Back to login</span>
+      <Link
+        href='/login'
+        className='flex items-center justify-center gap-1 rounded-xs text-sm font-medium text-primaryLight transition-colors hover:text-primary'
+      >
+        <i aria-hidden className='tabler-chevron-left text-[16px]' />
+        Back to sign in
       </Link>
     </AuthShell>
   )
