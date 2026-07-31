@@ -50,20 +50,27 @@ const Alert = ({ severity = 'info', title, onClose, icon, action, className, chi
   <div
     role={severity === 'error' || severity === 'warning' ? 'alert' : 'status'}
     className={classnames(
-      'flex items-start gap-3 rounded-md border px-3.5 py-3 text-sm',
+      'flex items-center gap-3 rounded-md border px-3.5 py-3 text-sm',
       severityClasses[severity],
       className
     )}
     {...props}
   >
-    <span aria-hidden className={classnames('mt-px flex shrink-0 items-center', iconColorClasses[severity])}>
+    <span aria-hidden className={classnames('flex shrink-0 items-center', iconColorClasses[severity])}>
       {icon ?? <i className={classnames(severityIcon[severity], 'text-[18px]')} />}
     </span>
-    <div className='flex min-w-0 flex-1 flex-col gap-1'>
-      {title && <p className='font-semibold'>{title}</p>}
-      {children && <div className='min-w-0 [&_a]:underline [&_a]:underline-offset-2'>{children}</div>}
-      {action && <div className='mt-1 flex flex-wrap items-center gap-2'>{action}</div>}
-    </div>
+    {title ? (
+      <div className='flex min-w-0 flex-1 flex-col gap-1'>
+        <p className='font-semibold'>{title}</p>
+        {children && <div className='min-w-0 [&_a]:underline [&_a]:underline-offset-2'>{children}</div>}
+        {action && <div className='mt-1 flex flex-wrap items-center gap-2'>{action}</div>}
+      </div>
+    ) : (
+      <div className='flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3'>
+        {children && <div className='min-w-0 [&_a]:underline [&_a]:underline-offset-2'>{children}</div>}
+        {action && <div className='flex shrink-0 flex-wrap items-center gap-2'>{action}</div>}
+      </div>
+    )}
     {onClose && (
       <IconButton
         size='sm'
