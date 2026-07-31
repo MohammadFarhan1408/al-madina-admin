@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import Card, { CardBody } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import Input from '@/components/ui/form/Input'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
 import { useToast } from '@/contexts/ToastContext'
