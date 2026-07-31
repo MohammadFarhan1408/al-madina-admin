@@ -24,7 +24,7 @@ import {
 import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
-import Select from '@/components/ui/Select'
+import Select from '@/components/ui/form/Select'
 import Skeleton from '@/components/ui/Skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 

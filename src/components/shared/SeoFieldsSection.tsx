@@ -6,9 +6,9 @@
 // different value shapes that all happen to share these four field names.
 import { Controller } from 'react-hook-form'
 
-import Input from '@/components/ui/Input'
-import Textarea from '@/components/ui/Textarea'
-import Combobox from '@/components/ui/Combobox'
+import Input from '@/components/ui/form/Input'
+import Textarea from '@/components/ui/form/Textarea'
+import Combobox from '@/components/ui/form/Combobox'
 
 type SeoFieldsSectionProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

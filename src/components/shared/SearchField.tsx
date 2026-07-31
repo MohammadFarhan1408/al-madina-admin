@@ -9,7 +9,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 
 import IconButton from '@/components/ui/IconButton'
-import Input, { type InputSize, type InputTone } from '@/components/ui/Input'
+import Input, { type InputSize, type InputTone } from '@/components/ui/form/Input'
 import Spinner from '@/components/ui/Spinner'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 

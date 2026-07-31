@@ -10,8 +10,8 @@ import { autoUpdate, flip, offset, shift, useDismiss, useFloating, useInteractio
 import classnames from 'classnames'
 
 import Button from '@/components/ui/Button'
-import { controlBase, controlState, controlTone } from '@/components/ui/Field'
-import Input from '@/components/ui/Input'
+import { controlBase, controlState, controlTone } from '@/components/ui/form/Field'
+import Input from '@/components/ui/form/Input'
 import { popoverSurface } from '@/components/ui/Popover'
 
 export type PriceRange = { min?: number; max?: number }
