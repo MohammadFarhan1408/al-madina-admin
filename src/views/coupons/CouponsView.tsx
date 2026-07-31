@@ -17,20 +17,26 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
-import Select from '@/components/ui/form/Select'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
+import CouponsFilterBar, { type CouponsStatusFilter } from '@/features/coupons/components/CouponsFilterBar'
 import { useCoupons, useDeleteCoupon } from '@/features/coupons/hooks/useCoupons'
 import type { Coupon } from '@/features/coupons/types'
 
 const CouponsView = () => {
   const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [isActive, setIsActive] = useState<'' | 'true' | 'false'>('')
+  const [isActive, setIsActive] = useState<CouponsStatusFilter>('')
   const [toDelete, setToDelete] = useState<Coupon | null>(null)
+  const hasFilters = isActive !== ''
   const resetOnChange = useFilterReset(setPagination)
+
+  const clearFilters = () => {
+    setIsActive('')
+    setPagination(p => ({ ...p, pageIndex: 0 }))
+  }
 
   const deleteMutation = useDeleteCoupon()
   const { success, error: toastError } = useToast()
@@ -133,33 +139,26 @@ const CouponsView = () => {
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
         emptyIcon='tabler-discount-off'
-        emptyMessage={isActive === '' ? 'No coupons yet' : 'No coupons with this status'}
+        emptyMessage={hasFilters ? 'No coupons with this status' : 'No coupons yet'}
         emptyDescription={
-          isActive === ''
-            ? 'Create a discount code to run a promotion.'
-            : 'Switch the status filter to see the rest of your coupons.'
+          hasFilters
+            ? 'Switch the status filter to see the rest of your coupons.'
+            : 'Create a discount code to run a promotion.'
         }
         emptyAction={
-          isActive === '' && (
+          !hasFilters && (
             <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>
               Add Coupon
             </Button>
           )
         }
         toolbar={
-          <>
-            <Select
-              label='Status'
-              value={isActive}
-              onChange={e => resetOnChange(setIsActive)(e.target.value as '' | 'true' | 'false')}
-              containerClassName='min-w-40'
-              options={[
-                { label: 'All', value: '' },
-                { label: 'Active', value: 'true' },
-                { label: 'Inactive', value: 'false' }
-              ]}
-            />
-          </>
+          <CouponsFilterBar
+            isActive={isActive}
+            onIsActiveChange={resetOnChange(setIsActive)}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+          />
         }
       />
 
