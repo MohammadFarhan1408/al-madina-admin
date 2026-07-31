@@ -28,18 +28,28 @@ none of it exists; the equivalents below replaced it.
 
 ## UI layer: `components/ui/` (primitives) + `components/shared/` (composed)
 
-`src/components/ui/` holds style-agnostic, `forwardRef` primitives (Button,
-Input, Select, Card, Modal, Dropdown, Table, Field, IconButton, DateInput,
-Popover, Radio, Skeleton, EmptyState, etc.). House style for these:
+`src/components/ui/` holds style-agnostic, `forwardRef` primitives, split
+into two groups:
+
+- `components/ui/form/` — anything that's a form control: `Field` (the
+  shared label/control/error wrapper), `Input`, `Textarea`, `Select`,
+  `Checkbox`, `Radio`, `Switch`, `DateInput`, `PasswordInput`, `Combobox`,
+  `SearchSelect`. If you're adding a new field type, it goes here.
+- `components/ui/` (root) — everything else: `Button`, `Card`, `Modal`,
+  `Dropdown`, `Table`, `IconButton`, `Popover`, `Skeleton`, `EmptyState`,
+  `Badge`, `Alert`, `Tabs`, `Pagination`, `Rating`, `Spinner`, `Sidebar`,
+  `Navbar`.
+
+House style for both groups:
 
 - Variant/size/tone lookup tables are named `const`s at module scope
   (`sizeClasses`, `colorClasses`, …) above the component — never an inline
   ternary chain buried in JSX.
-- `Field.tsx` exports the shared control surface (`controlBase`,
-  `controlHeight`, `controlTone`, `controlState`) that `Input`, `Select`,
-  `Combobox`, `SearchSelect` all build on, so every form control has an
-  identical height, border, focus ring and error state. Reuse these before
-  writing new control-surface classes.
+- `components/ui/form/Field.tsx` exports the shared control surface
+  (`controlBase`, `controlHeight`, `controlTone`, `controlState`) that
+  `Input`, `Select`, `Combobox`, `SearchSelect` all build on, so every form
+  control has an identical height, border, focus ring and error state.
+  Reuse these before writing new control-surface classes.
 - Types stay colocated in the component file (matches `Button.tsx`/
   `Card.tsx`/`Field.tsx`) — only split out a `*.types.ts` if a type needs to
   be imported by 3+ files outside the component itself.
