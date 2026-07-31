@@ -18,8 +18,8 @@ import {
 import classnames from 'classnames'
 
 import Field, { controlBase, controlState, controlTone } from './Field'
-import IconButton from './IconButton'
-import { PopoverMessage, PopoverOption, popoverSurface } from './Popover'
+import IconButton from '../IconButton'
+import { PopoverMessage, PopoverOption, popoverSurface } from '../Popover'
 
 export type ComboboxProps<T> = {
   label?: ReactNode

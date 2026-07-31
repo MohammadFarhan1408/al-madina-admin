@@ -2,7 +2,7 @@
 
 import { forwardRef, useState } from 'react'
 
-import IconButton from './IconButton'
+import IconButton from '../IconButton'
 import Input, { type InputProps } from './Input'
 
 export type PasswordInputProps = Omit<InputProps, 'type' | 'endAdornment'>

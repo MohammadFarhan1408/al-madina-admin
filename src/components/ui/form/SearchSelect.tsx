@@ -18,9 +18,9 @@ import {
 import classnames from 'classnames'
 
 import Field, { controlBase, controlHeight, controlState, controlTone } from './Field'
-import IconButton from './IconButton'
-import { PopoverMessage, PopoverOption, popoverSurface } from './Popover'
-import Spinner from './Spinner'
+import IconButton from '../IconButton'
+import { PopoverMessage, PopoverOption, popoverSurface } from '../Popover'
+import Spinner from '../Spinner'
 
 export type SearchSelectProps<T> = {
   label?: ReactNode
