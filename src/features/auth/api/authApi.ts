@@ -12,8 +12,7 @@ export const authApi = {
 
   signOut: (refreshToken: string) => apiPost<{ success: boolean }>(endpoints.auth.signOut, { refreshToken }),
 
-  forgotPassword: (body: ForgotPasswordValues) =>
-    apiPost<{ message?: string }>(endpoints.auth.forgotPassword, body),
+  forgotPassword: (body: ForgotPasswordValues) => apiPost<{ message?: string }>(endpoints.auth.forgotPassword, body),
 
   resetPassword: (body: Omit<ResetPasswordValues, 'confirmPassword'>) =>
     apiPost<{ message?: string }>(endpoints.auth.resetPassword, body)

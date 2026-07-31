@@ -10,8 +10,7 @@ export const ordersApi = {
 
   detail: (id: string) => apiGet<Order>(endpoints.orders.detail(id)),
 
-  updateStatus: (id: string, status: OrderStatus) =>
-    apiPatch<Order>(endpoints.admin.orderStatus(id), { status }),
+  updateStatus: (id: string, status: OrderStatus) => apiPatch<Order>(endpoints.admin.orderStatus(id), { status }),
 
   transactions: (id: string) => apiGet<Transaction[]>(endpoints.admin.orderTransactions(id)),
 

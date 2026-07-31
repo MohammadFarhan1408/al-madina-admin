@@ -127,7 +127,7 @@ const RoleForm = ({ role, onSuccess, onCancel }: Props) => {
             render={({ field }) => <Textarea {...field} rows={2} label='Description' />}
           />
 
-          <hr className='border-secondary/20' />
+          <hr className='border-border' />
           <span className='text-xs font-semibold uppercase tracking-widest text-textSecondary'>Permissions</span>
           <div className='flex flex-col gap-4'>
             {Array.from(grouped.entries()).map(([module, perms]) => {
@@ -161,7 +161,7 @@ const RoleForm = ({ role, onSuccess, onCancel }: Props) => {
             })}
           </div>
 
-          <hr className='border-secondary/20' />
+          <hr className='border-border' />
           <div className='flex items-center justify-end gap-4'>
             <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel

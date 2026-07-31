@@ -9,7 +9,7 @@ import type { PaginationState } from '@tanstack/react-table'
  */
 export function useFilterReset(setPagination: Dispatch<SetStateAction<PaginationState>>) {
   return useCallback(
-    <T,>(setter: (value: T) => void) =>
+    <T>(setter: (value: T) => void) =>
       (value: T) => {
         setter(value)
         setPagination(p => ({ ...p, pageIndex: 0 }))

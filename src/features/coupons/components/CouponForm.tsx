@@ -8,8 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import Card, { CardBody } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import DateInput from '@/components/ui/DateInput'
 import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
+import { RadioGroup } from '@/components/ui/Radio'
 import Switch from '@/components/ui/Switch'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
@@ -92,16 +93,21 @@ const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
           <Controller
             name='description'
             control={control}
-            render={({ field }) => <Input {...field} required label='Description' error={errors.description?.message} />}
+            render={({ field }) => (
+              <Input {...field} required label='Description' error={errors.description?.message} />
+            )}
           />
           <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
             <Controller
               name='discountType'
               control={control}
               render={({ field }) => (
-                <Select
-                  {...field}
+                <RadioGroup
+                  inline
+                  name='discountType'
                   label='Discount type'
+                  value={field.value}
+                  onChange={field.onChange}
                   options={DISCOUNT_TYPES.map(type => ({
                     label: type === 'percentage' ? 'Percentage' : 'Fixed amount',
                     value: type
@@ -166,7 +172,7 @@ const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
               name='expiresAt'
               control={control}
               render={({ field }) => (
-                <Input {...field} type='date' required label='Expires on' error={errors.expiresAt?.message} />
+                <DateInput {...field} required label='Expires on' error={errors.expiresAt?.message} />
               )}
             />
           </div>

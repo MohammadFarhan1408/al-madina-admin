@@ -140,10 +140,10 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
             error={errors.image?.message}
           />
 
-          <hr className='border-secondary/20' />
+          <hr className='border-border' />
           <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' />
 
-          <hr className='border-secondary/20' />
+          <hr className='border-border' />
           <div className='flex items-center justify-end gap-4'>
             <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
               Cancel

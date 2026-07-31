@@ -46,8 +46,7 @@ export const useUpdateCollection = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<CollectionFormValues> }) =>
-      collectionsApi.update(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Partial<CollectionFormValues> }) => collectionsApi.update(id, body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: collectionKeys.all })
   })
 }

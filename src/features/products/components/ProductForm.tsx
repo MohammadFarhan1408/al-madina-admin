@@ -12,6 +12,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import Combobox from '@/components/ui/Combobox'
 import Input from '@/components/ui/Input'
@@ -151,9 +152,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
       <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
         <div className='flex flex-col gap-6 md:col-span-2'>
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>Product information</h2>
-            </CardHeader>
+            <CardHeader title='Product information' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='name'
@@ -195,9 +194,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>Gallery</h2>
-            </CardHeader>
+            <CardHeader title='Gallery' />
             <CardBody>
               <ImageUpload
                 type='product'
@@ -211,18 +208,23 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>Variants</h2>
-              <Button
-                type='button'
-                size='sm'
-                variant='text'
-                startIcon={<i className='tabler-plus' />}
-                onClick={() => appendVariant({ volumeMl: 50, price: 0, sku: '', barcode: '', stock: 0, inStock: true })}
-              >
-                Add size
-              </Button>
-            </CardHeader>
+            <CardHeader
+              title='Variants'
+              description='Sizes this fragrance is sold in'
+              action={
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='soft'
+                  startIcon={<i className='tabler-plus' />}
+                  onClick={() =>
+                    appendVariant({ volumeMl: 50, price: 0, sku: '', barcode: '', stock: 0, inStock: true })
+                  }
+                >
+                  Add size
+                </Button>
+              }
+            />
             <CardBody className='flex flex-col gap-3'>
               {variantFields.length === 0 && (
                 <p className='text-xs text-textSecondary'>
@@ -283,14 +285,15 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                       />
                     )}
                   />
-                  <button
-                    type='button'
+                  <IconButton
+                    size='sm'
+                    color='error'
                     aria-label='Remove size'
                     onClick={() => removeVariant(index)}
-                    className='mb-1 rounded-md p-1.5 text-error hover:bg-error/10'
+                    className='mb-1'
                   >
                     <i className='tabler-trash' />
-                  </button>
+                  </IconButton>
                 </div>
               ))}
             </CardBody>
@@ -299,9 +302,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
 
         <div className='flex flex-col gap-6'>
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>Pricing</h2>
-            </CardHeader>
+            <CardHeader title='Pricing' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='volumeMl'
@@ -353,9 +354,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>Organize</h2>
-            </CardHeader>
+            <CardHeader title='Organize' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='categoryId'
@@ -412,7 +411,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                 }
               />
 
-              <hr className='border-secondary/20' />
+              <hr className='border-border' />
               <span className='text-xs font-semibold uppercase tracking-widest text-textSecondary'>Availability</span>
               <div className='flex flex-wrap gap-x-6 gap-y-2'>
                 {AVAILABILITY_FLAGS.map(flag => (
@@ -453,9 +452,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <h2 className='text-base font-semibold text-textPrimary'>SEO</h2>
-            </CardHeader>
+            <CardHeader title='SEO' />
             <CardBody>
               <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} bare />
             </CardBody>

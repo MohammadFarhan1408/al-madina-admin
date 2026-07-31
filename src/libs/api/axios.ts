@@ -73,7 +73,19 @@ api.interceptors.response.use(
       }
 
       // Refresh failed — force re-login on the client.
-      if (typeof window !== 'undefined') window.location.href = '/login'
+      //
+      // Clear the tokens *here* rather than trusting the refresh path to have
+      // done it: `refreshAccessToken` returns null without clearing anything
+      // when there's no refresh token at all. The middleware counts a stale
+      // access cookie as a live session, so redirecting while one is still set
+      // bounces /login straight back to /dashboard, which re-fires this same
+      // 401 — a full-page reload loop that reads like the app is hammering the
+      // server. Also don't re-navigate if we're already on /login.
+      if (typeof window !== 'undefined') {
+        clearTokens()
+
+        if (!window.location.pathname.startsWith('/login')) window.location.href = '/login'
+      }
     }
 
     const body: ApiErrorBody = error.response?.data ?? {
