@@ -31,17 +31,17 @@ const ZoomableImage = ({ src, alt = '', children }: ZoomableImageProps) => {
       >
         {children}
       </div>
-      <Modal open={open} onClose={() => setOpen(false)} size='xl' className='w-auto max-w-none bg-transparent'>
-        <div className='relative'>
+      <Modal open={open} onClose={() => setOpen(false)} size='xl' className='w-auto bg-transparent'>
+        <div className='relative max-h-[85vh] max-w-[90vw]'>
           <button
             type='button'
             aria-label='Close preview'
             onClick={() => setOpen(false)}
-            className='absolute right-2 top-2 rounded-full bg-backgroundPaper p-1.5 shadow hover:bg-primary/10'
+            className='absolute right-2 top-2 size-10 flex items-center justify-center rounded-full bg-backgroundPaper p-2 shadow hover:bg-primary/50'
           >
             <i className='tabler-x' />
           </button>
-          <img src={src} alt={alt} className='block max-h-[85vh] max-w-[90vw] object-contain' />
+          <img src={src} alt={alt} className='block w-full h-full object-contain' />
         </div>
       </Modal>
     </>

@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from 'react'
 
 import classnames from 'classnames'
 
-import IconButton from '@/components/ui/IconButton'
 import Spinner from '@/components/ui/Spinner'
 import { uploadImage, type UploadType } from '@/libs/api/upload'
 import { ApiError } from '@/libs/api/types'
@@ -196,19 +195,20 @@ const ImageUpload = ({
           {value.map((url, index) => (
             <li key={url + index} className='group relative'>
               <ZoomableImage src={url} alt={`Image ${index + 1}`}>
-                <img src={url} alt='' className='size-18 rounded-md border border-border object-cover' />
+                <div className='relative size-24 '>
+                  <img src={url} alt='' className='rounded-md border border-border object-cover' />
+                  <button
+                    color='error'
+                    aria-label={`Remove image ${index + 1}`}
+                    onClick={() => removeAt(index)}
+                    className='absolute -right-1 -top-1 size-5 text-xs shadow-sm text-white
+                    flex items-center justify-center rounded-full bg-error p-3 hover:bg-errorDark
+                    '
+                  >
+                    <i className='tabler-x' />
+                  </button>
+                </div>
               </ZoomableImage>
-              <IconButton
-                size='sm'
-                variant='filled'
-                color='error'
-                rounded
-                aria-label={`Remove image ${index + 1}`}
-                onClick={() => removeAt(index)}
-                className='absolute -right-2 -top-2 size-6 text-[13px] shadow-sm'
-              >
-                <i className='tabler-x' />
-              </IconButton>
             </li>
           ))}
           {pending.map((p, index) => (
