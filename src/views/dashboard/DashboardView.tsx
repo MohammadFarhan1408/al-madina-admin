@@ -1,22 +1,25 @@
 'use client'
 
-// Admin dashboard — KPI cards + recent orders + top products, all from
-// GET /admin/dashboard (doc §7.12). Reuses shared StatCard / StatusChip.
+// Admin dashboard — KPI cards + charts + tables, all from GET /admin/dashboard
+// (doc §7.12). Every widget is backed by a real field on DashboardData; there
+// is no historical time-series or trend-% data in the backend response, so
+// there are no sparklines/trend arrows here — see AGENTS.md dashboard notes.
 
 import Link from 'next/link'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import StatCard, { StatCardSkeleton } from '@/components/shared/StatCard'
-import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
-import EmptyState from '@/components/ui/EmptyState'
-import Skeleton from '@/components/ui/Skeleton'
+import InventoryAlertCard from '@/features/dashboard/components/InventoryAlertCard'
+import OrdersStatusChart from '@/features/dashboard/components/OrdersStatusChart'
+import RecentOrdersTable from '@/features/dashboard/components/RecentOrdersTable'
+import RevenueChart from '@/features/dashboard/components/RevenueChart'
+import TopProductsList from '@/features/dashboard/components/TopProductsList'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
-import { ORDER_STATUSES } from '@/features/orders/types'
-import { formatCurrency, formatDate } from '@/libs/format'
+import { formatCurrency } from '@/libs/format'
 
 const DashboardView = () => {
   const { data, isLoading, isError, error, refetch } = useDashboard()
@@ -48,8 +51,8 @@ const DashboardView = () => {
   }
 
   const pending = isLoading || !data
-  const revenue = data?.revenue
-  const ordersByStatus = data?.orders?.byStatus
+  const outOfStock = data?.products.outOfStock ?? 0
+  const showInventoryAlert = pending || outOfStock > 0
 
   return (
     <>
@@ -65,59 +68,59 @@ const DashboardView = () => {
           ) : (
             <>
               <StatCard
-                title="Today's revenue"
-                value={formatCurrency(revenue?.today)}
+                title='Total revenue'
+                value={formatCurrency(data.revenue.month)}
+                subtitle='This month'
                 icon='tabler-currency-dirham'
                 color='primary'
               />
               <StatCard
-                title='This week'
-                value={formatCurrency(revenue?.week)}
-                icon='tabler-calendar-week'
+                title='Orders'
+                value={data.orders.month}
+                subtitle='This month'
+                icon='tabler-shopping-cart'
                 color='info'
               />
+              <StatCard title='Customers' value={data.customers} icon='tabler-users' color='success' />
               <StatCard
-                title='This month'
-                value={formatCurrency(revenue?.month)}
-                icon='tabler-chart-line'
-                color='success'
+                title='Products'
+                value={data.products.total}
+                subtitle={outOfStock > 0 ? `${outOfStock} out of stock` : undefined}
+                icon='tabler-package'
+                color='warning'
               />
-              <StatCard title='Customers' value={data.customers ?? 0} icon='tabler-users' color='warning' />
             </>
           )}
         </div>
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-5'>
-          {/* Orders by status */}
-          <Card className='md:col-span-5'>
-            <CardHeader title='Orders by status' />
-            <CardBody className='flex flex-col gap-3'>
-              {ORDER_STATUSES.map(status => (
-                <div key={status} className='flex items-center justify-between gap-3'>
-                  {pending ? (
-                    <>
-                      <Skeleton className='h-6 w-24 rounded-md' />
-                      <Skeleton className='h-4 w-8' />
-                    </>
-                  ) : (
-                    <>
-                      <StatusChip value={status} />
-                      <span className='text-sm font-semibold tabular-nums text-textPrimary'>
-                        {ordersByStatus?.[status] ?? 0}
-                      </span>
-                    </>
-                  )}
-                </div>
-              ))}
+          <Card className={showInventoryAlert ? 'md:col-span-7' : 'md:col-span-12'}>
+            <CardHeader title='Revenue overview' description='Today, this week and this month' />
+            <CardBody>
+              <RevenueChart revenue={data?.revenue} isLoading={pending} />
             </CardBody>
           </Card>
 
-          {/* Top products */}
+          {showInventoryAlert && (
+            <div className='md:col-span-5'>
+              <InventoryAlertCard outOfStock={outOfStock} isLoading={pending} />
+            </div>
+          )}
+        </div>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-5'>
+          <Card className='md:col-span-5'>
+            <CardHeader title='Orders by status' />
+            <CardBody>
+              <OrdersStatusChart byStatus={data?.orders.byStatus} isLoading={pending} />
+            </CardBody>
+          </Card>
+
           <Card className='md:col-span-7'>
             <CardHeader
-              title='Top products'
+              title='Top selling products'
               action={
-                !pending && data.topProducts?.length ? (
+                !pending && data.topProducts.length ? (
                   <Link href='/products'>
                     <Button size='sm' variant='text' endIcon={<i className='tabler-arrow-right' />}>
                       All products
@@ -126,56 +129,17 @@ const DashboardView = () => {
                 ) : undefined
               }
             />
-            <CardBody padding={pending || data.topProducts?.length ? 'md' : 'none'}>
-              {pending ? (
-                <ul className='flex flex-col gap-3'>
-                  {[...Array(3)].map((_, i) => (
-                    <li key={i} className='flex items-center gap-3'>
-                      <Skeleton variant='block' className='size-10' />
-                      <div className='flex flex-1 flex-col gap-1.5'>
-                        <Skeleton className='w-3/5' />
-                        <Skeleton className='h-3 w-1/3' />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : data.topProducts?.length ? (
-                <ul className='flex flex-col gap-3'>
-                  {data.topProducts.map((product, index) => (
-                    <li key={index} className='flex items-center gap-3'>
-                      <img
-                        src={product.image}
-                        alt=''
-                        className='size-10 shrink-0 rounded-md border border-border object-cover'
-                      />
-                      <div className='flex min-w-0 flex-1 flex-col'>
-                        <span className='truncate text-sm text-textPrimary'>{product.name}</span>
-                        <span className='text-xs text-textMuted'>{product.unitsSold} sold</span>
-                      </div>
-                      <span className='shrink-0 text-sm font-medium tabular-nums text-textPrimary'>
-                        {formatCurrency(product.revenue)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <EmptyState
-                  size='sm'
-                  icon='tabler-chart-bar-off'
-                  title='No sales yet'
-                  description='Your best sellers will appear here once orders start coming in.'
-                />
-              )}
+            <CardBody>
+              <TopProductsList products={data?.topProducts} isLoading={pending} />
             </CardBody>
           </Card>
         </div>
 
-        {/* Recent orders */}
         <Card>
           <CardHeader
             title='Recent orders'
             action={
-              !pending && data.recentOrders?.length ? (
+              !pending && data.recentOrders.length ? (
                 <Link href='/orders'>
                   <Button size='sm' variant='text' endIcon={<i className='tabler-arrow-right' />}>
                     All orders
@@ -184,52 +148,8 @@ const DashboardView = () => {
               ) : undefined
             }
           />
-          {/* Rows carry their own gutters so each is a full-width hit target. */}
           <CardBody padding='none'>
-            {pending ? (
-              <ul className='divide-y divide-border'>
-                {[...Array(3)].map((_, i) => (
-                  <li key={i} className='flex flex-wrap items-center justify-between gap-2 px-5 py-3'>
-                    <div className='flex flex-col gap-1.5'>
-                      <Skeleton className='w-32' />
-                      <Skeleton className='h-3 w-40' />
-                    </div>
-                    <Skeleton className='w-20' />
-                  </li>
-                ))}
-              </ul>
-            ) : data.recentOrders?.length ? (
-              <ul className='divide-y divide-border'>
-                {data.recentOrders.map(order => (
-                  <li key={order.id}>
-                    <Link
-                      href={`/orders/${order.id}`}
-                      className='flex flex-wrap items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-primary/6'
-                    >
-                      <div className='flex min-w-0 flex-col'>
-                        <span className='truncate text-sm font-medium text-textPrimary'>{order.reference}</span>
-                        <span className='truncate text-xs text-textMuted'>
-                          {[order.shippingAddress?.fullName, formatDate(order.placedAt)].filter(Boolean).join(' · ')}
-                        </span>
-                      </div>
-                      <div className='flex shrink-0 items-center gap-3'>
-                        <StatusChip value={order.status} />
-                        <span className='text-sm font-medium tabular-nums text-textPrimary'>
-                          {formatCurrency(order.total, order.currency)}
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyState
-                size='sm'
-                icon='tabler-shopping-cart-off'
-                title='No orders yet'
-                description='New customer orders will show up here as they arrive.'
-              />
-            )}
+            <RecentOrdersTable orders={data?.recentOrders} isLoading={pending} />
           </CardBody>
         </Card>
       </div>
