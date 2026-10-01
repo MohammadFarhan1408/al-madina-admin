@@ -61,9 +61,6 @@ export const endpoints = {
     upload: '/admin/upload',
     coupons: '/admin/coupons',
     coupon: (id: string) => `/admin/coupons/${id}`,
-    roles: '/admin/roles',
-    role: (id: string) => `/admin/roles/${id}`,
-    permissions: '/admin/permissions',
     tags: '/admin/tags',
     tag: (id: string) => `/admin/tags/${id}`
   }
