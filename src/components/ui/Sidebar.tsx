@@ -37,14 +37,14 @@ export type SidebarProps = {
  *  the same x. */
 /** Square control in the rail header — collapse toggle, mobile close. */
 const headerButton = classnames(
-  'flex size-8 shrink-0 items-center justify-center rounded-lg text-ivoryDim/70',
+  'flex size-8 pointer-coarse:size-11 shrink-0 items-center justify-center rounded-lg text-ivoryDim/70',
   'transition-colors duration-150 hover:bg-white/8 hover:text-ivory',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-inset'
 )
 
 const row = (collapsed: boolean) =>
   classnames(
-    'group relative flex h-9 w-full items-center rounded text-sm transition-[color,background-color] duration-150 ease-out-quart',
+    'group relative flex h-9 pointer-coarse:h-11 w-full items-center rounded text-sm transition-[color,background-color] duration-150 ease-out-quart',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-inset',
     collapsed ? 'justify-center px-0' : 'gap-2.5 px-2'
   )

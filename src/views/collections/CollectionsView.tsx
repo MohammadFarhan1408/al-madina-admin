@@ -10,7 +10,6 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import CornerFrame from '@/components/shared/CornerFrame'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import Card, { CardBody } from '@/components/ui/Card'
@@ -72,12 +71,10 @@ const CollectionsView = () => {
         ) : collections?.length ? (
           collections.map(collection => (
             <Card key={collection.id} className='flex h-full flex-col'>
-              <CornerFrame>
-                <div
-                  className='h-60 rounded-t-lg bg-cover bg-center'
-                  style={{ backgroundImage: `url(${collection.image})` }}
-                />
-              </CornerFrame>
+              <div
+                className='h-60 rounded-t-lg bg-cover bg-center'
+                style={{ backgroundImage: `url(${collection.image})` }}
+              />
               <CardBody className='flex flex-1 flex-col gap-2'>
                 <div className='flex items-center justify-between gap-2'>
                   <h2 className='text-base font-semibold'>{collection.title}</h2>

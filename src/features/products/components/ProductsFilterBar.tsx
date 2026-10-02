@@ -101,7 +101,7 @@ const ProductsFilterBar = ({
         options={STOCK_OPTIONS}
       />
       <PriceRangeFilter value={priceRange} onChange={onPriceRangeChange} className={filterSelectClassName} />
-      <div className='flex shrink-0 items-center gap-1 rounded-md border border-border bg-backgroundChat/40 p-0.5'>
+      <div className='flex shrink-0 items-center gap-1 rounded-md border border-border bg-surfaceSunken/40 p-0.5'>
         <IconButton
           size='sm'
           aria-label='Grid view'

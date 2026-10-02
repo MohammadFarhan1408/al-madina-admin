@@ -35,7 +35,7 @@ const EmptyState = ({ icon = 'tabler-inbox', title, description, action, size = 
     <span
       aria-hidden
       className={classnames(
-        'flex items-center justify-center rounded-full border border-border bg-backgroundChat/50 text-primaryInk',
+        'flex items-center justify-center rounded-full border border-border bg-surfaceSunken/50 text-primaryInk',
         size === 'md' ? 'size-14' : 'size-11'
       )}
     >
