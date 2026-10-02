@@ -25,10 +25,6 @@ const sidebarNavData: SidebarSection[] = [
   {
     title: 'Engagement',
     items: [{ label: 'Notifications', href: '/notifications', icon: 'tabler-bell' }]
-  },
-  {
-    title: 'Administration',
-    items: [{ label: 'Roles & Permissions', href: '/roles', icon: 'tabler-shield-lock' }]
   }
 ]
 
