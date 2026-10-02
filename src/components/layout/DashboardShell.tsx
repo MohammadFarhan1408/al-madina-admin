@@ -80,6 +80,25 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
     setDrawerOpen(false)
   }, [pathname])
 
+  // Modal behaviour for the mobile drawer: focus moves in, returns to the
+  // opener on close, and the page behind is `inert` (below). Crossing into the
+  // desktop layout closes it so a resize can't leave the page inert.
+  useEffect(() => {
+    if (!drawerOpen) return
+
+    const opener = document.activeElement as HTMLElement | null
+    const mq = window.matchMedia('(min-width: 1200px)')
+    const onChange = () => mq.matches && setDrawerOpen(false)
+
+    document.querySelector<HTMLElement>('aside button[aria-label="Close navigation"]')?.focus()
+    mq.addEventListener('change', onChange)
+
+    return () => {
+      mq.removeEventListener('change', onChange)
+      opener?.focus()
+    }
+  }, [drawerOpen])
+
   // Esc closes the drawer, matching the dismiss behaviour of every other
   // overlay in the admin.
   useEffect(() => {
@@ -123,6 +142,7 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
       />
 
       <div
+        inert={drawerOpen}
         className={classnames(
           'flex min-h-dvh flex-col transition-[padding] duration-200 ease-out-quart',
           collapsed ? 'lg:pl-(--sidebar-width-collapsed)' : 'lg:pl-(--sidebar-width)'
@@ -137,17 +157,6 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
         <main className='flex-1 px-4 py-5 md:px-6 md:py-6 xl:px-8'>
           <div className='mx-auto w-full max-w-[1600px]'>{children}</div>
         </main>
-
-        <footer className='mt-auto border-t border-border px-4 py-4 md:px-6 xl:px-8'>
-          <div className='mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-2 text-xs'>
-            <p className='text-textMuted'>
-              {`© ${new Date().getFullYear()} `}
-              <span className='font-medium text-primaryInk'>Al Madina Ittar</span>
-              {' · Admin Panel'}
-            </p>
-            <p className='text-textMuted max-sm:hidden'>Luxury Arabian Perfumery</p>
-          </div>
-        </footer>
       </div>
 
       <ScrollToTopButton />
