@@ -69,7 +69,7 @@
      `textDisabled` is reserved for genuinely inert controls, which WCAG
      exempts; never use it for live content. */
   --color-textPrimary: rgb(11 11 11 / 92%);
-  --color-textSecondary: #60646c;
+  --color-textSecondary: #5f5a4f; /* warm, 6.5:1 on ivory */
   --color-textMuted: #6b6559;
   --color-textDisabled: #9c9585;
 
@@ -82,7 +82,7 @@
   /* ---- Surfaces ------------------------------------------------------------- */
   --color-backgroundPaper: #f7f3ea; /* cards, popovers, inputs */
   --color-backgroundDefault: #fbf9f3; /* app canvas */
-  --color-backgroundChat: #e5ddcb; /* sunken: table headers, wells */
+  --color-surfaceSunken: #e5ddcb; /* sunken: table headers, wells */
   --color-backdrop: rgb(11 11 11 / 50%);
 
   /* ---- Borders --------------------------------------------------------------
@@ -90,7 +90,7 @@
      is the boundary of an interactive control and clears the 3:1 non-text
      contrast bar on its own. `borderStrong` is for hover/emphasis. */
   --color-border: #e3dac6;
-  --color-borderControl: #a68537; /* 3.1:1 on ivory — clears WCAG 1.4.11 */
+  --color-borderControl: #977834; /* 3.9:1 on ivory — clears WCAG 1.4.11 */
   --color-borderStrong: #9a7b33;
 
   /* ---- Dark surfaces — nav rail + auth screens (never runtime-switched) ---- */
@@ -527,49 +527,6 @@
   [hidden] {
     display: none !important;
   }
-}
-
-/* Art Deco corner-bracket frame — see components/shared/CornerFrame.tsx */
-.am-corner-frame {
-  position: relative;
-}
-
-.am-corner {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-color: var(--color-primary);
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.am-corner-tl {
-  top: 10px;
-  left: 10px;
-  border-top: 2px solid;
-  border-left: 2px solid;
-}
-
-.am-corner-tr {
-  top: 10px;
-  right: 10px;
-  border-top: 2px solid;
-  border-right: 2px solid;
-}
-
-.am-corner-bl {
-  bottom: 10px;
-  left: 10px;
-  border-bottom: 2px solid;
-  border-left: 2px solid;
-}
-
-.am-corner-br {
-  bottom: 10px;
-  right: 10px;
-  border-bottom: 2px solid;
-  border-right: 2px solid;
 }
 
 /* Art Deco auth-screen background — dark gradient + diamond lattice, no image

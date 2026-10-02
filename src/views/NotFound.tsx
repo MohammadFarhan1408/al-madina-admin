@@ -10,7 +10,7 @@ const NotFound = () => (
   <div className='flex min-h-dvh flex-col items-center justify-center gap-6 px-4 py-12 text-center'>
     <span
       aria-hidden
-      className='flex size-16 items-center justify-center rounded-full border border-border bg-backgroundChat/50 text-primaryInk'
+      className='flex size-16 items-center justify-center rounded-full border border-border bg-surfaceSunken/50 text-primaryInk'
     >
       <i className='tabler-map-search text-[30px]' />
     </span>

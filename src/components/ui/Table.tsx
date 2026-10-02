@@ -27,7 +27,7 @@ export type TableHeadProps = HTMLAttributes<HTMLTableSectionElement> & {
 
 export const TableHead = ({ sticky = false, className, children, ...props }: TableHeadProps) => (
   <thead
-    className={classnames('bg-backgroundChat/55', sticky && 'sticky top-0 z-(--z-sticky) backdrop-blur-sm', className)}
+    className={classnames('bg-surfaceSunken/55', sticky && 'sticky top-0 z-(--z-sticky) backdrop-blur-sm', className)}
     {...props}
   >
     {children}

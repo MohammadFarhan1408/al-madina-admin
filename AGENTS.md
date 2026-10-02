@@ -92,8 +92,8 @@ cross-page gap exists — that's how `SearchField`, `ZoomableImage` and
   reset) used across features.
 - `src/app/globals.css` — the single source of truth for design tokens
   (`@theme { --color-*, --radius-*, --shadow-*, --text-* }`), plus a
-  hand-rolled minimal preflight and two bespoke utilities (`.am-corner-*`,
-  `.am-deco-bg`) for the Art Deco corner-frame motif. No `@apply`, no second
+  hand-rolled minimal preflight and one bespoke utility (`.am-deco-bg`, the
+  auth-screen background). No `@apply`, no second
   styling system — don't introduce one.
 
 ## Where things are documented

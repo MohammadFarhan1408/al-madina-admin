@@ -254,7 +254,7 @@ const ProductsView = () => {
     <Card hoverable className='flex h-full flex-col overflow-hidden'>
       <button
         type='button'
-        className='block aspect-square w-full shrink-0 overflow-hidden bg-backgroundChat'
+        className='block aspect-square w-full shrink-0 overflow-hidden bg-surfaceSunken'
         onClick={() => router.push(`/products/${product.id}`)}
       >
         <img src={product.images?.[0]} alt='' className='size-full object-cover' />
