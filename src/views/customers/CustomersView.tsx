@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import EntityCell from '@/components/shared/EntityCell'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -72,22 +73,13 @@ const CustomersView = () => {
         header: 'Customer',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <div
-            className='flex cursor-pointer items-center gap-3'
+          <EntityCell
+            round
+            name={row.original.fullName}
+            subtitle={row.original.email}
+            image={row.original.avatar}
             onClick={() => router.push(`/customers/${row.original.id}`)}
-          >
-            {row.original.avatar ? (
-              <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
-            ) : (
-              <span className='flex size-10 items-center justify-center rounded-full bg-secondary/15 text-sm font-medium'>
-                {row.original.fullName?.charAt(0)}
-              </span>
-            )}
-            <div className='flex flex-col'>
-              <span className='text-sm font-medium'>{row.original.fullName}</span>
-              <span className='text-xs text-textSecondary'>{row.original.email}</span>
-            </div>
-          </div>
+          />
         )
       },
       {

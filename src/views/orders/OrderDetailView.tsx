@@ -74,7 +74,12 @@ const OrderDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Order' />
-        <QueryState isError={isError} error={fetchError} onRetry={() => refetch()} fallbackMessage='Failed to load order.' />
+        <QueryState
+          isError={isError}
+          error={fetchError}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load order.'
+        />
       </>
     )
   }
@@ -85,7 +90,7 @@ const OrderDetailView = ({ id }: Props) => {
       <PageHeader
         title={`Order ${order.reference}`}
         action={
-          <div className='flex items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             <StatusChip value={order.status} />
             <StatusChip value={order.paymentStatus} />
             <Button variant='outlined' color='secondary' onClick={() => router.push('/orders')}>
@@ -97,6 +102,16 @@ const OrderDetailView = ({ id }: Props) => {
 
       <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
         <div className='flex flex-col gap-6 md:col-span-2'>
+          <DetailSection title='Status'>
+            <Select
+              label='Update status'
+              value={order.status}
+              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
+              disabled={updateStatus.isPending}
+              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
+            />
+          </DetailSection>
+
           <DetailSection title='Line items'>
             <Table>
               <TableHead>
@@ -194,16 +209,6 @@ const OrderDetailView = ({ id }: Props) => {
                 Refund payment
               </Button>
             )}
-          </DetailSection>
-
-          <DetailSection title='Status'>
-            <Select
-              label='Update status'
-              value={order.status}
-              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
-              disabled={updateStatus.isPending}
-              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
-            />
           </DetailSection>
         </div>
 
