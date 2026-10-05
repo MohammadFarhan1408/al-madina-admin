@@ -42,3 +42,12 @@ export const useDeactivateCustomer = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.all })
   })
 }
+
+export const useReactivateCustomer = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => customersApi.reactivate(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.all })
+  })
+}

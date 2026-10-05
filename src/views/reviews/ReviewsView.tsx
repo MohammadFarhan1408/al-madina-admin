@@ -3,6 +3,8 @@
 // Reviews moderation — server-paginated table, rating filter, delete action.
 import { useMemo, useState } from 'react'
 
+import Link from 'next/link'
+
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -15,6 +17,7 @@ import Rating from '@/components/ui/Rating'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatDate } from '@/libs/format'
+import ReviewsSummary from '@/features/reviews/components/ReviewsSummary'
 import ReviewsFilterBar from '@/features/reviews/components/ReviewsFilterBar'
 import { useDeleteReview, useReviews } from '@/features/reviews/hooks/useReviews'
 import type { Review } from '@/features/reviews/types'
@@ -65,6 +68,16 @@ const ReviewsView = () => {
               {row.original.verified && <StatusChip value='verified' />}
             </div>
           </div>
+        )
+      },
+      {
+        header: 'Product',
+        accessorKey: 'productName',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Link href={`/products/${row.original.productId}`} className='text-sm hover:text-primaryInk hover:underline'>
+            {row.original.productName ?? 'Deleted product'}
+          </Link>
         )
       },
       {
@@ -119,6 +132,8 @@ const ReviewsView = () => {
           {(error as Error)?.message || 'Failed to load reviews.'}
         </Alert>
       )}
+
+      <ReviewsSummary />
 
       <DataTable
         data={data?.items ?? []}

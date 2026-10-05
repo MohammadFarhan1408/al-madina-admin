@@ -8,8 +8,12 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
+import Link from 'next/link'
+
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
+
+import OrderTimeline from '@/features/orders/components/OrderTimeline'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
 import StatusChip from '@/components/shared/StatusChip'
@@ -220,6 +224,18 @@ const OrderDetailView = ({ id }: Props) => {
               value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
               stacked
             />
+            {order.customer && (
+              <DetailRow
+                label='Account'
+                stacked
+                value={
+                  <Link href={`/customers/${order.customer.id}`} className='flex flex-col hover:underline'>
+                    <span className='text-sm font-medium text-primaryInk'>{order.customer.fullName}</span>
+                    <span className='text-xs text-textSecondary'>{order.customer.email}</span>
+                  </Link>
+                }
+              />
+            )}
             <DetailRow
               label='Contact'
               stacked
@@ -231,6 +247,10 @@ const OrderDetailView = ({ id }: Props) => {
                 </div>
               }
             />
+          </DetailSection>
+
+          <DetailSection title='Status history'>
+            <OrderTimeline history={order.statusHistory} />
           </DetailSection>
 
           <DetailSection title='Shipping address'>

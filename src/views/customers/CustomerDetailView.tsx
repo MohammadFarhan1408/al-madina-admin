@@ -6,6 +6,7 @@
 // tier stage-then-confirm logic as before — only the layout changed.
 import { useState } from 'react'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import PageHeader from '@/components/shared/PageHeader'
@@ -22,7 +23,7 @@ import Tabs, { TabPanel } from '@/components/ui/Tabs'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
-import { useCustomer, useUpdateCustomerTier } from '@/features/customers/hooks/useCustomers'
+import { useCustomer, useReactivateCustomer, useUpdateCustomerTier } from '@/features/customers/hooks/useCustomers'
 import { USER_TIERS, type UserTier } from '@/features/customers/types'
 
 type Props = { id: string }
@@ -34,6 +35,16 @@ const CustomerDetailView = ({ id }: Props) => {
   const updateTier = useUpdateCustomerTier()
   const [pendingTier, setPendingTier] = useState<UserTier | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const reactivate = useReactivateCustomer()
+
+  const reactivateNow = async () => {
+    try {
+      await reactivate.mutateAsync(id)
+      success('Customer reactivated')
+    } catch (err) {
+      error(getErrorMessage(err, 'Failed to reactivate customer'))
+    }
+  }
 
   const applyTierChange = async () => {
     if (!pendingTier) return
@@ -70,9 +81,21 @@ const CustomerDetailView = ({ id }: Props) => {
         title={data.user.fullName}
         subtitle={data.user.email}
         action={
-          <Button variant='outlined' color='secondary' onClick={() => router.push('/customers')}>
-            Back
-          </Button>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button variant='outlined' color='secondary' onClick={() => router.push('/customers')}>
+              Back
+            </Button>
+            {!data.user.isActive && (
+              <Button
+                variant='outlined'
+                startIcon={<i className='tabler-user-check' />}
+                loading={reactivate.isPending}
+                onClick={reactivateNow}
+              >
+                Reactivate
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -100,6 +123,16 @@ const CustomerDetailView = ({ id }: Props) => {
                   <StatusChip value={data.user.tier} />
                 </div>
               </div>
+              <dl className='grid w-full grid-cols-2 gap-3 text-center'>
+                <div className='rounded-md bg-surfaceSunken/50 px-3 py-2'>
+                  <dd className='text-lg font-semibold tabular-nums'>{data.stats.orderCount}</dd>
+                  <dt className='text-xs text-textMuted'>Orders</dt>
+                </div>
+                <div className='rounded-md bg-surfaceSunken/50 px-3 py-2'>
+                  <dd className='text-lg font-semibold tabular-nums'>{formatCurrency(data.stats.totalSpent)}</dd>
+                  <dt className='text-xs text-textMuted'>Total spent</dt>
+                </div>
+              </dl>
               <hr className='w-full border-border' />
               <Select
                 containerClassName='w-full'
@@ -135,7 +168,12 @@ const CustomerDetailView = ({ id }: Props) => {
                 data.recentOrders.map(order => (
                   <div key={order.id} className='flex items-center justify-between gap-2'>
                     <div className='flex flex-col'>
-                      <span className='text-sm font-medium'>{order.reference}</span>
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className='text-sm font-medium hover:text-primaryInk hover:underline'
+                      >
+                        {order.reference}
+                      </Link>
                       <span className='text-xs text-textSecondary'>{formatDate(order.placedAt)}</span>
                     </div>
                     <div className='flex items-center gap-3'>
