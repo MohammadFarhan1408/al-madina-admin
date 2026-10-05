@@ -38,6 +38,7 @@ export const endpoints = {
   // Admin (role: admin | manager) — audited mutations.
   admin: {
     dashboard: '/admin/dashboard',
+    dashboardSummary: '/admin/dashboard/summary',
     ordersStats: '/admin/orders/stats',
     products: '/admin/products',
     product: (id: string) => `/admin/products/${id}`,

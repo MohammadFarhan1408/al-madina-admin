@@ -40,9 +40,13 @@ const TopProductsList = ({ products, isLoading }: TopProductsListProps) => {
 
   return (
     <ul className='flex flex-col gap-4'>
-      {products.map((product, index) => (
-        <li key={index} className='flex items-center gap-3'>
-          <img src={product.image} alt='' className='size-10 shrink-0 rounded-md border border-border object-cover' />
+      {products.map(product => (
+        <li key={product.id ?? product.name} className='flex items-center gap-3'>
+          {product.image ? (
+            <img src={product.image} alt='' className='size-10 shrink-0 rounded-md border border-border object-cover' />
+          ) : (
+            <span aria-hidden className='size-10 shrink-0 rounded-md bg-secondary/15' />
+          )}
           <div className='flex min-w-0 flex-1 flex-col gap-1'>
             <div className='flex items-baseline justify-between gap-2'>
               <span className='truncate text-sm text-textPrimary'>{product.name}</span>
