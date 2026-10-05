@@ -34,7 +34,7 @@ type Props = { id: string }
 const OrderDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { success, error } = useToast()
-  const { data: order, isLoading, isError, error: fetchError } = useOrder(id)
+  const { data: order, isLoading, isError, error: fetchError, refetch } = useOrder(id)
   const { data: transactions } = useOrderTransactions(id)
   const updateStatus = useUpdateOrderStatus()
   const refundPayment = useRefundPayment(id)
@@ -74,7 +74,7 @@ const OrderDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Order' />
-        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load order.' />
+        <QueryState isError={isError} error={fetchError} onRetry={() => refetch()} fallbackMessage='Failed to load order.' />
       </>
     )
   }

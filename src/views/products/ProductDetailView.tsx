@@ -38,7 +38,7 @@ const MERCHANDISING_FLAGS: {
 
 const ProductDetailView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: product, isLoading, isError, error } = useProduct(id)
+  const { data: product, isLoading, isError, error, refetch } = useProduct(id)
   const { data: categories } = useCategories()
   const { data: tags } = useTags()
   const deleteMutation = useDeleteProduct()
@@ -70,7 +70,7 @@ const ProductDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Product' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load product.' />
+        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load product.' />
       </>
     )
   }

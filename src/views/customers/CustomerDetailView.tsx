@@ -30,7 +30,7 @@ type Props = { id: string }
 const CustomerDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { success, error } = useToast()
-  const { data, isLoading, isError, error: fetchError } = useCustomer(id)
+  const { data, isLoading, isError, error: fetchError, refetch } = useCustomer(id)
   const updateTier = useUpdateCustomerTier()
   const [pendingTier, setPendingTier] = useState<UserTier | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
@@ -53,7 +53,7 @@ const CustomerDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Customer' />
-        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load customer.' />
+        <QueryState isError={isError} error={fetchError} onRetry={() => refetch()} fallbackMessage='Failed to load customer.' />
       </>
     )
   }

@@ -12,14 +12,14 @@ type Props = { id: string }
 
 const EditCouponView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: coupon, isLoading, isError, error } = useCoupon(id)
+  const { data: coupon, isLoading, isError, error, refetch } = useCoupon(id)
 
   if (isLoading || !coupon) {
     return (
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Coupon' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load coupon.' />
+        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load coupon.' />
       </>
     )
   }
