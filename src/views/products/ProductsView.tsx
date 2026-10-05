@@ -14,21 +14,24 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import EntityCell from '@/components/shared/EntityCell'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import RowActions from '@/components/shared/RowActions'
 import type { PriceRange } from '@/components/shared/PriceRangeFilter'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-import Checkbox from '@/components/ui/form/Checkbox'
 import Rating from '@/components/ui/Rating'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
-import ProductsFilterBar, { type ProductsView as ProductsListView, type StockFilter } from '@/features/products/components/ProductsFilterBar'
+import ProductsFilterBar, {
+  type ProductsView as ProductsListView,
+  type StockFilter
+} from '@/features/products/components/ProductsFilterBar'
 import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
 import type { Product, ScentFamily } from '@/features/products/types'
 
@@ -49,7 +52,7 @@ const ProductsView = () => {
   const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
 
-  const [toDelete, setToDelete] = useState<Product | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const { data: categories } = useCategories()
@@ -95,82 +98,43 @@ const ProductsView = () => {
     setPagination(p => ({ ...p, pageIndex: 0 }))
   }
 
-  const confirmDelete = async () => {
-    if (!toDelete) return
-
-    try {
-      await deleteMutation.mutateAsync(toDelete.id)
-      success('Product deleted')
-      setToDelete(null)
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete product'))
-    }
-  }
+  const { ask: askDelete, dialog: deleteDialog } = useConfirmDelete<Product>({
+    entity: 'product',
+    remove: p => deleteMutation.mutateAsync(p.id),
+    name: p => p.name
+  })
 
   const deleteSelected = async () => {
     setBulkDeleting(true)
 
-    try {
-      await Promise.all([...selectedIds].map(id => deleteMutation.mutateAsync(id)))
-      success(`${selectedIds.size} product${selectedIds.size === 1 ? '' : 's'} deleted`)
-      setSelectedIds(new Set())
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete the selected products'))
-    } finally {
-      setBulkDeleting(false)
+    // allSettled so one failure doesn't hide which of the others went through.
+    const results = await Promise.allSettled([...selectedIds].map(id => deleteMutation.mutateAsync(id)))
+    const failed = results.filter(r => r.status === 'rejected')
+
+    if (failed.length) {
+      toastError(`${failed.length} of ${results.length} products could not be deleted`)
+    } else {
+      success(`${results.length} product${results.length === 1 ? '' : 's'} deleted`)
     }
+
+    setSelectedIds(new Set())
+    setBulkConfirm(false)
+    setBulkDeleting(false)
   }
-
-  const toggleSelected = (id: string) =>
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-
-      return next
-    })
-
-  const allOnPageSelected = items.length > 0 && items.every(item => selectedIds.has(item.id))
-
-  const toggleSelectAll = () => setSelectedIds(allOnPageSelected ? new Set() : new Set(items.map(item => item.id)))
 
   const columns = useMemo<ColumnDef<Product, any>[]>(
     () => [
-      {
-        id: 'select',
-        header: () => (
-          <Checkbox
-            aria-label='Select all products on this page'
-            checked={allOnPageSelected}
-            onChange={toggleSelectAll}
-          />
-        ),
-        enableSorting: false,
-        size: 40,
-        cell: ({ row }) => (
-          <Checkbox
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedIds.has(row.original.id)}
-            onChange={() => toggleSelected(row.original.id)}
-          />
-        )
-      },
       {
         header: 'Product',
         accessorKey: 'name',
         enableSorting: false,
         cell: ({ row }) => (
-          <div
-            className='flex min-w-0 cursor-pointer items-center gap-3'
+          <EntityCell
+            name={row.original.name}
+            subtitle={`by ${row.original.brand}`}
+            image={row.original.images?.[0]}
             onClick={() => router.push(`/products/${row.original.id}`)}
-          >
-            <img src={row.original.images?.[0]} alt='' className='size-10 shrink-0 rounded-md object-cover' />
-            <div className='flex min-w-0 flex-col'>
-              <span className='truncate text-sm font-medium'>{row.original.name}</span>
-              <span className='truncate text-xs text-textSecondary'>by {row.original.brand}</span>
-            </div>
-          </div>
+          />
         )
       },
       {
@@ -239,7 +203,7 @@ const ProductsView = () => {
                   icon: 'tabler-edit',
                   onClick: () => router.push(`/products/${row.original.id}/edit`)
                 },
-                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => askDelete(row.original) }
               ]}
             />
           </div>
@@ -247,7 +211,7 @@ const ProductsView = () => {
       }
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [categoryMap, router, selectedIds, allOnPageSelected]
+    [categoryMap, router, askDelete]
   )
 
   const renderCard = (product: Product) => (
@@ -293,7 +257,7 @@ const ProductsView = () => {
               variant='outlined'
               color='error'
               aria-label={`Delete ${product.name}`}
-              onClick={() => setToDelete(product)}
+              onClick={() => askDelete(product)}
             >
               <i className='tabler-trash' />
             </IconButton>
@@ -319,20 +283,6 @@ const ProductsView = () => {
       {isError && (
         <Alert severity='error' className='mb-4'>
           {(error as Error)?.message || 'Failed to load products.'}
-        </Alert>
-      )}
-
-      {selectedIds.size > 0 && (
-        <Alert
-          severity='warning'
-          className='mb-4'
-          action={
-            <Button size='sm' variant='outlined' color='error' loading={bulkDeleting} onClick={deleteSelected}>
-              Delete {selectedIds.size} selected
-            </Button>
-          }
-        >
-          {selectedIds.size} product{selectedIds.size === 1 ? '' : 's'} selected
         </Alert>
       )}
 
@@ -366,6 +316,16 @@ const ProductsView = () => {
         }
         view={view}
         renderCard={renderCard}
+        selection={{
+          selected: selectedIds,
+          onChange: setSelectedIds,
+          getId: p => p.id,
+          actions: (
+            <Button size='sm' variant='outlined' color='error' onClick={() => setBulkConfirm(true)}>
+              Delete
+            </Button>
+          )
+        }}
         toolbar={
           <ProductsFilterBar
             search={search}
@@ -387,14 +347,15 @@ const ProductsView = () => {
         }
       />
 
+      {deleteDialog}
       <ConfirmDialog
-        open={!!toDelete}
-        title='Delete product'
-        description={`Delete "${toDelete?.name}"? This performs a soft delete — it can be restored from the database if needed.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onClose={() => setToDelete(null)}
+        open={bulkConfirm}
+        title='Delete products'
+        description={`Delete ${selectedIds.size} selected product${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`}
+        confirmText={`Delete ${selectedIds.size}`}
+        loading={bulkDeleting}
+        onConfirm={deleteSelected}
+        onClose={() => setBulkConfirm(false)}
       />
     </>
   )
