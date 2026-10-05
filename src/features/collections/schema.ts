@@ -8,7 +8,7 @@ export const collectionSchema = z.object({
   subtitle: z.string().trim().min(1, 'Subtitle is required'),
   image: z.string().min(1, 'An image is required'),
   accent: z.enum(COLLECTION_ACCENTS, { message: 'Accent is required' }),
-  sortOrder: z.number().int('Must be a whole number').min(0, 'Must be 0 or greater'),
+  sortOrder: z.number({ error: 'Enter a number' }).int('Must be a whole number').min(0, 'Must be 0 or greater'),
   slug: z.string().trim().optional().or(z.literal('')),
   metaTitle: z.string().trim().optional().or(z.literal('')),
   metaDescription: z.string().trim().optional().or(z.literal('')),

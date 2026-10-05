@@ -11,13 +11,17 @@ export const couponSchema = z.object({
     .transform(v => v.toUpperCase()),
   description: z.string().trim().min(2, 'Description is required'),
   discountType: z.enum(DISCOUNT_TYPES),
-  value: z.number().min(0, 'Must be 0 or greater'),
+  value: z.number({ error: 'Enter a value' }).min(0, 'Must be 0 or greater'),
   minPurchase: z.number().min(0).optional(),
   maxDiscount: z.number().min(0).optional(),
   usageLimit: z.number().int().min(0).optional(),
   expiresAt: z.string().min(1, 'Expiry date is required'),
   isActive: z.boolean()
 })
+  .refine(v => v.discountType !== 'percentage' || v.value <= 100, {
+    path: ['value'],
+    message: 'A percentage cannot exceed 100'
+  })
 
 export type CouponFormValues = z.infer<typeof couponSchema>
 
