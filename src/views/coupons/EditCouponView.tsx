@@ -19,7 +19,12 @@ const EditCouponView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Coupon' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load coupon.' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load coupon.'
+        />
       </>
     )
   }

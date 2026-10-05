@@ -10,7 +10,7 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import DetailActions from '@/components/shared/DetailActions'
 import ZoomableImage from '@/components/shared/ZoomableImage'
 import QueryState from '@/components/shared/QueryState'
 import Button from '@/components/ui/Button'
@@ -18,11 +18,13 @@ import IconButton from '@/components/ui/IconButton'
 import SearchSelect from '@/components/ui/form/SearchSelect'
 import Spinner from '@/components/ui/Spinner'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, humanize } from '@/libs/format'
 import { useProducts } from '@/features/products/hooks/useProducts'
 import type { Product } from '@/features/products/types'
+import type { Collection } from '@/features/collections/types'
 import {
   useAddCollectionProduct,
   useCollection,
@@ -37,8 +39,14 @@ const CollectionDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { data: collection, isLoading, isError, error, refetch } = useCollection(id)
   const deleteMutation = useDeleteCollection()
-  const { success, error: toastError } = useToast()
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const { success, error: toastError, toast } = useToast()
+
+  const { ask, dialog } = useConfirmDelete<Collection>({
+    entity: 'collection',
+    remove: c => deleteMutation.mutateAsync(c.id),
+    name: c => c.title,
+    onDeleted: () => router.push('/collections')
+  })
 
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Product | null>(null)
@@ -71,24 +79,14 @@ const CollectionDetailView = ({ id }: Props) => {
 
     try {
       await removeMutation.mutateAsync({ id, productId })
-      success('Product removed')
+      toast('Product removed', 'success', {
+        label: 'Undo',
+        onClick: () => addMutation.mutate({ id, productId })
+      })
     } catch (err) {
       toastError(getErrorMessage(err, 'Failed to remove product'))
     } finally {
       setRemovingId(null)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!collection) return
-
-    try {
-      await deleteMutation.mutateAsync(collection.id)
-      success('Collection deleted')
-      router.push('/collections')
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete collection'))
-      setConfirmDelete(false)
     }
   }
 
@@ -97,7 +95,12 @@ const CollectionDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Collection' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load collection.' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load collection.'
+        />
       </>
     )
   }
@@ -109,26 +112,11 @@ const CollectionDetailView = ({ id }: Props) => {
         title={collection.title}
         subtitle={collection.subtitle}
         action={
-          <div className='flex items-center gap-3'>
-            <Button variant='outlined' color='secondary' onClick={() => router.push('/collections')}>
-              Back
-            </Button>
-            <Button
-              variant='outlined'
-              startIcon={<i className='tabler-edit' />}
-              onClick={() => router.push(`/collections/${id}/edit`)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant='outlined'
-              color='error'
-              startIcon={<i className='tabler-trash' />}
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete
-            </Button>
-          </div>
+          <DetailActions
+            backHref='/collections'
+            editHref={`/collections/${id}/edit`}
+            onDelete={() => ask(collection)}
+          />
         }
       />
 
@@ -223,15 +211,7 @@ const CollectionDetailView = ({ id }: Props) => {
         )}
       </div>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        title='Delete collection'
-        description={`Delete "${collection.title}"? This cannot be undone.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(false)}
-      />
+      {dialog}
     </>
   )
 }

@@ -1,10 +1,8 @@
 'use client'
 
-// Tags management — list (all, client-paginated), navigates to dedicated
-// Create/Edit pages (no Detail page — a single name field), delete.
+// Tags management — list (all, client-paginated). Create/rename happen in a
+// dialog (a tag is one name field); delete confirms inline.
 import { useMemo, useState } from 'react'
-
-import { useRouter } from 'next/navigation'
 
 import type { ColumnDef } from '@tanstack/react-table'
 
@@ -12,41 +10,32 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
+import TagFormDialog from '@/features/tags/components/TagFormDialog'
 import { useTags, useDeleteTag } from '@/features/tags/hooks/useTags'
 import type { Tag } from '@/features/tags/types'
 
 const TagsView = () => {
-  const router = useRouter()
   const { data: tags, isLoading, isError, error } = useTags()
   const deleteMutation = useDeleteTag()
-  const { success, error: toastError } = useToast()
 
   const [search, setSearch] = useState('')
-  const [toDelete, setToDelete] = useState<Tag | null>(null)
+  const [editing, setEditing] = useState<{ tag?: Tag } | null>(null)
+
+  const { ask, dialog } = useConfirmDelete<Tag>({
+    entity: 'tag',
+    remove: t => deleteMutation.mutateAsync(t.id),
+    name: t => t.name
+  })
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
 
     return q ? (tags ?? []).filter(t => t.name.toLowerCase().includes(q)) : (tags ?? [])
   }, [tags, search])
-
-  const confirmDelete = async () => {
-    if (!toDelete) return
-
-    try {
-      await deleteMutation.mutateAsync(toDelete.id)
-      success('Tag deleted')
-      setToDelete(null)
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete tag'))
-    }
-  }
 
   const columns = useMemo<ColumnDef<Tag, any>[]>(
     () => [
@@ -64,15 +53,15 @@ const TagsView = () => {
           <div className='flex items-center justify-end'>
             <RowActions
               options={[
-                { text: 'Rename', icon: 'tabler-edit', onClick: () => router.push(`/tags/${row.original.id}/edit`) },
-                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
+                { text: 'Rename', icon: 'tabler-edit', onClick: () => setEditing({ tag: row.original }) },
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => ask(row.original) }
               ]}
             />
           </div>
         )
       }
     ],
-    [router]
+    [ask]
   )
 
   return (
@@ -82,7 +71,7 @@ const TagsView = () => {
         title='Tags'
         subtitle='Reusable labels for product merchandising'
         action={
-          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
+          <Button startIcon={<i className='tabler-plus' />} onClick={() => setEditing({})}>
             Add Tag
           </Button>
         }
@@ -108,7 +97,7 @@ const TagsView = () => {
         }
         emptyAction={
           !search && (
-            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/tags/new')}>
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => setEditing({})}>
               Add Tag
             </Button>
           )
@@ -120,15 +109,8 @@ const TagsView = () => {
         }
       />
 
-      <ConfirmDialog
-        open={!!toDelete}
-        title='Delete tag'
-        description={`Delete "${toDelete?.name}"? Products using it will simply lose the tag.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onClose={() => setToDelete(null)}
-      />
+      {dialog}
+      {editing && <TagFormDialog tag={editing.tag} onClose={() => setEditing(null)} />}
     </>
   )
 }

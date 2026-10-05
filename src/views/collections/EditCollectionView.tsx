@@ -19,7 +19,12 @@ const EditCollectionView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Collection' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load collection.' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load collection.'
+        />
       </>
     )
   }

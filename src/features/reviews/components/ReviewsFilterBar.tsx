@@ -1,25 +1,24 @@
 'use client'
 
-import IconButton from '@/components/ui/IconButton'
-import Rating from '@/components/ui/Rating'
+import Select from '@/components/ui/form/Select'
 
 export type ReviewsFilterBarProps = {
   rating: number | ''
   onRatingChange: (value: number | '') => void
 }
 
+const RATING_OPTIONS = [5, 4, 3, 2, 1].map(n => ({ label: `${n} star${n === 1 ? '' : 's'}`, value: String(n) }))
+
 const ReviewsFilterBar = ({ rating, onRatingChange }: ReviewsFilterBarProps) => (
-  <div className='flex flex-col gap-1.5'>
-    <span className='text-sm font-medium leading-5 text-textPrimary'>Filter by rating</span>
-    <div className='flex h-10 items-center gap-1'>
-      <Rating value={rating || 0} onChange={value => onRatingChange(value || '')} />
-      {rating !== '' && (
-        <IconButton size='sm' aria-label='Clear rating filter' onClick={() => onRatingChange('')}>
-          <i className='tabler-x' />
-        </IconButton>
-      )}
-    </div>
-  </div>
+  <Select
+    aria-label='Filter by rating'
+    value={rating === '' ? '' : String(rating)}
+    onChange={e => onRatingChange(e.target.value === '' ? '' : Number(e.target.value))}
+    icon={<i className='tabler-star' />}
+    placeholder='All ratings'
+    containerClassName='w-full sm:w-48'
+    options={RATING_OPTIONS}
+  />
 )
 
 export default ReviewsFilterBar

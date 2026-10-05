@@ -1,7 +1,7 @@
 'use client'
 
 // Read-only product detail — gallery, pricing, variants, tags, merchandising flags, SEO.
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -9,19 +9,18 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import DetailActions from '@/components/shared/DetailActions'
 import ZoomableImage from '@/components/shared/ZoomableImage'
 import StatusChip from '@/components/shared/StatusChip'
 import QueryState from '@/components/shared/QueryState'
 import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatCurrency, humanize } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { useProduct, useDeleteProduct } from '@/features/products/hooks/useProducts'
+import type { Product } from '@/features/products/types'
 
 type Props = { id: string }
 
@@ -42,8 +41,13 @@ const ProductDetailView = ({ id }: Props) => {
   const { data: categories } = useCategories()
   const { data: tags } = useTags()
   const deleteMutation = useDeleteProduct()
-  const { success, error: toastError } = useToast()
-  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const { ask, dialog } = useConfirmDelete<Product>({
+    entity: 'product',
+    remove: p => deleteMutation.mutateAsync(p.id),
+    name: p => p.name,
+    onDeleted: () => router.push('/products')
+  })
 
   const categoryName = useMemo(
     () => (categories ?? []).find(c => c.id === product?.categoryId)?.name ?? '—',
@@ -52,25 +56,17 @@ const ProductDetailView = ({ id }: Props) => {
 
   const productTags = useMemo(() => (tags ?? []).filter(t => product?.tagIds.includes(t.id)), [tags, product])
 
-  const handleDelete = async () => {
-    if (!product) return
-
-    try {
-      await deleteMutation.mutateAsync(product.id)
-      success('Product deleted')
-      router.push('/products')
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete product'))
-      setConfirmDelete(false)
-    }
-  }
-
   if (isLoading || !product) {
     return (
       <>
         <Breadcrumbs />
         <PageHeader title='Product' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load product.' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load product.'
+        />
       </>
     )
   }
@@ -83,28 +79,7 @@ const ProductDetailView = ({ id }: Props) => {
       <PageHeader
         title={product.name}
         subtitle={`${product.brand} · ${humanize(product.scentFamily)}`}
-        action={
-          <div className='flex items-center gap-3'>
-            <Button variant='outlined' color='secondary' onClick={() => router.push('/products')}>
-              Back
-            </Button>
-            <Button
-              variant='outlined'
-              startIcon={<i className='tabler-edit' />}
-              onClick={() => router.push(`/products/${id}/edit`)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant='outlined'
-              color='error'
-              startIcon={<i className='tabler-trash' />}
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete
-            </Button>
-          </div>
-        }
+        action={<DetailActions backHref='/products' editHref={`/products/${id}/edit`} onDelete={() => ask(product)} />}
       />
 
       <div className='flex flex-col gap-4'>
@@ -216,15 +191,7 @@ const ProductDetailView = ({ id }: Props) => {
         )}
       </div>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        title='Delete product'
-        description={`Delete "${product.name}"? This performs a soft delete — it can be restored from the database if needed.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(false)}
-      />
+      {dialog}
     </>
   )
 }

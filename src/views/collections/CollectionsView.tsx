@@ -2,47 +2,35 @@
 
 // Collections management — grid of collection cards, navigates to dedicated
 // Create/Detail/Edit pages (product membership lives on the Detail page).
-import { useState } from 'react'
-
 import { useRouter } from 'next/navigation'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import StatusChip from '@/components/shared/StatusChip'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import Card, { CardBody } from '@/components/ui/Card'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/Skeleton'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { useCollections, useDeleteCollection } from '@/features/collections/hooks/useCollections'
 import type { Collection } from '@/features/collections/types'
 
 const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } as const
 
-// ponytail: matches the md:4 (3-per-row) grid below; not breakpoint-aware,
-// bump if the grid's column count changes.
+// ponytail: one row's worth; not breakpoint-aware, bump if the grid changes.
 const SKELETON_COUNT = 4
 
 const CollectionsView = () => {
   const router = useRouter()
   const { data: collections, isLoading, isError, error } = useCollections()
   const deleteMutation = useDeleteCollection()
-  const { success, error: toastError } = useToast()
 
-  const [toDelete, setToDelete] = useState<Collection | null>(null)
-
-  const confirmDelete = async () => {
-    if (!toDelete) return
-
-    try {
-      await deleteMutation.mutateAsync(toDelete.id)
-      success('Collection deleted')
-      setToDelete(null)
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete collection'))
-    }
-  }
+  const { ask, dialog } = useConfirmDelete<Collection>({
+    entity: 'collection',
+    remove: c => deleteMutation.mutateAsync(c.id),
+    name: c => c.title
+  })
 
   return (
     <>
@@ -66,7 +54,7 @@ const CollectionsView = () => {
       <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
         {isLoading ? (
           [...Array(SKELETON_COUNT)].map((_, i) => (
-            <div key={i} className='h-[280px] animate-pulse rounded-lg bg-textDisabled/20' />
+            <Skeleton key={i} variant='block' className='h-[280px] rounded-lg' />
           ))
         ) : collections?.length ? (
           collections.map(collection => (
@@ -94,7 +82,7 @@ const CollectionsView = () => {
                   >
                     Edit
                   </Button>
-                  <Button size='sm' variant='outlined' color='error' onClick={() => setToDelete(collection)}>
+                  <Button size='sm' variant='outlined' color='error' onClick={() => ask(collection)}>
                     Delete
                   </Button>
                 </div>
@@ -102,19 +90,22 @@ const CollectionsView = () => {
             </Card>
           ))
         ) : (
-          <p className='col-span-full p-8 text-center text-textSecondary'>No collections yet.</p>
+          <Card className='col-span-full'>
+            <EmptyState
+              icon='tabler-stack-2'
+              title='No collections yet'
+              description='Collections group fragrances into curated sets customers can browse.'
+              action={
+                <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/collections/new')}>
+                  Add Collection
+                </Button>
+              }
+            />
+          </Card>
         )}
       </div>
 
-      <ConfirmDialog
-        open={!!toDelete}
-        title='Delete collection'
-        description={`Delete "${toDelete?.title}"? This cannot be undone.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onClose={() => setToDelete(null)}
-      />
+      {dialog}
     </>
   )
 }
