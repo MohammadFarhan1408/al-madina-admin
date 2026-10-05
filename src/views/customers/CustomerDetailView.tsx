@@ -30,7 +30,7 @@ type Props = { id: string }
 const CustomerDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { success, error } = useToast()
-  const { data, isLoading, isError, error: fetchError } = useCustomer(id)
+  const { data, isLoading, isError, error: fetchError, refetch } = useCustomer(id)
   const updateTier = useUpdateCustomerTier()
   const [pendingTier, setPendingTier] = useState<UserTier | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
@@ -53,7 +53,12 @@ const CustomerDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Customer' />
-        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load customer.' />
+        <QueryState
+          isError={isError}
+          error={fetchError}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load customer.'
+        />
       </>
     )
   }
@@ -75,9 +80,18 @@ const CustomerDetailView = ({ id }: Props) => {
         <div>
           <Card>
             <CardBody className='flex flex-col items-center gap-4 pt-12'>
-              <ZoomableImage src={data.user.avatar} alt={data.user.fullName}>
-                <img src={data.user.avatar} alt='' className='size-25 rounded-full object-cover' />
-              </ZoomableImage>
+              {data.user.avatar ? (
+                <ZoomableImage src={data.user.avatar} alt={data.user.fullName}>
+                  <img src={data.user.avatar} alt='' className='size-25 rounded-full object-cover' />
+                </ZoomableImage>
+              ) : (
+                <span
+                  aria-hidden
+                  className='flex size-25 items-center justify-center rounded-full bg-secondary/15 text-3xl font-medium text-secondaryDark'
+                >
+                  {data.user.fullName?.charAt(0).toUpperCase()}
+                </span>
+              )}
               <div className='flex flex-col items-center gap-2 text-center'>
                 <h2 className='text-xl font-semibold'>{data.user.fullName}</h2>
                 <p className='text-textSecondary'>{data.user.email}</p>

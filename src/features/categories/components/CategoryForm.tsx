@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import Card, { CardBody } from '@/components/ui/Card'
 import Input from '@/components/ui/form/Input'
+import NumberInput from '@/components/ui/form/NumberInput'
 import FormActions from '@/components/shared/FormActions'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
@@ -104,15 +105,7 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
           <Controller
             name='sortOrder'
             control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                type='number'
-                label='Sort order'
-                error={errors.sortOrder?.message}
-              />
-            )}
+            render={({ field }) => <NumberInput {...field} label='Sort order' error={errors.sortOrder?.message} />}
           />
           <ImageUpload
             type='category'

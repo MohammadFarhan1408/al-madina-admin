@@ -14,6 +14,7 @@ import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Button from '@/components/ui/Button'
+import Alert from '@/components/ui/Alert'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import Input from '@/components/ui/form/Input'
 import Select from '@/components/ui/form/Select'
@@ -50,7 +51,9 @@ const NotificationsView = () => {
   const {
     data: history,
     isLoading: historyLoading,
-    isFetching: historyFetching
+    isFetching: historyFetching,
+    isError: historyError,
+    refetch: refetchHistory
   } = useNotificationHistory({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize
@@ -74,6 +77,15 @@ const NotificationsView = () => {
     () => [
       { header: 'Kind', accessorKey: 'kind', cell: ({ getValue }) => <StatusChip value={getValue() as string} /> },
       { header: 'Title', accessorKey: 'title' },
+      {
+        header: 'Message',
+        accessorKey: 'body',
+        cell: ({ getValue }) => (
+          <span className='block max-w-xs truncate text-textSecondary' title={getValue() as string}>
+            {(getValue() as string) || '—'}
+          </span>
+        )
+      },
       {
         header: 'Audience',
         accessorKey: 'tier',
@@ -155,6 +167,19 @@ const NotificationsView = () => {
         <div>
           <Card>
             <CardHeader title='Broadcast history' description='Past announcements sent from this panel' />
+            {historyError && (
+              <Alert
+                severity='error'
+                className='m-4'
+                action={
+                  <Button size='sm' variant='outlined' color='error' onClick={() => refetchHistory()}>
+                    Try again
+                  </Button>
+                }
+              >
+                Could not load the broadcast history.
+              </Alert>
+            )}
             <DataTable
               data={history?.items ?? []}
               columns={columns}

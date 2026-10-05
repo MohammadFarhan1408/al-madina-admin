@@ -16,6 +16,7 @@ import { forgotPasswordSchema, type ForgotPasswordValues } from '@/features/auth
 
 const ForgotPassword = () => {
   const [sent, setSent] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const {
     control,
@@ -27,9 +28,16 @@ const ForgotPassword = () => {
   })
 
   const onSubmit = async (values: ForgotPasswordValues) => {
-    // Backend always responds success to avoid account enumeration.
-    await authApi.forgotPassword(values).catch(() => undefined)
-    setSent(true)
+    // The backend answers success for unknown emails (no account enumeration),
+    // so any real failure here is a network/server problem worth showing.
+    setFormError(null)
+
+    try {
+      await authApi.forgotPassword(values)
+      setSent(true)
+    } catch {
+      setFormError('Could not send the reset link. Check your connection and try again.')
+    }
   }
 
   return (
@@ -45,6 +53,7 @@ const ForgotPassword = () => {
         </Alert>
       ) : (
         <form noValidate onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
+          {formError && <Alert severity='error'>{formError}</Alert>}
           <Controller
             name='email'
             control={control}

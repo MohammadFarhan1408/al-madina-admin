@@ -41,7 +41,7 @@ const Login = () => {
       await signIn(values)
       const redirectTo = searchParams.get('redirectTo')
 
-      router.replace(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard')
+      router.replace(redirectTo && /^\/(?![/\\])/.test(redirectTo) ? redirectTo : '/dashboard')
     } catch (err) {
       const message =
         err instanceof ApiError

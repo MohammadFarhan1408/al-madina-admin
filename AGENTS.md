@@ -64,7 +64,17 @@ CRUD page is assembled from these:
   pass `manualPagination={false}` for a small, fully-loaded list — see
   `CategoriesView.tsx`) + a toolbar + `RowActions` (the "⋮" kebab menu,
   built on `ui/Dropdown`) for 2+ row actions — skip it for a single action.
-- `ConfirmDialog` for delete confirmations.
+- `useConfirmDelete` (hooks/) for the ask → confirm → delete → toast flow;
+  `DetailActions` for a detail page's Back/Edit/Delete header.
+- Forms: `FormActions` (sticky Cancel/Save + unsaved-changes guard),
+  `useFormSync` (seed an edit form once per record — never `reset()` in a
+  `[entity]` effect, it wipes edits on refetch), `NumberInput` for any numeric
+  field (empty is `undefined`; the schema message says what's missing).
+- `DataTable` takes `selection` (checkbox column + bulk bar) and `mobileCard`
+  (rows become cards below `md`); `EntityCell` for thumbnail/initials cells;
+  `SegmentedControl` for 2–4 exclusive options. Toasts accept an action
+  (`toast(msg, 'success', { label: 'Undo', onClick })`) — prefer Undo over a
+  confirm for reversible actions.
 - `DetailSection`/`DetailRow` for read-only key/value blocks on Detail
   pages; `ProductDetailView.tsx`/`OrderDetailView.tsx` are good references
   for a multi-section Detail layout.

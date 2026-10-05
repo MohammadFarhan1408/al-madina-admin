@@ -18,7 +18,7 @@ type Props = { id: string }
 
 const CategoryDetailView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: category, isLoading, isError, error } = useCategory(id)
+  const { data: category, isLoading, isError, error, refetch } = useCategory(id)
   const deleteMutation = useDeleteCategory()
 
   const { ask, dialog } = useConfirmDelete<Category>({
@@ -33,7 +33,7 @@ const CategoryDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Category' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load category.' />
+        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load category.' />
       </>
     )
   }
