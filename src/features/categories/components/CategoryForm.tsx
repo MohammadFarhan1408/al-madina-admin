@@ -3,16 +3,17 @@
 // Create/edit category form. RHF + Zod, image via shared ImageUpload. Hosted
 // directly by the /categories/new and /categories/[id]/edit pages — no
 // Dialog chrome, that's the page shell's job now.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import Card, { CardBody } from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
 import Input from '@/components/ui/form/Input'
+import FormActions from '@/components/shared/FormActions'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
+import { useFormSync } from '@/hooks/useFormSync'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { categorySchema, defaultCategoryValues, type CategoryFormValues } from '../schema'
@@ -38,28 +39,27 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
     reset,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors, isDirty }
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: defaultCategoryValues
   })
 
-  useEffect(() => {
-    reset(
-      category
-        ? {
-            name: category.name,
-            tagline: category.tagline ?? '',
-            image: category.image,
-            sortOrder: category.sortOrder,
-            slug: category.slug ?? '',
-            metaTitle: category.metaTitle ?? '',
-            metaDescription: category.metaDescription ?? '',
-            metaKeywords: category.metaKeywords ?? []
-          }
-        : defaultCategoryValues
-    )
-  }, [category, reset])
+  useFormSync(
+    reset,
+    category,
+    c => ({
+      name: c.name,
+      tagline: c.tagline ?? '',
+      image: c.image,
+      sortOrder: c.sortOrder,
+      slug: c.slug ?? '',
+      metaTitle: c.metaTitle ?? '',
+      metaDescription: c.metaDescription ?? '',
+      metaKeywords: c.metaKeywords ?? []
+    }),
+    defaultCategoryValues
+  )
 
   const image = watch('image')
   const metaKeywords = watch('metaKeywords')
@@ -92,9 +92,9 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending || imageUploading
 
   return (
-    <Card>
-      <CardBody>
-        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Card>
+        <CardBody className='flex flex-col gap-5'>
           <Controller
             name='name'
             control={control}
@@ -117,25 +117,23 @@ const CategoryForm = ({ category, onSuccess, onCancel }: Props) => {
           <ImageUpload
             type='category'
             value={image ? [image] : []}
-            onChange={urls => setValue('image', urls[0] ?? '', { shouldValidate: true })}
+            onChange={urls => setValue('image', urls[0] ?? '', { shouldValidate: true, shouldDirty: true })}
             onUploadingChange={setImageUploading}
             label='Category image'
             error={errors.image?.message}
           />
 
           <SeoFieldsSection control={control} metaKeywords={metaKeywords} />
+        </CardBody>
+      </Card>
 
-          <div className='flex items-center justify-end gap-4'>
-            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type='submit' loading={submitting}>
-              {isEdit ? 'Save changes' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+      <FormActions
+        dirty={isDirty}
+        submitting={submitting}
+        submitLabel={isEdit ? 'Save changes' : 'Create'}
+        onCancel={onCancel}
+      />
+    </form>
   )
 }
 

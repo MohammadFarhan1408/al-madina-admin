@@ -7,7 +7,7 @@
 //   (e.g. Categories/Collections have no backend pagination), so TanStack's
 //   own pagination + sorting row models run entirely in the browser.
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 
 import classnames from 'classnames'
 import {
@@ -21,7 +21,9 @@ import {
   type SortingState
 } from '@tanstack/react-table'
 
+import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import Checkbox from '@/components/ui/form/Checkbox'
 import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Select from '@/components/ui/form/Select'
@@ -78,6 +80,22 @@ export type DataTableProps<T> = {
   view?: 'table' | 'grid'
   renderCard?: (item: T) => ReactNode
   gridClassName?: string
+
+  /** Below `md`, render each row as a card instead of a scrolling table. Cards
+   *  have no checkbox, so bulk selection is a desktop affordance. */
+  mobileCard?: (item: T) => ReactNode
+
+  /** Row checkboxes + a bulk bar. The caller owns the id set; ids that leave
+   *  the current data (page or filter change, deletion) are pruned so a bulk
+   *  action can never touch rows the user can no longer see. */
+  selection?: {
+    selected: Set<string>
+    onChange: (selected: Set<string>) => void
+    getId: (item: T) => string
+
+    /** Bulk action buttons, shown with the "N selected" bar. */
+    actions: ReactNode
+  }
 }
 
 function DataTable<T>({
@@ -99,7 +117,9 @@ function DataTable<T>({
   onSortingChange,
   view = 'table',
   renderCard,
-  gridClassName
+  gridClassName,
+  mobileCard,
+  selection
 }: DataTableProps<T>) {
   // Uncontrolled fallbacks for client mode.
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
@@ -113,9 +133,62 @@ function DataTable<T>({
   const activePagination = manualPagination ? pagination! : internalPagination
   const activeSorting = manualPagination ? (controlledSorting ?? []) : internalSorting
 
+  const selectedSet = selection?.selected
+  const getId = selection?.getId
+  const onSelectionChange = selection?.onChange
+
+  const allColumns = useMemo<ColumnDef<T, any>[]>(() => {
+    if (!selectedSet || !getId || !onSelectionChange) return columns
+
+    const toggle = (ids: string[], on: boolean) => {
+      const next = new Set(selectedSet)
+
+      ids.forEach(id => (on ? next.add(id) : next.delete(id)))
+      onSelectionChange(next)
+    }
+
+    return [
+      {
+        id: 'select',
+        size: 40,
+        enableSorting: false,
+        header: ({ table }) => {
+          const ids = table.getRowModel().rows.map(r => getId(r.original))
+          const all = ids.length > 0 && ids.every(id => selectedSet.has(id))
+
+          return (
+            <Checkbox
+              aria-label='Select all rows on this page'
+              checked={all}
+              indeterminate={!all && ids.some(id => selectedSet.has(id))}
+              onChange={() => toggle(ids, !all)}
+            />
+          )
+        },
+        cell: ({ row }) => (
+          <Checkbox
+            aria-label='Select row'
+            checked={selectedSet.has(getId(row.original))}
+            onChange={e => toggle([getId(row.original)], e.target.checked)}
+          />
+        )
+      },
+      ...columns
+    ]
+  }, [columns, selectedSet, getId, onSelectionChange])
+
+  useEffect(() => {
+    if (!selectedSet?.size || !getId || !onSelectionChange) return
+
+    const visible = new Set(data.map(getId))
+    const kept = [...selectedSet].filter(id => visible.has(id))
+
+    if (kept.length !== selectedSet.size) onSelectionChange(new Set(kept))
+  }, [data, selectedSet, getId, onSelectionChange])
+
   const table = useReactTable({
     data,
-    columns,
+    columns: allColumns,
     state: {
       pagination: activePagination,
       ...(sortingEnabled ? { sorting: activeSorting } : {})
@@ -171,6 +244,16 @@ function DataTable<T>({
     <Card className='overflow-hidden'>
       {toolbar && <div className='flex flex-wrap items-end gap-3 border-b border-border px-4 py-3.5'>{toolbar}</div>}
 
+      {selection && selection.selected.size > 0 && (
+        <div className='flex flex-wrap items-center gap-3 border-b border-border bg-primary/10 px-4 py-2.5 text-sm'>
+          <span className='font-medium'>{selection.selected.size} selected</span>
+          <Button size='sm' variant='text' color='secondary' onClick={() => selection.onChange(new Set())}>
+            Clear
+          </Button>
+          <div className='ml-auto flex items-center gap-2'>{selection.actions}</div>
+        </div>
+      )}
+
       {/* Indeterminate progress bar for background refetches. Fixed height so
           it never nudges the table when it appears and disappears. */}
       <div aria-hidden className={isLoading ? 'h-0.5 w-full overflow-hidden bg-transparent' : ''}>
@@ -208,65 +291,103 @@ function DataTable<T>({
           </div>
         )
       ) : (
-        <Table aria-busy={isLoading || isRefetching || undefined}>
-          <TableHead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  const canSort = sortingEnabled && header.column.getCanSort()
-
-                  return (
-                    <TableHeaderCell
-                      key={header.id}
-                      align={header.column.columnDef.meta?.align ?? 'left'}
-                      style={
-                        header.column.columnDef.size !== undefined ? { width: header.column.columnDef.size } : undefined
-                      }
-                      sortDirection={header.column.getIsSorted()}
-                      onSort={canSort ? () => header.column.toggleSorting() : undefined}
-                    >
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHeaderCell>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>
-            {showSkeleton ? (
-              Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 6) }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {columns.map((_, ci) => (
-                    <TableCell key={ci}>
-                      <Skeleton className={ci === 0 ? 'w-3/4' : ci % 3 === 0 ? 'w-1/2' : 'w-2/3'} />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : showEmpty ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className='p-0'>
+        <>
+          {mobileCard && (
+            <ul
+              aria-busy={isLoading || isRefetching || undefined}
+              className='flex flex-col divide-y divide-border md:hidden'
+            >
+              {showSkeleton ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <li key={i} className='flex flex-col gap-2 p-4'>
+                    <Skeleton className='w-2/3' />
+                    <Skeleton className='w-1/3' />
+                  </li>
+                ))
+              ) : showEmpty ? (
+                <li>
                   <EmptyState
                     icon={emptyIcon}
                     title={emptyMessage}
                     description={emptyDescription}
                     action={emptyAction}
                   />
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map(row => (
-                <TableRow key={row.id} hover className={isRefetching ? 'opacity-60 transition-opacity' : undefined}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </li>
+              ) : (
+                rows.map(row => (
+                  <li key={row.id} className={classnames('p-4', isRefetching && 'opacity-60 transition-opacity')}>
+                    {mobileCard(row.original)}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+          <div className={mobileCard ? 'max-md:hidden' : undefined}>
+            <Table aria-busy={isLoading || isRefetching || undefined}>
+              <TableHead>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map(header => {
+                      const canSort = sortingEnabled && header.column.getCanSort()
+
+                      return (
+                        <TableHeaderCell
+                          key={header.id}
+                          align={header.column.columnDef.meta?.align ?? 'left'}
+                          style={
+                            header.column.columnDef.size !== undefined
+                              ? { width: header.column.columnDef.size }
+                              : undefined
+                          }
+                          sortDirection={header.column.getIsSorted()}
+                          onSort={canSort ? () => header.column.toggleSorting() : undefined}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHeaderCell>
+                      )
+                    })}
+                  </TableRow>
+                ))}
+              </TableHead>
+              <TableBody>
+                {showSkeleton ? (
+                  Array.from({ length: Math.min(activePagination?.pageSize ?? 5, 6) }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      {allColumns.map((_, ci) => (
+                        <TableCell key={ci}>
+                          <Skeleton className={ci === 0 ? 'w-3/4' : ci % 3 === 0 ? 'w-1/2' : 'w-2/3'} />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : showEmpty ? (
+                  <TableRow>
+                    <TableCell colSpan={allColumns.length} className='p-0'>
+                      <EmptyState
+                        icon={emptyIcon}
+                        title={emptyMessage}
+                        description={emptyDescription}
+                        action={emptyAction}
+                      />
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </TableRow>
+                ) : (
+                  rows.map(row => (
+                    <TableRow key={row.id} hover className={isRefetching ? 'opacity-60 transition-opacity' : undefined}>
+                      {row.getVisibleCells().map(cell => (
+                        <TableCell key={cell.id} align={cell.column.columnDef.meta?.align ?? 'left'}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       {/* The footer is dead weight on an empty table — hide it rather than show
