@@ -23,7 +23,12 @@ const CustomersFilterBar = ({
   onClearFilters
 }: CustomersFilterBarProps) => (
   <>
-    <SearchField value={search} onChange={onSearchChange} placeholder='Search name or email' className='min-w-56 flex-1' />
+    <SearchField
+      value={search}
+      onChange={onSearchChange}
+      placeholder='Search name or email'
+      className='min-w-56 flex-1'
+    />
     <Select
       label='Tier'
       value={tier}
@@ -32,7 +37,13 @@ const CustomersFilterBar = ({
       options={[{ label: 'All tiers', value: '' }, ...USER_TIERS.map(t => ({ label: t, value: t }))]}
     />
     {hasFilters && (
-      <Button startIcon={<i className='tabler-x' />} size='sm' variant='text' color='secondary' onClick={onClearFilters}>
+      <Button
+        startIcon={<i className='tabler-x' />}
+        size='sm'
+        variant='text'
+        color='secondary'
+        onClick={onClearFilters}
+      >
         Clear filters
       </Button>
     )}

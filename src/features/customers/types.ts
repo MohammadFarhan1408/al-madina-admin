@@ -7,7 +7,8 @@ export type { UserTier }
 export const USER_TIERS: UserTier[] = ['Member', 'Connoisseur', 'Maison Elite']
 
 /** A customer is a User row; the admin list reuses the User shape. */
-export type Customer = User
+/** `orderCount`/`totalSpent` are added by the admin list and exclude cancelled orders. */
+export type Customer = User & { orderCount?: number; totalSpent?: number }
 
 /** Read-only — admin views a customer's saved address book, doesn't manage it. */
 export type CustomerAddress = {
@@ -34,6 +35,7 @@ export type CustomerCartItem = {
 /** `GET /admin/users/:id` returns the customer plus recent orders, addresses, and cart. */
 export type CustomerDetail = {
   user: Customer
+  stats: { orderCount: number; totalSpent: number }
   recentOrders: Order[]
   addresses: CustomerAddress[]
   cart: CustomerCartItem[]

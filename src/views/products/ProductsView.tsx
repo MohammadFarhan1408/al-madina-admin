@@ -44,7 +44,7 @@ const ProductsView = () => {
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') ?? '')
   const [family, setFamily] = useState<ScentFamily | ''>(() => (searchParams.get('family') as ScentFamily) ?? '')
-  const [stock, setStock] = useState<StockFilter>('')
+  const [stock, setStock] = useState<StockFilter>(() => (searchParams.get('stock') as StockFilter) ?? '')
   const [priceRange, setPriceRange] = useState<PriceRange>({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [view, setView] = useState<ProductsListView>('table')
@@ -66,9 +66,10 @@ const ProductsView = () => {
     if (debouncedSearch) params.set('q', debouncedSearch)
     if (categoryId) params.set('categoryId', categoryId)
     if (family) params.set('family', family)
+    if (stock) params.set('stock', stock)
     router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, categoryId, family])
+  }, [debouncedSearch, categoryId, family, stock])
 
   const categoryMap = useMemo(() => new Map((categories ?? []).map(c => [c.id, c.name])), [categories])
 

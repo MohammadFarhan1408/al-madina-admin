@@ -3,7 +3,7 @@
 // Customers management — server-paginated table, search + tier filter,
 // navigates to a dedicated Detail page, and deactivate action. No
 // create/edit routes — customers self-register.
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -21,9 +21,9 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
-import { formatDate } from '@/libs/format'
+import { formatCurrency, formatDate } from '@/libs/format'
 import CustomersFilterBar from '@/features/customers/components/CustomersFilterBar'
-import { useCustomers, useDeactivateCustomer } from '@/features/customers/hooks/useCustomers'
+import { useCustomers, useDeactivateCustomer, useReactivateCustomer } from '@/features/customers/hooks/useCustomers'
 import type { Customer, UserTier } from '@/features/customers/types'
 
 const CustomersView = () => {
@@ -44,7 +44,8 @@ const CustomersView = () => {
   }
 
   const deactivateMutation = useDeactivateCustomer()
-  const { success, error: toastError } = useToast()
+  const reactivateMutation = useReactivateCustomer()
+  const { success, error: toastError, toast } = useToast()
 
   const { data, isLoading, isFetching, isError, error } = useCustomers({
     page: pagination.pageIndex + 1,
@@ -66,6 +67,22 @@ const CustomersView = () => {
       toastError(getErrorMessage(err, 'Failed to deactivate customer'))
     }
   }
+
+  const { mutateAsync: reactivate } = reactivateMutation
+  const { mutate: deactivate } = deactivateMutation
+
+  // Reversible, so no confirm dialog: act, then offer Undo.
+  const reactivateCustomer = useCallback(
+    async (customer: Customer) => {
+      try {
+        await reactivate(customer.id)
+        toast('Customer reactivated', 'success', { label: 'Undo', onClick: () => deactivate(customer.id) })
+      } catch (err) {
+        toastError(getErrorMessage(err, 'Failed to reactivate customer'))
+      }
+    },
+    [reactivate, deactivate, toast, toastError]
+  )
 
   const columns = useMemo<ColumnDef<Customer, any>[]>(
     () => [
@@ -94,6 +111,22 @@ const CustomersView = () => {
         cell: ({ getValue }) => <StatusChip value={(getValue() as boolean) ? 'active' : 'inactive'} />
       },
       {
+        header: 'Orders',
+        accessorKey: 'orderCount',
+        enableSorting: false,
+        meta: { align: 'right' },
+        cell: ({ getValue }) => <span className='tabular-nums'>{(getValue() as number | undefined) ?? 0}</span>
+      },
+      {
+        header: 'Total spent',
+        accessorKey: 'totalSpent',
+        enableSorting: false,
+        meta: { align: 'right' },
+        cell: ({ getValue }) => (
+          <span className='tabular-nums'>{formatCurrency((getValue() as number | undefined) ?? 0)}</span>
+        )
+      },
+      {
         header: 'Member since',
         accessorKey: 'memberSince',
         cell: ({ row }) => formatDate(row.original.memberSince || row.original.createdAt)
@@ -111,20 +144,29 @@ const CustomersView = () => {
             >
               <i className='tabler-eye' />
             </IconButton>
-            <IconButton
-              size='sm'
-              color='error'
-              aria-label={`Deactivate ${row.original.fullName}`}
-              disabled={!row.original.isActive}
-              onClick={() => setToDeactivate(row.original)}
-            >
-              <i className='tabler-user-off' />
-            </IconButton>
+            {row.original.isActive ? (
+              <IconButton
+                size='sm'
+                color='error'
+                aria-label={`Deactivate ${row.original.fullName}`}
+                onClick={() => setToDeactivate(row.original)}
+              >
+                <i className='tabler-user-off' />
+              </IconButton>
+            ) : (
+              <IconButton
+                size='sm'
+                aria-label={`Reactivate ${row.original.fullName}`}
+                onClick={() => reactivateCustomer(row.original)}
+              >
+                <i className='tabler-user-check' />
+              </IconButton>
+            )}
           </div>
         )
       }
     ],
-    [router]
+    [router, reactivateCustomer]
   )
 
   return (

@@ -1,5 +1,5 @@
 // Customers service (doc §7.12 — admin users).
-import { apiDelete, apiGet, apiPatch } from '@/libs/api/axios'
+import { apiDelete, apiGet, apiPatch, apiPost } from '@/libs/api/axios'
 import { endpoints } from '@/libs/api/endpoints'
 import type { Paginated } from '@/libs/api/types'
 
@@ -11,6 +11,8 @@ export const customersApi = {
   detail: (id: string) => apiGet<CustomerDetail>(endpoints.admin.user(id)),
 
   updateTier: (id: string, tier: UserTier) => apiPatch<Customer>(endpoints.admin.userTier(id), { tier }),
+
+  reactivate: (id: string) => apiPost<null>(endpoints.admin.userReactivate(id)),
 
   deactivate: (id: string) => apiDelete<{ success: boolean }>(endpoints.admin.user(id))
 }

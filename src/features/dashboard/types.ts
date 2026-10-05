@@ -10,7 +10,7 @@ export type RevenueBreakdown = {
 export type OrderStatusCounts = Record<OrderStatus, number>
 
 export type TopProduct = {
-  productId: string
+  id?: string
   name: string
   image?: string
   unitsSold: number
@@ -34,4 +34,20 @@ export type OrderStats = {
   byStatus: OrderStatusCounts
   totalRevenue: number
   totalOrders: number
+}
+
+export type Granularity = 'day' | 'month'
+
+export type SummaryPoint = { date: string; revenue: number; orders: number; newCustomers: number }
+
+export type SummaryTotals = { revenue: number; orders: number; aov: number; newCustomers: number }
+
+/** Shape of `GET /admin/dashboard/summary` — mirrors adminService.dashboardSummary(). */
+export type DashboardSummary = {
+  range: { from: string; to: string; granularity: Granularity }
+  totals: SummaryTotals
+  previous: SummaryTotals
+  series: SummaryPoint[]
+  ordersByStatus: Partial<OrderStatusCounts>
+  topProducts: TopProduct[]
 }

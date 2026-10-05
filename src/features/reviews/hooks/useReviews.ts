@@ -17,6 +17,12 @@ export const useReviews = (params: AdminReviewListParams) =>
     placeholderData: keepPreviousData
   })
 
+export const useReviewSummary = () =>
+  useQuery({
+    queryKey: [...reviewKeys.all, 'summary'] as const,
+    queryFn: reviewsApi.summary
+  })
+
 export const useDeleteReview = () => {
   const queryClient = useQueryClient()
 
