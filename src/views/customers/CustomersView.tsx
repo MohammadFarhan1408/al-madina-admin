@@ -14,6 +14,7 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
@@ -24,8 +25,19 @@ import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
 import CustomersFilterBar from '@/features/customers/components/CustomersFilterBar'
+import { customersApi } from '@/features/customers/api/customersApi'
 import { useCustomers, useDeactivateCustomer, useReactivateCustomer } from '@/features/customers/hooks/useCustomers'
 import type { Customer, UserTier } from '@/features/customers/types'
+
+const EXPORT_COLUMNS: ExportColumn<Customer>[] = [
+  { header: 'Name', value: c => c.fullName },
+  { header: 'Email', value: c => c.email },
+  { header: 'Tier', value: c => c.tier },
+  { header: 'Status', value: c => (c.isActive ? 'active' : 'inactive') },
+  { header: 'Orders', value: c => c.orderCount ?? 0 },
+  { header: 'Total spent', value: c => c.totalSpent ?? 0 },
+  { header: 'Member since', value: c => c.memberSince || c.createdAt }
+]
 
 const CustomersView = () => {
   const router = useRouter()
@@ -48,13 +60,17 @@ const CustomersView = () => {
   const reactivateMutation = useReactivateCustomer()
   const { success, error: toastError, toast } = useToast()
 
-  const { data, isLoading, isFetching, isError, error } = useCustomers({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+  const filters = {
     tier: tier || undefined,
     q: debouncedSearch || undefined,
     sortBy: (sorting[0]?.id as 'fullName' | 'email' | 'tier' | 'memberSince') || undefined,
-    sortOrder: sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : undefined
+    sortOrder: sorting[0] ? (sorting[0].desc ? ('desc' as const) : ('asc' as const)) : undefined
+  }
+
+  const { data, isLoading, isFetching, isError, error } = useCustomers({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...filters
   })
 
   const confirmDeactivate = async () => {
@@ -173,7 +189,17 @@ const CustomersView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Customers' subtitle='Your registered account holders' />
+      <PageHeader
+        title='Customers'
+        subtitle='Your registered account holders'
+        action={
+          <ExportButton
+            filename='customers'
+            columns={EXPORT_COLUMNS}
+            fetchPage={(page, limit) => customersApi.list({ ...filters, page, limit })}
+          />
+        }
+      />
 
       {isError && (
         <Alert severity='error' className='mb-4'>

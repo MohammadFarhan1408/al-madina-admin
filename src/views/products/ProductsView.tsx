@@ -13,6 +13,7 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import EntityCell from '@/components/shared/EntityCell'
@@ -33,8 +34,9 @@ import ProductsFilterBar, {
   type ProductsView as ProductsListView,
   type StockFilter
 } from '@/features/products/components/ProductsFilterBar'
+import { productsApi } from '@/features/products/api/productsApi'
 import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
-import type { Product, ScentFamily } from '@/features/products/types'
+import type { Product, ScentFamily, ProductListParams } from '@/features/products/types'
 
 const ProductsView = () => {
   const router = useRouter()
@@ -76,9 +78,7 @@ const ProductsView = () => {
 
   const sort = sorting[0]?.id === 'price' ? (sorting[0].desc ? 'price_desc' : 'price_asc') : 'featured'
 
-  const { data, isLoading, isFetching, isError, error } = useProducts({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+  const filters: ProductListParams = {
     q: debouncedSearch || undefined,
     categoryId: categoryId || undefined,
     family: family || undefined,
@@ -86,6 +86,12 @@ const ProductsView = () => {
     minPrice: priceRange.min,
     maxPrice: priceRange.max,
     sort
+  }
+
+  const { data, isLoading, isFetching, isError, error } = useProducts({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...filters
   })
 
   const items = data?.items ?? []
@@ -123,6 +129,20 @@ const ProductsView = () => {
     setBulkConfirm(false)
     setBulkDeleting(false)
   }
+
+  const exportColumns: ExportColumn<Product>[] = [
+    { header: 'Name', value: p => p.name },
+    { header: 'Brand', value: p => p.brand },
+    { header: 'Category', value: p => categoryMap.get(p.categoryId) },
+    { header: 'Scent family', value: p => p.scentFamily },
+    { header: 'Price', value: p => p.price },
+    { header: 'Currency', value: p => p.currency },
+    { header: 'In stock', value: p => (p.inStock ? 'yes' : 'no') },
+    { header: 'Badge', value: p => p.badge },
+    { header: 'SKU', value: p => p.variants?.[0]?.sku },
+    { header: 'Rating', value: p => p.rating },
+    { header: 'Reviews', value: p => p.reviewCount }
+  ]
 
   const columns = useMemo<ColumnDef<Product, any>[]>(
     () => [
@@ -276,9 +296,16 @@ const ProductsView = () => {
         title='Products'
         subtitle='Manage your fragrance catalogue'
         action={
-          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
-            Add Product
-          </Button>
+          <>
+            <ExportButton
+              filename='products'
+              columns={exportColumns}
+              fetchPage={(page, limit) => productsApi.list({ ...filters, page, limit })}
+            />
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
+              Add Product
+            </Button>
+          </>
         }
       />
 

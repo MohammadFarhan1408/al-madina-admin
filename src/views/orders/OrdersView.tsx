@@ -13,6 +13,7 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
@@ -20,8 +21,26 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate } from '@/libs/format'
 import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
+import { ordersApi } from '@/features/orders/api/ordersApi'
 import { useOrders } from '@/features/orders/hooks/useOrders'
 import type { Order, OrderStatus, PaymentStatus } from '@/features/orders/types'
+
+const EXPORT_COLUMNS: ExportColumn<Order>[] = [
+  { header: 'Reference', value: o => o.reference },
+  { header: 'Placed', value: o => o.placedAt },
+  { header: 'Customer', value: o => o.shippingAddress?.fullName },
+  { header: 'Email', value: o => o.guestEmail },
+  { header: 'Status', value: o => o.status },
+  { header: 'Payment status', value: o => o.paymentStatus },
+  { header: 'Payment method', value: o => o.paymentMethod },
+  { header: 'Delivery', value: o => o.deliveryMethod },
+  { header: 'Items', value: o => o.items.reduce((n, i) => n + i.quantity, 0) },
+  { header: 'Subtotal', value: o => o.subtotal },
+  { header: 'Shipping', value: o => o.shipping },
+  { header: 'Discount', value: o => o.discountAmount },
+  { header: 'Total', value: o => o.total },
+  { header: 'Currency', value: o => o.currency }
+]
 
 const OrdersView = () => {
   const router = useRouter()
@@ -45,16 +64,20 @@ const OrdersView = () => {
     setPagination(p => ({ ...p, pageIndex: 0 }))
   }
 
-  const { data, isLoading, isFetching, isError, error } = useOrders({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+  const filters = {
     q: debouncedSearch || undefined,
     paymentStatus: paymentStatus || undefined,
     status: status || undefined,
     from: from || undefined,
     to: to || undefined,
     sortBy: (sorting[0]?.id as 'reference' | 'placedAt' | 'total' | 'status') || undefined,
-    sortOrder: sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : undefined
+    sortOrder: sorting[0] ? (sorting[0].desc ? ('desc' as const) : ('asc' as const)) : undefined
+  }
+
+  const { data, isLoading, isFetching, isError, error } = useOrders({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...filters
   })
 
   const columns = useMemo<ColumnDef<Order, any>[]>(
@@ -127,7 +150,17 @@ const OrdersView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Orders' subtitle='Track and fulfil customer orders' />
+      <PageHeader
+        title='Orders'
+        subtitle='Track and fulfil customer orders'
+        action={
+          <ExportButton
+            filename='orders'
+            columns={EXPORT_COLUMNS}
+            fetchPage={(page, limit) => ordersApi.list({ ...filters, page, limit })}
+          />
+        }
+      />
 
       {isError && (
         <Alert severity='error' className='mb-4'>
