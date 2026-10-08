@@ -113,7 +113,7 @@ export const TableHeaderCell = ({
           type='button'
           onClick={onSort}
           className={classnames(
-            'group -mx-1.5 inline-flex max-w-full items-center gap-1.5 rounded-xs px-1.5 py-0.5 transition-colors',
+            'group -mx-1.5 inline-flex max-w-full items-center gap-1.5 rounded-xs px-1.5 py-0.5 pointer-coarse:py-3 transition-colors',
             'hover:text-textPrimary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
             sortDirection && 'text-textPrimary',
             align === 'right' && 'flex-row-reverse'

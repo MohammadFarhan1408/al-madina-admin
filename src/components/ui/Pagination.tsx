@@ -62,7 +62,7 @@ const Pagination = ({ page, count, onChange, compact = false, className }: Pagin
               aria-current={p === page ? 'page' : undefined}
               onClick={() => onChange(p)}
               className={classnames(
-                'inline-flex size-7 items-center justify-center rounded-md text-sm tabular-nums transition-colors',
+                'inline-flex size-7 pointer-coarse:size-11 items-center justify-center rounded-md text-sm tabular-nums transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2',
                 p === page
                   ? 'bg-primary font-semibold text-richBlack'

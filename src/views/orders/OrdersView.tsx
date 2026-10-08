@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -137,6 +138,21 @@ const OrdersView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={order => (
+          <MobileRow
+            onClick={() => router.push(`/orders/${order.id}`)}
+            title={order.reference}
+            trailing={<StatusChip value={order.status} />}
+            meta={[
+              order.shippingAddress?.fullName ?? order.guestEmail ?? '—',
+              formatDate(order.placedAt),
+              <span key='t' className='font-medium text-textPrimary'>
+                {formatCurrency(order.total, order.currency)}
+              </span>,
+              <StatusChip key='p' value={order.paymentStatus} />
+            ]}
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}

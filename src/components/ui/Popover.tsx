@@ -40,7 +40,7 @@ export const PopoverOption = forwardRef<HTMLButtonElement, PopoverOptionProps>(
       type='button'
       aria-selected={props.role === 'option' ? selected : undefined}
       className={classnames(
-        'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors',
+        'flex w-full items-center gap-2 rounded-md px-2.5 py-2 pointer-coarse:min-h-11 text-left text-sm transition-colors',
         'disabled:pointer-events-none disabled:opacity-45',
         danger ? 'text-error' : 'text-textPrimary',
         active && (danger ? 'bg-error/12' : 'bg-primary/14'),

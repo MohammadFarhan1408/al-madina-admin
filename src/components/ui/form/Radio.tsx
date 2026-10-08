@@ -22,7 +22,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(({ label, description, cl
     <label
       htmlFor={radioId}
       className={classnames(
-        'group flex cursor-pointer items-start gap-2.5 select-none',
+        'group flex cursor-pointer items-start gap-2.5 pointer-coarse:min-h-11 pointer-coarse:items-center select-none',
         props.disabled && 'cursor-not-allowed opacity-60',
         className
       )}

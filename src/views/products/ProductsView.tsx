@@ -9,6 +9,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -290,6 +291,33 @@ const ProductsView = () => {
       <DataTable
         data={items}
         columns={columns}
+        mobileCard={product => (
+          <MobileRow
+            title={
+              <EntityCell
+                name={product.name}
+                subtitle={`by ${product.brand}`}
+                image={product.images?.[0]}
+                onClick={() => router.push(`/products/${product.id}`)}
+              />
+            }
+            trailing={<StatusChip value={product.inStock ? 'in-stock' : 'out-of-stock'} />}
+            meta={[formatCurrency(product.price, product.currency), `${product.reviewCount} reviews`]}
+            actions={
+              <>
+                <IconButton
+                  aria-label={`Edit ${product.name}`}
+                  onClick={() => router.push(`/products/${product.id}/edit`)}
+                >
+                  <i className='tabler-edit' />
+                </IconButton>
+                <IconButton color='error' aria-label={`Delete ${product.name}`} onClick={() => askDelete(product)}>
+                  <i className='tabler-trash' />
+                </IconButton>
+              </>
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}

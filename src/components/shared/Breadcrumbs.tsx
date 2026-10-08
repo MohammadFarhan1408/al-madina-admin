@@ -66,7 +66,7 @@ const Breadcrumbs = ({ extra = [] }: BreadcrumbsProps) => {
               {crumb.href && !isLast ? (
                 <NextLink
                   href={crumb.href}
-                  className='truncate rounded-xs px-0.5 text-textMuted transition-colors hover:text-primaryInk hover:underline hover:underline-offset-2'
+                  className='truncate rounded-xs px-0.5 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center text-textMuted transition-colors hover:text-primaryInk hover:underline hover:underline-offset-2'
                 >
                   {crumb.label}
                 </NextLink>

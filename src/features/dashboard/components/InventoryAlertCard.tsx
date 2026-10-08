@@ -37,7 +37,7 @@ const InventoryAlertCard = () => {
       <ul className='flex flex-col gap-3'>
         {items.map(product => (
           <li key={product.id}>
-            <Link href={`/products/${product.id}/edit`} className='block rounded-md hover:bg-actionHover'>
+            <Link href={`/products/${product.id}/edit`} className='block rounded-md py-1 hover:bg-actionHover'>
               <EntityCell name={product.name} subtitle={`by ${product.brand}`} image={product.images?.[0]} />
             </Link>
           </li>

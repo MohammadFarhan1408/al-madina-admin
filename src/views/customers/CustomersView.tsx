@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
 import EntityCell from '@/components/shared/EntityCell'
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -183,6 +184,40 @@ const CustomersView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={customer => (
+          <MobileRow
+            title={
+              <EntityCell
+                round
+                name={customer.fullName}
+                subtitle={customer.email}
+                image={customer.avatar}
+                onClick={() => router.push(`/customers/${customer.id}`)}
+              />
+            }
+            trailing={<StatusChip value={customer.tier} />}
+            meta={[
+              `${customer.orderCount ?? 0} orders`,
+              formatCurrency(customer.totalSpent ?? 0),
+              <StatusChip key='s' value={customer.isActive ? 'active' : 'inactive'} />
+            ]}
+            actions={
+              customer.isActive ? (
+                <IconButton
+                  color='error'
+                  aria-label={`Deactivate ${customer.fullName}`}
+                  onClick={() => setToDeactivate(customer)}
+                >
+                  <i className='tabler-user-off' />
+                </IconButton>
+              ) : (
+                <IconButton aria-label={`Reactivate ${customer.fullName}`} onClick={() => reactivateCustomer(customer)}>
+                  <i className='tabler-user-check' />
+                </IconButton>
+              )
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}

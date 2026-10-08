@@ -7,6 +7,7 @@ import Link from 'next/link'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -138,6 +139,18 @@ const ReviewsView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={review => (
+          <MobileRow
+            title={review.title}
+            trailing={<Rating value={review.rating} size='sm' />}
+            meta={[review.author, review.productName ?? 'Deleted product', formatDate(review.date || review.createdAt)]}
+            actions={
+              <IconButton color='error' aria-label={`Delete review by ${review.author}`} onClick={() => ask(review)}>
+                <i className='tabler-trash' />
+              </IconButton>
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}

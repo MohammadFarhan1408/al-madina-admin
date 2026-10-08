@@ -90,7 +90,7 @@ const Field = ({
 export const controlBase =
   'flex items-center gap-2 rounded-md border text-sm transition-[color,background-color,border-color,box-shadow]'
 
-export const controlHeight = 'h-10'
+export const controlHeight = 'h-10 pointer-coarse:h-11'
 
 export const controlTone: Record<FieldTone, { idle: string; text: string; placeholder: string }> = {
   light: {

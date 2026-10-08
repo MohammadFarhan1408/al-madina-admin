@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -16,6 +17,7 @@ import StatusChip from '@/components/shared/StatusChip'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatCurrency, formatDate } from '@/libs/format'
@@ -133,6 +135,23 @@ const CouponsView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={coupon => (
+          <MobileRow
+            onClick={() => router.push(`/coupons/${coupon.id}/edit`)}
+            title={coupon.code}
+            trailing={<StatusChip value={couponState(coupon)} />}
+            meta={[
+              coupon.description,
+              coupon.discountType === 'percentage' ? `${coupon.value}%` : formatCurrency(coupon.value, coupon.currency),
+              `Expires ${formatDate(coupon.expiresAt)}`
+            ]}
+            actions={
+              <IconButton color='error' aria-label={`Delete ${coupon.code}`} onClick={() => ask(coupon)}>
+                <i className='tabler-trash' />
+              </IconButton>
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
