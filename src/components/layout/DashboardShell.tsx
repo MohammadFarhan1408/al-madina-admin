@@ -14,7 +14,8 @@ import IconButton from '@/components/ui/IconButton'
 import Logo from '@/components/layout/shared/Logo'
 import NavbarSearch from '@/components/layout/shared/NavbarSearch'
 import UserDropdown from '@/components/layout/shared/UserDropdown'
-import sidebarNavData from '@/data/navigation/sidebarNavData'
+import { useAuth } from '@/contexts/AuthContext'
+import { visibleNav } from '@/data/navigation/sidebarNavData'
 
 const COLLAPSE_KEY = 'am-admin:sidebar-collapsed'
 
@@ -60,6 +61,7 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
+  const { user } = useAuth()
 
   // Read the saved rail state after mount — reading localStorage during render
   // would desync the server and client markup.
@@ -122,7 +124,7 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
         Skip to content
       </a>
       <Sidebar
-        sections={sidebarNavData}
+        sections={visibleNav(user?.role === 'admin')}
         open={drawerOpen}
 
         // The rail state is a desktop preference; a collapsed rail opened as a

@@ -39,6 +39,7 @@ export const endpoints = {
   admin: {
     dashboard: '/admin/dashboard',
     dashboardSummary: '/admin/dashboard/summary',
+    activity: '/admin/activity',
     ordersStats: '/admin/orders/stats',
     products: '/admin/products',
     product: (id: string) => `/admin/products/${id}`,
