@@ -13,7 +13,14 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1, 'Reset token is required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+
+    // Mirrors the API's password policy (auth.schema.ts) so the user sees the rule
+    // before submitting instead of a 422 after.
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Za-z]/, 'Password must include a letter')
+      .regex(/\d/, 'Password must include a number'),
     confirmPassword: z.string().min(1, 'Please confirm your password')
   })
   .refine(v => v.password === v.confirmPassword, {

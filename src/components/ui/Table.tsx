@@ -27,7 +27,7 @@ export type TableHeadProps = HTMLAttributes<HTMLTableSectionElement> & {
 
 export const TableHead = ({ sticky = false, className, children, ...props }: TableHeadProps) => (
   <thead
-    className={classnames('bg-backgroundChat/55', sticky && 'sticky top-0 z-(--z-sticky) backdrop-blur-sm', className)}
+    className={classnames('bg-surfaceSunken/55', sticky && 'sticky top-0 z-(--z-sticky) backdrop-blur-sm', className)}
     {...props}
   >
     {children}
@@ -113,7 +113,7 @@ export const TableHeaderCell = ({
           type='button'
           onClick={onSort}
           className={classnames(
-            'group -mx-1.5 inline-flex max-w-full items-center gap-1.5 rounded-xs px-1.5 py-0.5 transition-colors',
+            'group -mx-1.5 inline-flex max-w-full items-center gap-1.5 rounded-xs px-1.5 py-0.5 pointer-coarse:py-3 transition-colors',
             'hover:text-textPrimary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
             sortDirection && 'text-textPrimary',
             align === 'right' && 'flex-row-reverse'

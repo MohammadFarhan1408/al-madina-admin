@@ -12,13 +12,12 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import EntityCell from '@/components/shared/EntityCell'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { useCategories, useDeleteCategory } from '@/features/categories/hooks/useCategories'
 import type { Category } from '@/features/categories/types'
 
@@ -26,10 +25,14 @@ const CategoriesView = () => {
   const router = useRouter()
   const { data: categories, isLoading, isError, error } = useCategories()
   const deleteMutation = useDeleteCategory()
-  const { success, error: toastError } = useToast()
 
   const [search, setSearch] = useState('')
-  const [toDelete, setToDelete] = useState<Category | null>(null)
+
+  const { ask, dialog } = useConfirmDelete<Category>({
+    entity: 'category',
+    remove: c => deleteMutation.mutateAsync(c.id),
+    name: c => c.name
+  })
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -41,35 +44,17 @@ const CategoriesView = () => {
     )
   }, [categories, search])
 
-  const confirmDelete = async () => {
-    if (!toDelete) return
-
-    try {
-      await deleteMutation.mutateAsync(toDelete.id)
-      success('Category deleted')
-      setToDelete(null)
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete category'))
-    }
-  }
-
   const columns = useMemo<ColumnDef<Category, any>[]>(
     () => [
       {
         header: 'Category',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <div
-            className='flex cursor-pointer items-center gap-3'
+          <EntityCell
+            name={row.original.name}
+            image={row.original.image}
             onClick={() => router.push(`/categories/${row.original.id}`)}
-          >
-            {row.original.image ? (
-              <img src={row.original.image} alt='' className='size-10 rounded-md object-cover' />
-            ) : (
-              <span className='size-10 rounded-md bg-secondary/15' />
-            )}
-            <span className='text-sm font-medium'>{row.original.name}</span>
-          </div>
+          />
         )
       },
       {
@@ -100,14 +85,14 @@ const CategoriesView = () => {
                   icon: 'tabler-edit',
                   onClick: () => router.push(`/categories/${row.original.id}/edit`)
                 },
-                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => ask(row.original) }
               ]}
             />
           </div>
         )
       }
     ],
-    [router]
+    [router, ask]
   )
 
   return (
@@ -133,6 +118,19 @@ const CategoriesView = () => {
         manualPagination={false}
         data={filtered}
         columns={columns}
+        mobileCard={category => (
+          <div className='flex items-center justify-between gap-3'>
+            <EntityCell
+              name={category.name}
+              subtitle={`${category.productCount} products`}
+              image={category.image}
+              onClick={() => router.push(`/categories/${category.id}`)}
+            />
+            <IconButton aria-label={`Edit ${category.name}`} onClick={() => router.push(`/categories/${category.id}/edit`)}>
+              <i className='tabler-edit' />
+            </IconButton>
+          </div>
+        )}
         isLoading={isLoading}
         emptyIcon='tabler-category'
         emptyMessage={search ? 'No categories match your search' : 'No categories yet'}
@@ -160,15 +158,7 @@ const CategoriesView = () => {
         }
       />
 
-      <ConfirmDialog
-        open={!!toDelete}
-        title='Delete category'
-        description={`Delete "${toDelete?.name}"? This cannot be undone.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onClose={() => setToDelete(null)}
-      />
+      {dialog}
     </>
   )
 }

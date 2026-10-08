@@ -9,29 +9,36 @@ import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate } from '@/libs/format'
 import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
 import { useOrders } from '@/features/orders/hooks/useOrders'
-import type { Order, OrderStatus } from '@/features/orders/types'
+import type { Order, OrderStatus, PaymentStatus } from '@/features/orders/types'
 
 const OrdersView = () => {
   const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
+  const [search, setSearch] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>('')
   const [status, setStatus] = useState<OrderStatus | ''>('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const hasFilters = Boolean(status || from || to)
+  const debouncedSearch = useDebouncedValue(search)
+  const hasFilters = Boolean(search || paymentStatus || status || from || to)
   const resetOnChange = useFilterReset(setPagination)
 
   const clearFilters = () => {
+    setSearch('')
+    setPaymentStatus('')
     setStatus('')
     setFrom('')
     setTo('')
@@ -41,6 +48,8 @@ const OrdersView = () => {
   const { data, isLoading, isFetching, isError, error } = useOrders({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
+    q: debouncedSearch || undefined,
+    paymentStatus: paymentStatus || undefined,
     status: status || undefined,
     from: from || undefined,
     to: to || undefined,
@@ -129,6 +138,21 @@ const OrdersView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={order => (
+          <MobileRow
+            onClick={() => router.push(`/orders/${order.id}`)}
+            title={order.reference}
+            trailing={<StatusChip value={order.status} />}
+            meta={[
+              order.shippingAddress?.fullName ?? order.guestEmail ?? '—',
+              formatDate(order.placedAt),
+              <span key='t' className='font-medium text-textPrimary'>
+                {formatCurrency(order.total, order.currency)}
+              </span>,
+              <StatusChip key='p' value={order.paymentStatus} />
+            ]}
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
@@ -140,11 +164,15 @@ const OrdersView = () => {
         emptyMessage={hasFilters ? 'No orders match these filters' : 'No orders yet'}
         emptyDescription={
           hasFilters
-            ? 'Try a wider date range, or clear the status filter.'
+            ? 'Try a different search, a wider date range, or clear the filters.'
             : 'Orders placed in the mobile app will appear here.'
         }
         toolbar={
           <OrdersFilterBar
+            search={search}
+            onSearchChange={resetOnChange(setSearch)}
+            paymentStatus={paymentStatus}
+            onPaymentStatusChange={resetOnChange(setPaymentStatus)}
             status={status}
             onStatusChange={resetOnChange(setStatus)}
             from={from}

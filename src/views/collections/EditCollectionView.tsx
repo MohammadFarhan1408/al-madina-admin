@@ -12,14 +12,19 @@ type Props = { id: string }
 
 const EditCollectionView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: collection, isLoading, isError, error } = useCollection(id)
+  const { data: collection, isLoading, isError, error, refetch } = useCollection(id)
 
   if (isLoading || !collection) {
     return (
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Collection' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load collection.' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load collection.'
+        />
       </>
     )
   }

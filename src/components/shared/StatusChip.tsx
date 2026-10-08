@@ -34,6 +34,10 @@ const COLOR_MAP: Record<string, BadgeColor> = {
   inactive: 'secondary',
   verified: 'success',
 
+  // Coupon lifecycle (derived, see CouponsView)
+  expired: 'error',
+  exhausted: 'warning',
+
   // Product inventory state — distinct from active/inactive (enabled vs disabled)
   'in-stock': 'success',
   'out-of-stock': 'error'

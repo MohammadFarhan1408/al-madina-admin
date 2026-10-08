@@ -15,7 +15,7 @@ export type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & 
 }
 
 /** Checkbox input styled as a track+knob toggle, so it stays keyboard- and
- *  form-native (no ARIA role juggling). The knob translates rather than
+ *  form-native; `role='switch'` makes screen readers announce on/off. The knob translates rather than
  *  animating layout, and the track carries the state colour. */
 const Switch = forwardRef<HTMLInputElement, SwitchProps>(
   ({ label, description, reverse = false, className, id, ...props }, ref) => {
@@ -26,7 +26,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       <label
         htmlFor={switchId}
         className={classnames(
-          'group inline-flex items-center gap-3 select-none',
+          'group inline-flex items-center gap-3 pointer-coarse:min-h-11 select-none',
           reverse && 'w-full justify-between',
           props.disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
           className
@@ -39,12 +39,12 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           </span>
         )}
         <span className='relative inline-flex shrink-0 items-center'>
-          <input ref={ref} type='checkbox' id={switchId} className='peer sr-only' {...props} />
+          <input ref={ref} type='checkbox' role='switch' id={switchId} className='peer sr-only' {...props} />
           <span
             aria-hidden
             className={classnames(
-              'block h-5 w-9 rounded-full border border-transparent bg-textDisabled/50 transition-colors',
-              'group-hover:bg-textDisabled/70 peer-checked:bg-primaryDark peer-checked:group-hover:bg-primaryInk',
+              'block h-5 w-9 rounded-full border border-borderControl bg-surfaceSunken transition-colors',
+              'group-hover:bg-surfaceSunken/60 peer-checked:border-transparent peer-checked:bg-primaryDark peer-checked:group-hover:bg-primaryInk',
               'peer-focus-visible:ring-2 peer-focus-visible:ring-primary/50 peer-focus-visible:ring-offset-2'
             )}
           />

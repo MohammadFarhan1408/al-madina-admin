@@ -8,14 +8,17 @@
 // before anyone read it. Errors also persist longer than confirmations, since
 // they're the ones a user actually needs to act on.
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import Alert, { type AlertSeverity } from '@/components/ui/Alert'
 
-type Toast = { id: number; message: string; severity: AlertSeverity }
+/** One-click recovery, e.g. `{ label: 'Undo', onClick: restore }`. */
+type ToastAction = { label: string; onClick: () => void }
+
+type Toast = { id: number; message: string; severity: AlertSeverity; action?: ToastAction }
 
 type ToastContextValue = {
-  toast: (message: string, severity?: AlertSeverity) => void
+  toast: (message: string, severity?: AlertSeverity, action?: ToastAction) => void
   success: (message: string) => void
   error: (message: string) => void
 }
@@ -32,8 +35,46 @@ const DURATION: Record<AlertSeverity, number> = {
 
 const MAX_VISIBLE = 3
 
+/** Owns its own dismiss timer so it is cleared on unmount, and paused while the
+ *  stack is hovered or focused — a toast with an Undo button must not vanish
+ *  under the cursor (WCAG 2.2.1). */
+const ToastItem = ({ toast: t, paused, onDismiss }: { toast: Toast; paused: boolean; onDismiss: (id: number) => void }) => {
+  useEffect(() => {
+    if (paused) return
+
+    const timer = setTimeout(() => onDismiss(t.id), DURATION[t.severity])
+
+    return () => clearTimeout(timer)
+  }, [paused, t.id, t.severity, onDismiss])
+
+  return (
+    <Alert
+      severity={t.severity}
+      onClose={() => onDismiss(t.id)}
+      action={
+        t.action && (
+          <button
+            type='button'
+            className='rounded px-2 py-1 text-sm font-semibold underline underline-offset-2 pointer-coarse:min-h-11'
+            onClick={() => {
+              t.action?.onClick()
+              onDismiss(t.id)
+            }}
+          >
+            {t.action.label}
+          </button>
+        )
+      }
+      className='pointer-events-auto w-full animate-toast-in shadow-lg'
+    >
+      {t.message}
+    </Alert>
+  )
+}
+
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [paused, setPaused] = useState(false)
   const nextId = useRef(0)
 
   const dismiss = useCallback((id: number) => {
@@ -41,7 +82,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const toast = useCallback(
-    (message: string, severity: AlertSeverity = 'info') => {
+    (message: string, severity: AlertSeverity = 'info', action?: ToastAction) => {
       const id = nextId.current++
 
       setToasts(current => {
@@ -50,12 +91,10 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         // separate failures.
         if (current.at(-1)?.message === message) return current
 
-        return [...current, { id, message, severity }].slice(-MAX_VISIBLE)
+        return [...current, { id, message, severity, action }].slice(-MAX_VISIBLE)
       })
-
-      setTimeout(() => dismiss(id), DURATION[severity])
     },
-    [dismiss]
+    []
   )
 
   const value = useMemo<ToastContextValue>(
@@ -71,24 +110,20 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     <ToastContext.Provider value={value}>
       {children}
 
-      {/* Bottom-right, clear of the sticky header and the account menu the
-          previous top-right placement used to cover. `aria-live` sits on the
-          persistent region — not on the toasts — because a live region has to
-          exist before its content changes to be announced at all. */}
+      {/* Bottom-right, raised to clear the scroll-to-top button. `aria-live`
+          sits on the persistent region — not on the toasts — because a live
+          region has to exist before its content changes to be announced. */}
       <div
         aria-live='polite'
         aria-relevant='additions'
-        className='pointer-events-none fixed inset-x-4 bottom-4 z-(--z-toast) flex flex-col items-end gap-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-96'
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={() => setPaused(false)}
+        className='pointer-events-none fixed inset-x-4 bottom-20 z-(--z-toast) flex flex-col items-end gap-2 sm:inset-x-auto sm:right-5 sm:w-96'
       >
         {toasts.map(t => (
-          <Alert
-            key={t.id}
-            severity={t.severity}
-            onClose={() => dismiss(t.id)}
-            className='pointer-events-auto w-full animate-toast-in shadow-lg'
-          >
-            {t.message}
-          </Alert>
+          <ToastItem key={t.id} toast={t} paused={paused} onDismiss={dismiss} />
         ))}
       </div>
     </ToastContext.Provider>

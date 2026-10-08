@@ -12,14 +12,14 @@ type Props = { id: string }
 
 const EditProductView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: product, isLoading, isError, error } = useProduct(id)
+  const { data: product, isLoading, isError, error, refetch } = useProduct(id)
 
   if (isLoading || !product) {
     return (
       <>
         <Breadcrumbs />
         <PageHeader title='Edit Product' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load product.' />
+        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load product.' />
       </>
     )
   }

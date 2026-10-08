@@ -31,7 +31,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       <label
         htmlFor={checkboxId}
         className={classnames(
-          'group inline-flex items-start gap-2.5 select-none',
+          'group inline-flex items-start gap-2.5 pointer-coarse:min-h-11 pointer-coarse:items-center select-none',
           props.disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
           className
         )}

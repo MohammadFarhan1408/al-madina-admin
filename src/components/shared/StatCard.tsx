@@ -11,6 +11,34 @@ type StatCardProps = {
   icon: string
   color?: StatCardColor
   subtitle?: string
+
+  /** Change vs the previous period: `change` is a fraction (0.12 = +12%), null
+   *  when there is no prior value to compare with. */
+  trend?: { change: number | null; caption: string }
+}
+
+/** Fractional change, or null when the baseline is zero. */
+export const changeBetween = (current: number, previous: number) => (previous ? (current - previous) / previous : null)
+
+const TrendLine = ({ change, caption }: NonNullable<StatCardProps['trend']>) => {
+  if (change === null) return <span className='truncate text-xs text-textMuted'>No prior data to compare</span>
+
+  const up = change >= 0
+
+  // Arrow + sign + text: direction never relies on colour alone.
+  return (
+    <span
+      className={classnames('flex items-center gap-1 truncate text-xs', up ? 'text-successDark' : 'text-errorDark')}
+    >
+      <i aria-hidden className={up ? 'tabler-trend-up' : 'tabler-trend-down'} />
+      <span className='sr-only'>{up ? 'Up' : 'Down'}</span>
+      <span className='font-medium tabular-nums'>
+        {up ? '+' : '−'}
+        {Math.abs(change * 100).toFixed(1)}%
+      </span>
+      <span className='truncate text-textMuted'>vs {caption}</span>
+    </span>
+  )
 }
 
 /* Icon tints pair each family's soft background with its ink, so the glyph
@@ -29,7 +57,7 @@ const iconClasses: Record<StatCardColor, string> = {
  *
  *  Tabular figures (set globally on `body`) keep a row of these optically
  *  aligned as the numbers change. */
-const StatCard = ({ title, value, icon, color = 'primary', subtitle }: StatCardProps) => (
+const StatCard = ({ title, value, icon, color = 'primary', subtitle, trend }: StatCardProps) => (
   <Card hoverable>
     <div className='flex items-start gap-3.5 px-4 py-4'>
       <span
@@ -41,7 +69,11 @@ const StatCard = ({ title, value, icon, color = 'primary', subtitle }: StatCardP
       <div className='flex min-w-0 flex-col gap-0.5'>
         <span className='truncate text-xl font-semibold tracking-[-0.01em] text-textPrimary'>{value}</span>
         <span className='truncate text-sm text-textSecondary'>{title}</span>
-        {subtitle && <span className='truncate text-xs text-textMuted'>{subtitle}</span>}
+        {trend ? (
+          <TrendLine {...trend} />
+        ) : (
+          subtitle && <span className='truncate text-xs text-textMuted'>{subtitle}</span>
+        )}
       </div>
     </div>
   </Card>

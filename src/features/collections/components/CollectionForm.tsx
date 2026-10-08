@@ -1,17 +1,19 @@
 'use client'
 
 // Create/edit collection form (doc §5.4). RHF + Zod; accent enum + image.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import Card, { CardBody } from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
 import Input from '@/components/ui/form/Input'
+import NumberInput from '@/components/ui/form/NumberInput'
 import Select from '@/components/ui/form/Select'
+import FormActions from '@/components/shared/FormActions'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
+import { useFormSync } from '@/hooks/useFormSync'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { humanize } from '@/libs/format'
@@ -38,30 +40,28 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
     reset,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors, isDirty }
   } = useForm<CollectionFormValues>({
     resolver: zodResolver(collectionSchema),
     defaultValues: defaultCollectionValues
   })
 
-  useEffect(() => {
-    reset(
-      collection
-        ? {
-            title: collection.title,
-            subtitle: collection.subtitle,
-            image: collection.image,
-            accent: collection.accent,
-            sortOrder: collection.sortOrder,
-            slug: collection.slug ?? '',
-            metaTitle: collection.metaTitle ?? '',
-            metaDescription: collection.metaDescription ?? '',
-            metaKeywords: collection.metaKeywords ?? []
-          }
-        : defaultCollectionValues
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection])
+  useFormSync(
+    reset,
+    collection,
+    c => ({
+      title: c.title,
+      subtitle: c.subtitle,
+      image: c.image,
+      accent: c.accent,
+      sortOrder: c.sortOrder,
+      slug: c.slug ?? '',
+      metaTitle: c.metaTitle ?? '',
+      metaDescription: c.metaDescription ?? '',
+      metaKeywords: c.metaKeywords ?? []
+    }),
+    defaultCollectionValues
+  )
 
   const image = watch('image')
   const metaKeywords = watch('metaKeywords')
@@ -94,18 +94,18 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending || imageUploading
 
   return (
-    <Card>
-      <CardBody>
-        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Card>
+        <CardBody className='flex flex-col gap-5'>
           <Controller
             name='title'
             control={control}
-            render={({ field }) => <Input {...field} label='Title' error={errors.title?.message} />}
+            render={({ field }) => <Input {...field} required label='Title' error={errors.title?.message} />}
           />
           <Controller
             name='subtitle'
             control={control}
-            render={({ field }) => <Input {...field} label='Subtitle' error={errors.subtitle?.message} />}
+            render={({ field }) => <Input {...field} required label='Subtitle' error={errors.subtitle?.message} />}
           />
           <Controller
             name='accent'
@@ -121,20 +121,12 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
           <Controller
             name='sortOrder'
             control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                type='number'
-                label='Sort order'
-                error={errors.sortOrder?.message}
-              />
-            )}
+            render={({ field }) => <NumberInput {...field} label='Sort order' error={errors.sortOrder?.message} />}
           />
           <ImageUpload
             type='collection'
             value={image ? [image] : []}
-            onChange={urls => setValue('image', urls[0] ?? '', { shouldValidate: true })}
+            onChange={urls => setValue('image', urls[0] ?? '', { shouldValidate: true, shouldDirty: true })}
             onUploadingChange={setImageUploading}
             label='Collection image'
             error={errors.image?.message}
@@ -142,19 +134,16 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
 
           <hr className='border-border' />
           <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' />
+        </CardBody>
+      </Card>
 
-          <hr className='border-border' />
-          <div className='flex items-center justify-end gap-4'>
-            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type='submit' loading={submitting}>
-              {isEdit ? 'Save changes' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+      <FormActions
+        dirty={isDirty}
+        submitting={submitting}
+        submitLabel={isEdit ? 'Save changes' : 'Create'}
+        onCancel={onCancel}
+      />
+    </form>
   )
 }
 

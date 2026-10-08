@@ -79,7 +79,7 @@ const ResetPassword = () => {
               required
               tone='dark'
               label='New password'
-              placeholder='At least 8 characters'
+              placeholder='8+ characters, with a letter and a number'
               autoComplete='new-password'
               error={errors.password?.message}
             />

@@ -38,12 +38,16 @@ export type OrderItem = {
   volumeMl: number
 }
 
+/** One entry of an order's status timeline (orders placed before it existed have none). */
+export type StatusChange = { status: OrderStatus; at: string; by?: string | null }
+
 export type Order = {
   id: string
   reference: string
   userId?: string | null
   guestEmail?: string
   status: OrderStatus
+  statusHistory?: StatusChange[]
   shippingAddress: ShippingAddress
   deliveryMethod: DeliveryMethod
   paymentMethod: PaymentMethod
@@ -60,11 +64,18 @@ export type Order = {
   updatedAt: string
 }
 
+/** `GET /admin/orders/:id` — the order plus its registered customer (null for guests). */
+export type AdminOrder = Order & { customer: { id: string; fullName: string; email: string } | null }
+
 /** Filters for `GET /admin/orders` (doc §7.12). */
 export type AdminOrderListParams = {
   page?: number
   limit?: number
   status?: OrderStatus
+  paymentStatus?: PaymentStatus
+
+  /** Matches reference, guest email or shipping name. */
+  q?: string
   from?: string
   to?: string
   sortBy?: 'reference' | 'placedAt' | 'total' | 'status'

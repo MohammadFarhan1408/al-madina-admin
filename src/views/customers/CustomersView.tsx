@@ -3,12 +3,14 @@
 // Customers management — server-paginated table, search + tier filter,
 // navigates to a dedicated Detail page, and deactivate action. No
 // create/edit routes — customers self-register.
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
+import EntityCell from '@/components/shared/EntityCell'
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -20,9 +22,9 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
-import { formatDate } from '@/libs/format'
+import { formatCurrency, formatDate } from '@/libs/format'
 import CustomersFilterBar from '@/features/customers/components/CustomersFilterBar'
-import { useCustomers, useDeactivateCustomer } from '@/features/customers/hooks/useCustomers'
+import { useCustomers, useDeactivateCustomer, useReactivateCustomer } from '@/features/customers/hooks/useCustomers'
 import type { Customer, UserTier } from '@/features/customers/types'
 
 const CustomersView = () => {
@@ -43,7 +45,8 @@ const CustomersView = () => {
   }
 
   const deactivateMutation = useDeactivateCustomer()
-  const { success, error: toastError } = useToast()
+  const reactivateMutation = useReactivateCustomer()
+  const { success, error: toastError, toast } = useToast()
 
   const { data, isLoading, isFetching, isError, error } = useCustomers({
     page: pagination.pageIndex + 1,
@@ -66,28 +69,35 @@ const CustomersView = () => {
     }
   }
 
+  const { mutateAsync: reactivate } = reactivateMutation
+  const { mutate: deactivate } = deactivateMutation
+
+  // Reversible, so no confirm dialog: act, then offer Undo.
+  const reactivateCustomer = useCallback(
+    async (customer: Customer) => {
+      try {
+        await reactivate(customer.id)
+        toast('Customer reactivated', 'success', { label: 'Undo', onClick: () => deactivate(customer.id) })
+      } catch (err) {
+        toastError(getErrorMessage(err, 'Failed to reactivate customer'))
+      }
+    },
+    [reactivate, deactivate, toast, toastError]
+  )
+
   const columns = useMemo<ColumnDef<Customer, any>[]>(
     () => [
       {
         header: 'Customer',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <div
-            className='flex cursor-pointer items-center gap-3'
+          <EntityCell
+            round
+            name={row.original.fullName}
+            subtitle={row.original.email}
+            image={row.original.avatar}
             onClick={() => router.push(`/customers/${row.original.id}`)}
-          >
-            {row.original.avatar ? (
-              <img src={row.original.avatar} alt='' className='size-10 rounded-full object-cover' />
-            ) : (
-              <span className='flex size-10 items-center justify-center rounded-full bg-secondary/15 text-sm font-medium'>
-                {row.original.fullName?.charAt(0)}
-              </span>
-            )}
-            <div className='flex flex-col'>
-              <span className='text-sm font-medium'>{row.original.fullName}</span>
-              <span className='text-xs text-textSecondary'>{row.original.email}</span>
-            </div>
-          </div>
+          />
         )
       },
       {
@@ -100,6 +110,22 @@ const CustomersView = () => {
         accessorKey: 'isActive',
         enableSorting: false,
         cell: ({ getValue }) => <StatusChip value={(getValue() as boolean) ? 'active' : 'inactive'} />
+      },
+      {
+        header: 'Orders',
+        accessorKey: 'orderCount',
+        enableSorting: false,
+        meta: { align: 'right' },
+        cell: ({ getValue }) => <span className='tabular-nums'>{(getValue() as number | undefined) ?? 0}</span>
+      },
+      {
+        header: 'Total spent',
+        accessorKey: 'totalSpent',
+        enableSorting: false,
+        meta: { align: 'right' },
+        cell: ({ getValue }) => (
+          <span className='tabular-nums'>{formatCurrency((getValue() as number | undefined) ?? 0)}</span>
+        )
       },
       {
         header: 'Member since',
@@ -119,20 +145,29 @@ const CustomersView = () => {
             >
               <i className='tabler-eye' />
             </IconButton>
-            <IconButton
-              size='sm'
-              color='error'
-              aria-label={`Deactivate ${row.original.fullName}`}
-              disabled={!row.original.isActive}
-              onClick={() => setToDeactivate(row.original)}
-            >
-              <i className='tabler-user-off' />
-            </IconButton>
+            {row.original.isActive ? (
+              <IconButton
+                size='sm'
+                color='error'
+                aria-label={`Deactivate ${row.original.fullName}`}
+                onClick={() => setToDeactivate(row.original)}
+              >
+                <i className='tabler-user-off' />
+              </IconButton>
+            ) : (
+              <IconButton
+                size='sm'
+                aria-label={`Reactivate ${row.original.fullName}`}
+                onClick={() => reactivateCustomer(row.original)}
+              >
+                <i className='tabler-user-check' />
+              </IconButton>
+            )}
           </div>
         )
       }
     ],
-    [router]
+    [router, reactivateCustomer]
   )
 
   return (
@@ -149,6 +184,40 @@ const CustomersView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={customer => (
+          <MobileRow
+            title={
+              <EntityCell
+                round
+                name={customer.fullName}
+                subtitle={customer.email}
+                image={customer.avatar}
+                onClick={() => router.push(`/customers/${customer.id}`)}
+              />
+            }
+            trailing={<StatusChip value={customer.tier} />}
+            meta={[
+              `${customer.orderCount ?? 0} orders`,
+              formatCurrency(customer.totalSpent ?? 0),
+              <StatusChip key='s' value={customer.isActive ? 'active' : 'inactive'} />
+            ]}
+            actions={
+              customer.isActive ? (
+                <IconButton
+                  color='error'
+                  aria-label={`Deactivate ${customer.fullName}`}
+                  onClick={() => setToDeactivate(customer)}
+                >
+                  <i className='tabler-user-off' />
+                </IconButton>
+              ) : (
+                <IconButton aria-label={`Reactivate ${customer.fullName}`} onClick={() => reactivateCustomer(customer)}>
+                  <i className='tabler-user-check' />
+                </IconButton>
+              )
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}

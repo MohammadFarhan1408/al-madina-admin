@@ -9,27 +9,36 @@ import { useRouter } from 'next/navigation'
 
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import RowActions from '@/components/shared/RowActions'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 import { useFilterReset } from '@/hooks/useFilterReset'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatCurrency, formatDate } from '@/libs/format'
 import CouponsFilterBar, { type CouponsStatusFilter } from '@/features/coupons/components/CouponsFilterBar'
 import { useCoupons, useDeleteCoupon } from '@/features/coupons/hooks/useCoupons'
 import type { Coupon } from '@/features/coupons/types'
 
+/** `isActive` alone says "Active" for a coupon that can no longer be redeemed;
+ *  surface why it is dead. */
+const couponState = (c: Coupon) => {
+  if (!c.isActive) return 'inactive'
+  if (new Date(c.expiresAt).getTime() < Date.now()) return 'expired'
+  if (c.usageLimit && c.usageCount >= c.usageLimit) return 'exhausted'
+
+  return 'active'
+}
+
 const CouponsView = () => {
   const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
   const [isActive, setIsActive] = useState<CouponsStatusFilter>('')
-  const [toDelete, setToDelete] = useState<Coupon | null>(null)
   const hasFilters = isActive !== ''
   const resetOnChange = useFilterReset(setPagination)
 
@@ -39,25 +48,18 @@ const CouponsView = () => {
   }
 
   const deleteMutation = useDeleteCoupon()
-  const { success, error: toastError } = useToast()
+
+  const { ask, dialog } = useConfirmDelete<Coupon>({
+    entity: 'coupon',
+    remove: c => deleteMutation.mutateAsync(c.id),
+    name: c => c.code
+  })
 
   const { data, isLoading, isFetching, isError, error } = useCoupons({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     isActive: isActive === '' ? undefined : isActive === 'true'
   })
-
-  const confirmDelete = async () => {
-    if (!toDelete) return
-
-    try {
-      await deleteMutation.mutateAsync(toDelete.id)
-      success('Coupon deleted')
-      setToDelete(null)
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete coupon'))
-    }
-  }
 
   const columns = useMemo<ColumnDef<Coupon, any>[]>(
     () => [
@@ -91,7 +93,7 @@ const CouponsView = () => {
       {
         header: 'Status',
         accessorKey: 'isActive',
-        cell: ({ getValue }) => <StatusChip value={(getValue() as boolean) ? 'active' : 'inactive'} />
+        cell: ({ row }) => <StatusChip value={couponState(row.original)} />
       },
       {
         header: 'Actions',
@@ -101,14 +103,14 @@ const CouponsView = () => {
             <RowActions
               options={[
                 { text: 'Edit', icon: 'tabler-edit', onClick: () => router.push(`/coupons/${row.original.id}/edit`) },
-                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => setToDelete(row.original) }
+                { text: 'Delete', icon: 'tabler-trash', danger: true, onClick: () => ask(row.original) }
               ]}
             />
           </div>
         )
       }
     ],
-    [router]
+    [router, ask]
   )
 
   return (
@@ -133,6 +135,23 @@ const CouponsView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        mobileCard={coupon => (
+          <MobileRow
+            onClick={() => router.push(`/coupons/${coupon.id}/edit`)}
+            title={coupon.code}
+            trailing={<StatusChip value={couponState(coupon)} />}
+            meta={[
+              coupon.description,
+              coupon.discountType === 'percentage' ? `${coupon.value}%` : formatCurrency(coupon.value, coupon.currency),
+              `Expires ${formatDate(coupon.expiresAt)}`
+            ]}
+            actions={
+              <IconButton color='error' aria-label={`Delete ${coupon.code}`} onClick={() => ask(coupon)}>
+                <i className='tabler-trash' />
+              </IconButton>
+            }
+          />
+        )}
         total={data?.total ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
@@ -162,15 +181,7 @@ const CouponsView = () => {
         }
       />
 
-      <ConfirmDialog
-        open={!!toDelete}
-        title='Delete coupon'
-        description={`Delete "${toDelete?.code}"? This cannot be undone.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onClose={() => setToDelete(null)}
-      />
+      {dialog}
     </>
   )
 }

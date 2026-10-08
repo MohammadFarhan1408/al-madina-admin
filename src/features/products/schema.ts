@@ -7,10 +7,10 @@ const productVariantSchema = z.object({
   volumeMl: z.number().refine(v => (PRODUCT_VARIANT_SIZES_ML as readonly number[]).includes(v), {
     message: 'Choose a standard size'
   }),
-  price: z.number().min(0, 'Must be 0 or greater'),
+  price: z.number({ error: 'Enter a price' }).min(0, 'Must be 0 or greater'),
   sku: z.string().trim().min(2, 'SKU is required'),
   barcode: z.string().trim().optional().or(z.literal('')),
-  stock: z.number().int().min(0, 'Must be 0 or greater'),
+  stock: z.number({ error: 'Enter a stock count' }).int('Must be a whole number').min(0, 'Must be 0 or greater'),
   inStock: z.boolean()
 })
 
@@ -21,8 +21,8 @@ export const productSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   description: z.string().trim().min(1, 'Description is required'),
   scentFamily: z.enum(SCENT_FAMILIES, { message: 'Scent family is required' }),
-  volumeMl: z.number().min(0, 'Must be 0 or greater'),
-  price: z.number().min(0, 'Must be 0 or greater'),
+  volumeMl: z.number({ error: 'Choose a size' }).min(0, 'Must be 0 or greater'),
+  price: z.number({ error: 'Enter a price' }).min(0, 'Must be 0 or greater'),
   originalPrice: z.number().min(0).optional(),
   currency: z.string().trim().max(3, 'Max 3 characters'),
   notes: z.array(z.string()),

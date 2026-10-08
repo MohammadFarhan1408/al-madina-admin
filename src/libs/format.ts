@@ -41,3 +41,19 @@ export function humanize(value?: string) {
 
   return value.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
+
+/** Compact number for chart axes: 12400 → "12K". */
+export function formatCompact(value: number) {
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+}
+
+/** Label for a dashboard bucket key — "2026-10-05" → "5 Oct", "2026-10" → "Oct 2026". */
+export function formatBucket(key: string) {
+  const [y, m, d] = key.split('-').map(Number)
+
+  if (!y || !m) return key
+
+  return d
+    ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(y, m - 1, d))
+    : new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric' }).format(new Date(y, m - 1, 1))
+}

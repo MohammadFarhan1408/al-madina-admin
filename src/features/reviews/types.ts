@@ -3,6 +3,9 @@
 export type Review = {
   id: string
   productId: string
+
+  /** Added by the admin list so a moderator can tell what is being reviewed. */
+  productName?: string
   userId?: string | null
   author: string
   avatar?: string
@@ -13,6 +16,12 @@ export type Review = {
   verified: boolean
   createdAt: string
   updatedAt: string
+}
+
+export type ReviewSummary = {
+  average: number
+  total: number
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>
 }
 
 export type AdminReviewListParams = {

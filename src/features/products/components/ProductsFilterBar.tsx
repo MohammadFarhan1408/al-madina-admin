@@ -4,7 +4,7 @@
 // category/family/stock/price filters wrapping on a second row underneath —
 // keeps a 5-filter set from crowding into one overflowing line.
 
-import IconButton from '@/components/ui/IconButton'
+import SegmentedControl from '@/components/ui/form/SegmentedControl'
 import Button from '@/components/ui/Button'
 import SearchField from '@/components/shared/SearchField'
 import PriceRangeFilter, { type PriceRange } from '@/components/shared/PriceRangeFilter'
@@ -23,7 +23,8 @@ const STOCK_OPTIONS: { label: string; value: StockFilter }[] = [
 
 const FAMILY_OPTIONS = SCENT_FAMILIES.map(family => ({ label: humanize(family), value: family }))
 
-const filterSelectClassName = 'w-44 shrink-0'
+// Two-up on phones, fixed width from `sm` — the row wraps instead of overflowing.
+const filterSelectClassName = 'min-w-36 flex-1 sm:w-44 sm:flex-none'
 
 export type ProductsFilterBarProps = {
   search: string
@@ -67,13 +68,13 @@ const ProductsFilterBar = ({
   onClearFilters
 }: ProductsFilterBarProps) => (
   <div className='flex w-full flex-col gap-3'>
-    <div className='flex items-center gap-2'>
+    <div className='flex flex-wrap items-center gap-2'>
       <SearchField
         value={search}
         onChange={onSearchChange}
         placeholder='Search product name…'
         tone='subtle'
-        fullWidth
+        className='min-w-full flex-1 sm:min-w-56'
       />
 
       <Select
@@ -101,28 +102,15 @@ const ProductsFilterBar = ({
         options={STOCK_OPTIONS}
       />
       <PriceRangeFilter value={priceRange} onChange={onPriceRangeChange} className={filterSelectClassName} />
-      <div className='flex shrink-0 items-center gap-1 rounded-md border border-border bg-backgroundChat/40 p-0.5'>
-        <IconButton
-          size='sm'
-          aria-label='Grid view'
-          aria-pressed={view === 'grid'}
-          variant={view === 'grid' ? 'filled' : 'ghost'}
-          color={view === 'grid' ? 'primary' : 'default'}
-          onClick={() => onViewChange('grid')}
-        >
-          <i className='tabler-layout-grid' />
-        </IconButton>
-        <IconButton
-          size='sm'
-          aria-label='List view'
-          aria-pressed={view === 'table'}
-          variant={view === 'table' ? 'filled' : 'ghost'}
-          color={view === 'table' ? 'primary' : 'default'}
-          onClick={() => onViewChange('table')}
-        >
-          <i className='tabler-list' />
-        </IconButton>
-      </div>
+      <SegmentedControl
+        aria-label='Layout'
+        value={view}
+        onChange={onViewChange}
+        options={[
+          { value: 'table', icon: 'tabler-list', ariaLabel: 'List view' },
+          { value: 'grid', icon: 'tabler-layout-grid', ariaLabel: 'Grid view' }
+        ]}
+      />
       {hasFilters && (
         <Button
           startIcon={<i className='tabler-x' />}

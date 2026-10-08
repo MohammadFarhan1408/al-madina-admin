@@ -1,50 +1,39 @@
 'use client'
 
 // Read-only category detail — image, tagline, sort order, SEO metadata.
-import { useState } from 'react'
-
 import { useRouter } from 'next/navigation'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import DetailActions from '@/components/shared/DetailActions'
 import ZoomableImage from '@/components/shared/ZoomableImage'
 import QueryState from '@/components/shared/QueryState'
-import Button from '@/components/ui/Button'
-import { useToast } from '@/contexts/ToastContext'
-import { getErrorMessage } from '@/libs/api/types'
+import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { useCategory, useDeleteCategory } from '@/features/categories/hooks/useCategories'
+import type { Category } from '@/features/categories/types'
 
 type Props = { id: string }
 
 const CategoryDetailView = ({ id }: Props) => {
   const router = useRouter()
-  const { data: category, isLoading, isError, error } = useCategory(id)
+  const { data: category, isLoading, isError, error, refetch } = useCategory(id)
   const deleteMutation = useDeleteCategory()
-  const { success, error: toastError } = useToast()
-  const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const handleDelete = async () => {
-    if (!category) return
-
-    try {
-      await deleteMutation.mutateAsync(category.id)
-      success('Category deleted')
-      router.push('/categories')
-    } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete category'))
-      setConfirmDelete(false)
-    }
-  }
+  const { ask, dialog } = useConfirmDelete<Category>({
+    entity: 'category',
+    remove: c => deleteMutation.mutateAsync(c.id),
+    name: c => c.name,
+    onDeleted: () => router.push('/categories')
+  })
 
   if (isLoading || !category) {
     return (
       <>
         <Breadcrumbs />
         <PageHeader title='Category' />
-        <QueryState isError={isError} error={error} fallbackMessage='Failed to load category.' />
+        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load category.' />
       </>
     )
   }
@@ -55,28 +44,7 @@ const CategoryDetailView = ({ id }: Props) => {
       <PageHeader
         title={category.name}
         subtitle={category.tagline}
-        action={
-          <div className='flex items-center gap-3'>
-            <Button variant='outlined' color='secondary' onClick={() => router.push('/categories')}>
-              Back
-            </Button>
-            <Button
-              variant='outlined'
-              startIcon={<i className='tabler-edit' />}
-              onClick={() => router.push(`/categories/${id}/edit`)}
-            >
-              Edit
-            </Button>
-            <Button
-              variant='outlined'
-              color='error'
-              startIcon={<i className='tabler-trash' />}
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete
-            </Button>
-          </div>
-        }
+        action={<DetailActions backHref='/categories' editHref={`/categories/${id}/edit`} onDelete={() => ask(category)} />}
       />
 
       <div className='flex flex-col gap-4'>
@@ -109,15 +77,7 @@ const CategoryDetailView = ({ id }: Props) => {
         )}
       </div>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        title='Delete category'
-        description={`Delete "${category.name}"? This cannot be undone.`}
-        confirmText='Delete'
-        loading={deleteMutation.isPending}
-        onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(false)}
-      />
+      {dialog}
     </>
   )
 }

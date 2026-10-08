@@ -48,14 +48,14 @@ export type SelectProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChang
 }
 
 const sizeClasses: Record<InputSize, string> = {
-  sm: 'h-9 pl-2.5 pr-8',
-  md: 'h-10 pl-3 pr-9',
+  sm: 'h-9 pointer-coarse:h-11 pl-2.5 pr-8',
+  md: 'h-10 pointer-coarse:h-11 pl-3 pr-9',
   lg: 'h-11 pl-3.5 pr-10'
 }
 
 const iconSizeClasses: Record<InputSize, string> = {
-  sm: 'h-9 pl-8 pr-8',
-  md: 'h-10 pl-9 pr-9',
+  sm: 'h-9 pointer-coarse:h-11 pl-8 pr-8',
+  md: 'h-10 pointer-coarse:h-11 pl-9 pr-9',
   lg: 'h-11 pl-10 pr-10'
 }
 

@@ -8,8 +8,12 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
+import Link from 'next/link'
+
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
+
+import OrderTimeline from '@/features/orders/components/OrderTimeline'
 import DetailSection from '@/components/shared/DetailSection'
 import DetailRow from '@/components/shared/DetailRow'
 import StatusChip from '@/components/shared/StatusChip'
@@ -34,7 +38,7 @@ type Props = { id: string }
 const OrderDetailView = ({ id }: Props) => {
   const router = useRouter()
   const { success, error } = useToast()
-  const { data: order, isLoading, isError, error: fetchError } = useOrder(id)
+  const { data: order, isLoading, isError, error: fetchError, refetch } = useOrder(id)
   const { data: transactions } = useOrderTransactions(id)
   const updateStatus = useUpdateOrderStatus()
   const refundPayment = useRefundPayment(id)
@@ -74,7 +78,12 @@ const OrderDetailView = ({ id }: Props) => {
       <>
         <Breadcrumbs />
         <PageHeader title='Order' />
-        <QueryState isError={isError} error={fetchError} fallbackMessage='Failed to load order.' />
+        <QueryState
+          isError={isError}
+          error={fetchError}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load order.'
+        />
       </>
     )
   }
@@ -85,7 +94,7 @@ const OrderDetailView = ({ id }: Props) => {
       <PageHeader
         title={`Order ${order.reference}`}
         action={
-          <div className='flex items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             <StatusChip value={order.status} />
             <StatusChip value={order.paymentStatus} />
             <Button variant='outlined' color='secondary' onClick={() => router.push('/orders')}>
@@ -97,6 +106,16 @@ const OrderDetailView = ({ id }: Props) => {
 
       <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
         <div className='flex flex-col gap-6 md:col-span-2'>
+          <DetailSection title='Status'>
+            <Select
+              label='Update status'
+              value={order.status}
+              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
+              disabled={updateStatus.isPending}
+              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
+            />
+          </DetailSection>
+
           <DetailSection title='Line items'>
             <Table>
               <TableHead>
@@ -195,16 +214,6 @@ const OrderDetailView = ({ id }: Props) => {
               </Button>
             )}
           </DetailSection>
-
-          <DetailSection title='Status'>
-            <Select
-              label='Update status'
-              value={order.status}
-              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
-              disabled={updateStatus.isPending}
-              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
-            />
-          </DetailSection>
         </div>
 
         <div className='flex flex-col gap-6'>
@@ -215,6 +224,18 @@ const OrderDetailView = ({ id }: Props) => {
               value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
               stacked
             />
+            {order.customer && (
+              <DetailRow
+                label='Account'
+                stacked
+                value={
+                  <Link href={`/customers/${order.customer.id}`} className='flex min-h-11 flex-col justify-center hover:underline'>
+                    <span className='text-sm font-medium text-primaryInk'>{order.customer.fullName}</span>
+                    <span className='text-xs text-textSecondary'>{order.customer.email}</span>
+                  </Link>
+                }
+              />
+            )}
             <DetailRow
               label='Contact'
               stacked
@@ -226,6 +247,10 @@ const OrderDetailView = ({ id }: Props) => {
                 </div>
               }
             />
+          </DetailSection>
+
+          <DetailSection title='Status history'>
+            <OrderTimeline history={order.statusHistory} />
           </DetailSection>
 
           <DetailSection title='Shipping address'>

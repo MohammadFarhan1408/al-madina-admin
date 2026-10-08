@@ -6,7 +6,7 @@
 // right), adapted from Theme's ecommerce products/add page — same
 // RHF/Zod fields, mutations, and SeoFieldsSection/ImageUpload as before,
 // only regrouped into cards instead of one long column.
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,11 +16,14 @@ import IconButton from '@/components/ui/IconButton'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import Combobox from '@/components/ui/form/Combobox'
 import Input from '@/components/ui/form/Input'
+import NumberInput from '@/components/ui/form/NumberInput'
 import Select from '@/components/ui/form/Select'
 import Switch from '@/components/ui/form/Switch'
 import Textarea from '@/components/ui/form/Textarea'
+import FormActions from '@/components/shared/FormActions'
 import ImageUpload from '@/components/shared/ImageUpload'
 import SeoFieldsSection from '@/components/shared/SeoFieldsSection'
+import { useFormSync } from '@/hooks/useFormSync'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { useCategories } from '@/features/categories/hooks/useCategories'
@@ -61,7 +64,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
     reset,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors, isDirty }
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: defaultProductValues
@@ -76,40 +79,38 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
     name: 'variants'
   })
 
-  useEffect(() => {
-    reset(
-      product
-        ? {
-            name: product.name,
-            nameAr: product.nameAr ?? '',
-            brand: product.brand,
-            categoryId: product.categoryId,
-            description: product.description,
-            scentFamily: product.scentFamily,
-            volumeMl: product.volumeMl,
-            price: product.price,
-            originalPrice: product.originalPrice,
-            currency: product.currency,
-            notes: product.notes ?? [],
-            images: product.images ?? [],
-            badge: product.badge,
-            inStock: product.inStock,
-            isFeatured: product.isFeatured,
-            isNewArrival: product.isNewArrival,
-            isBestSeller: product.isBestSeller,
-            isSignature: product.isSignature,
-            isSeasonal: product.isSeasonal,
-            variants: product.variants ?? [],
-            tagIds: product.tagIds ?? [],
-            slug: product.slug ?? '',
-            metaTitle: product.metaTitle ?? '',
-            metaDescription: product.metaDescription ?? '',
-            metaKeywords: product.metaKeywords ?? []
-          }
-        : defaultProductValues
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product])
+  useFormSync(
+    reset,
+    product,
+    p => ({
+      name: p.name,
+      nameAr: p.nameAr ?? '',
+      brand: p.brand,
+      categoryId: p.categoryId,
+      description: p.description,
+      scentFamily: p.scentFamily,
+      volumeMl: p.volumeMl,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      currency: p.currency,
+      notes: p.notes ?? [],
+      images: p.images ?? [],
+      badge: p.badge,
+      inStock: p.inStock,
+      isFeatured: p.isFeatured,
+      isNewArrival: p.isNewArrival,
+      isBestSeller: p.isBestSeller,
+      isSignature: p.isSignature,
+      isSeasonal: p.isSeasonal,
+      variants: p.variants ?? [],
+      tagIds: p.tagIds ?? [],
+      slug: p.slug ?? '',
+      metaTitle: p.metaTitle ?? '',
+      metaDescription: p.metaDescription ?? '',
+      metaKeywords: p.metaKeywords ?? []
+    }),
+    defaultProductValues
+  )
 
   const images = watch('images')
   const notes = watch('notes')
@@ -200,7 +201,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                 type='product'
                 multiple
                 value={images ?? []}
-                onChange={urls => setValue('images', urls)}
+                onChange={urls => setValue('images', urls, { shouldDirty: true })}
                 onUploadingChange={setImagesUploading}
                 label='Gallery images'
               />
@@ -228,7 +229,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
             <CardBody className='flex flex-col gap-3'>
               {variantFields.length === 0 && (
                 <p className='text-xs text-textSecondary'>
-                  No additional bottle sizes — the product sells at the base volume/price above.
+                  No additional bottle sizes — the product sells at the base volume and price.
                 </p>
               )}
               {variantFields.map((variantField, index) => (
@@ -241,6 +242,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                         {...field}
                         containerClassName='min-w-[100px] flex-1'
                         label='Size'
+                        error={errors.variants?.[index]?.volumeMl?.message}
                         onChange={e => field.onChange(Number(e.target.value))}
                         options={PRODUCT_VARIANT_SIZES_ML.map(size => ({ label: `${size}ml`, value: size }))}
                       />
@@ -250,13 +252,11 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                     name={`variants.${index}.price`}
                     control={control}
                     render={({ field }) => (
-                      <Input
+                      <NumberInput
                         {...field}
                         containerClassName='min-w-[100px] flex-1'
-                        onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                        type='number'
                         label='Price'
-                        error={errors.variants?.[index]?.price ? ' ' : undefined}
+                        error={errors.variants?.[index]?.price?.message}
                       />
                     )}
                   />
@@ -268,7 +268,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                         {...field}
                         containerClassName='min-w-[100px] flex-1'
                         label='SKU'
-                        error={errors.variants?.[index]?.sku ? ' ' : undefined}
+                        error={errors.variants?.[index]?.sku?.message}
                       />
                     )}
                   />
@@ -276,12 +276,23 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                     name={`variants.${index}.stock`}
                     control={control}
                     render={({ field }) => (
-                      <Input
+                      <NumberInput
                         {...field}
                         containerClassName='min-w-[80px] flex-1'
-                        onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                        type='number'
                         label='Stock'
+                        error={errors.variants?.[index]?.stock?.message}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name={`variants.${index}.inStock`}
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        label='In stock'
+                        checked={field.value}
+                        onChange={e => field.onChange(e.target.checked)}
+                        className='mb-2'
                       />
                     )}
                   />
@@ -326,29 +337,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
               <Controller
                 name='price'
                 control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                    type='number'
-                    required
-                    label='Price'
-                    error={errors.price?.message}
-                  />
-                )}
+                render={({ field }) => <NumberInput {...field} required label='Price' error={errors.price?.message} />}
               />
               <Controller
                 name='originalPrice'
                 control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                    type='number'
-                    label='Original price (optional)'
-                  />
-                )}
+                render={({ field }) => <NumberInput {...field} label='Original price (optional)' />}
               />
             </CardBody>
           </Card>
@@ -406,7 +400,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                 onChange={next =>
                   setValue(
                     'tagIds',
-                    next.map(t => t.id)
+                    next.map(t => t.id),
+                    { shouldDirty: true }
                   )
                 }
               />
@@ -458,18 +453,14 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
             </CardBody>
           </Card>
         </div>
-
-        <div className='md:col-span-3'>
-          <div className='flex items-center justify-end gap-4'>
-            <Button type='button' variant='outlined' color='secondary' onClick={onCancel} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type='submit' loading={submitting}>
-              {isEdit ? 'Save changes' : 'Create'}
-            </Button>
-          </div>
-        </div>
       </div>
+
+      <FormActions
+        dirty={isDirty}
+        submitting={submitting}
+        submitLabel={isEdit ? 'Save changes' : 'Create'}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

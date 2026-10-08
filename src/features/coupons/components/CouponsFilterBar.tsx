@@ -18,7 +18,7 @@ const CouponsFilterBar = ({ isActive, onIsActiveChange, hasFilters, onClearFilte
       label='Status'
       value={isActive}
       onChange={e => onIsActiveChange(e.target.value as CouponsStatusFilter)}
-      containerClassName='min-w-40'
+      containerClassName='min-w-36 flex-1 sm:flex-none sm:min-w-40'
       options={[
         { label: 'All', value: '' },
         { label: 'Active', value: 'true' },
@@ -26,7 +26,13 @@ const CouponsFilterBar = ({ isActive, onIsActiveChange, hasFilters, onClearFilte
       ]}
     />
     {hasFilters && (
-      <Button startIcon={<i className='tabler-x' />} size='sm' variant='text' color='secondary' onClick={onClearFilters}>
+      <Button
+        startIcon={<i className='tabler-x' />}
+        size='sm'
+        variant='text'
+        color='secondary'
+        onClick={onClearFilters}
+      >
         Clear filters
       </Button>
     )}

@@ -1,52 +1,49 @@
+'use client'
+
 import Link from 'next/link'
 
+import ChartCard from '@/components/shared/ChartCard'
+import EntityCell from '@/components/shared/EntityCell'
 import Button from '@/components/ui/Button'
-import Card, { CardBody } from '@/components/ui/Card'
-import Skeleton from '@/components/ui/Skeleton'
+import { useProducts } from '@/features/products/hooks/useProducts'
 
-type InventoryAlertCardProps = {
-  outOfStock?: number
-  isLoading: boolean
-}
-
-/** Real-data callout — takes the reference dashboard's marketing-banner slot,
- *  but shows an actionable inventory signal instead of an "Upgrade Account"
- *  pitch that doesn't apply to an internal admin. Occupies no space at all
- *  when there's nothing to flag. */
-const InventoryAlertCard = ({ outOfStock, isLoading }: InventoryAlertCardProps) => {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardBody className='flex flex-col gap-3'>
-          <Skeleton variant='block' className='size-10' />
-          <Skeleton className='h-4 w-3/4' />
-          <Skeleton className='h-8 w-28' />
-        </CardBody>
-      </Card>
-    )
-  }
-
-  if (!outOfStock) return null
+/** Products currently marked out of stock (the real `inStock` flag — there is
+ *  no stock quantity at product level to threshold on). */
+const InventoryAlertCard = () => {
+  const { data, isLoading } = useProducts({ inStock: false, limit: 5 })
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
 
   return (
-    <Card className='h-full'>
-      <CardBody className='flex h-full flex-col gap-3'>
-        <span aria-hidden className='flex size-10 shrink-0 items-center justify-center rounded-md bg-warning/18 text-warningInk'>
-          <i className='tabler-alert-triangle text-[20px]' />
-        </span>
-        <div className='flex flex-1 flex-col gap-1'>
-          <p className='text-sm font-semibold text-textPrimary'>
-            {outOfStock} product{outOfStock === 1 ? '' : 's'} out of stock
-          </p>
-          <p className='text-sm text-textMuted'>Review inventory to keep your catalogue orderable.</p>
-        </div>
-        <Link href='/products' className='self-start'>
-          <Button size='sm' variant='outlined' color='warning' endIcon={<i className='tabler-arrow-right' />}>
-            Review products
-          </Button>
-        </Link>
-      </CardBody>
-    </Card>
+    <ChartCard
+      title='Out of stock'
+      description={total ? `${total} product${total === 1 ? '' : 's'} can't be ordered` : undefined}
+      isLoading={isLoading}
+      height={240}
+      className='h-full'
+      empty={
+        !total && { title: 'Everything is in stock', description: 'Products marked out of stock will be listed here.' }
+      }
+      action={
+        total > items.length ? (
+          <Link href='/products?stock=false'>
+            <Button size='sm' variant='text' endIcon={<i className='tabler-arrow-right' />}>
+              View all
+            </Button>
+          </Link>
+        ) : undefined
+      }
+    >
+      <ul className='flex flex-col gap-3'>
+        {items.map(product => (
+          <li key={product.id}>
+            <Link href={`/products/${product.id}/edit`} className='block rounded-md py-1 hover:bg-actionHover'>
+              <EntityCell name={product.name} subtitle={`by ${product.brand}`} image={product.images?.[0]} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </ChartCard>
   )
 }
 
