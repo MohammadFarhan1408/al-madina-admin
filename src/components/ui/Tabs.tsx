@@ -83,8 +83,9 @@ const Tabs = ({ items, value, onChange, label, className }: TabsProps) => {
             key={item.value}
             role='tab'
             type='button'
+            id={`${item.value}-tab`}
             aria-selected={active}
-            aria-controls={`${item.value}-panel`}
+            aria-controls={active ? `${item.value}-panel` : undefined}
             tabIndex={active ? 0 : -1}
             disabled={item.disabled}
             onClick={() => onChange(item.value)}
@@ -130,6 +131,7 @@ export const TabPanel = ({ active, value, children, className }: TabPanelProps) 
     <div
       role='tabpanel'
       id={value ? `${value}-panel` : undefined}
+      aria-labelledby={value ? `${value}-tab` : undefined}
       tabIndex={0}
       className={classnames('pt-5 focus-visible:outline-none', className)}
     >

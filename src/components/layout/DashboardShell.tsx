@@ -115,6 +115,12 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className='min-h-dvh bg-backgroundDefault'>
+      <a
+        href='#main'
+        className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-(--z-toast) focus:rounded-md focus:bg-richBlack focus:px-4 focus:py-2 focus:text-sm focus:text-ivory'
+      >
+        Skip to content
+      </a>
       <Sidebar
         sections={sidebarNavData}
         open={drawerOpen}
@@ -154,7 +160,7 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
 
         {/* Gutters step up with the viewport instead of sitting at a fixed 24px,
             which is too tight on phones and too cramped on a 27" display. */}
-        <main className='flex-1 px-4 py-5 md:px-6 md:py-6 xl:px-8'>
+        <main id='main' tabIndex={-1} className='flex-1 focus:outline-none px-4 py-5 md:px-6 md:py-6 xl:px-8'>
           <div className='mx-auto w-full max-w-[1600px]'>{children}</div>
         </main>
       </div>
