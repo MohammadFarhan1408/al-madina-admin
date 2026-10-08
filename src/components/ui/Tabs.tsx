@@ -90,7 +90,7 @@ const Tabs = ({ items, value, onChange, label, className }: TabsProps) => {
             onClick={() => onChange(item.value)}
             onKeyDown={e => handleKeyDown(e, index)}
             className={classnames(
-              'relative flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap',
+              'relative flex shrink-0 items-center gap-1.5 px-3 py-2.5 pointer-coarse:min-h-11 text-sm font-medium whitespace-nowrap',
               'transition-colors duration-150 ease-out-quart',
               'after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-t-full after:transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset',

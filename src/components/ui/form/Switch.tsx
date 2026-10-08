@@ -26,7 +26,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       <label
         htmlFor={switchId}
         className={classnames(
-          'group inline-flex items-center gap-3 select-none',
+          'group inline-flex items-center gap-3 pointer-coarse:min-h-11 select-none',
           reverse && 'w-full justify-between',
           props.disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
           className

@@ -170,7 +170,7 @@ const CustomerDetailView = ({ id }: Props) => {
                     <div className='flex flex-col'>
                       <Link
                         href={`/orders/${order.id}`}
-                        className='text-sm font-medium hover:text-primaryInk hover:underline'
+                        className='-my-3 inline-block py-3 text-sm font-medium hover:text-primaryInk hover:underline'
                       >
                         {order.reference}
                       </Link>

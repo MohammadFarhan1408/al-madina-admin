@@ -101,7 +101,7 @@ const Login = () => {
         <div className='flex justify-end'>
           <Link
             href='/forgot-password'
-            className='rounded-xs text-sm font-medium text-primaryLight transition-colors hover:text-primary hover:underline hover:underline-offset-2'
+            className='rounded-xs py-1 pointer-coarse:py-3 text-sm font-medium text-primaryLight transition-colors hover:text-primary hover:underline hover:underline-offset-2'
           >
             Forgot password?
           </Link>

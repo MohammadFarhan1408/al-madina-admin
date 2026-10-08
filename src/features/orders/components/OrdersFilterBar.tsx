@@ -47,14 +47,14 @@ const OrdersFilterBar = ({
       label='Status'
       value={status}
       onChange={e => onStatusChange(e.target.value as OrderStatus | '')}
-      containerClassName='min-w-40'
+      containerClassName='min-w-36 flex-1'
       options={[{ label: 'All statuses', value: '' }, ...ORDER_STATUSES.map(s => ({ label: humanize(s), value: s }))]}
     />
     <Select
       label='Payment'
       value={paymentStatus}
       onChange={e => onPaymentStatusChange(e.target.value as PaymentStatus | '')}
-      containerClassName='min-w-40'
+      containerClassName='min-w-36 flex-1'
       options={[{ label: 'All payments', value: '' }, ...PAYMENT_STATUSES.map(s => ({ label: humanize(s), value: s }))]}
     />
     <DateInput
@@ -63,7 +63,7 @@ const OrdersFilterBar = ({
       value={from}
       max={to || undefined}
       onChange={e => onFromChange(e.target.value)}
-      containerClassName='min-w-44'
+      containerClassName='min-w-36 flex-1'
     />
     <DateInput
       clearable
@@ -71,7 +71,7 @@ const OrdersFilterBar = ({
       value={to}
       min={from || undefined}
       onChange={e => onToChange(e.target.value)}
-      containerClassName='min-w-44'
+      containerClassName='min-w-36 flex-1'
     />
     {hasFilters && (
       <Button

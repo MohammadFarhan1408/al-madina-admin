@@ -33,7 +33,7 @@ const CustomersFilterBar = ({
       label='Tier'
       value={tier}
       onChange={e => onTierChange(e.target.value as UserTier | '')}
-      containerClassName='min-w-44'
+      containerClassName='min-w-36 flex-1 sm:flex-none sm:min-w-44'
       options={[{ label: 'All tiers', value: '' }, ...USER_TIERS.map(t => ({ label: t, value: t }))]}
     />
     {hasFilters && (

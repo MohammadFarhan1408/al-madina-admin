@@ -32,8 +32,8 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 }
 
 const sizeClasses: Record<InputSize, string> = {
-  sm: 'h-9 px-2.5',
-  md: 'h-10 px-3',
+  sm: 'h-9 pointer-coarse:h-11 px-2.5',
+  md: 'h-10 pointer-coarse:h-11 px-3',
   lg: 'h-11 px-3.5'
 }
 

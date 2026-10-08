@@ -229,7 +229,7 @@ const OrderDetailView = ({ id }: Props) => {
                 label='Account'
                 stacked
                 value={
-                  <Link href={`/customers/${order.customer.id}`} className='flex flex-col hover:underline'>
+                  <Link href={`/customers/${order.customer.id}`} className='flex min-h-11 flex-col justify-center hover:underline'>
                     <span className='text-sm font-medium text-primaryInk'>{order.customer.fullName}</span>
                     <span className='text-xs text-textSecondary'>{order.customer.email}</span>
                   </Link>

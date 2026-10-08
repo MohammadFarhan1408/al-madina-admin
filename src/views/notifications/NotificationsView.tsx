@@ -8,6 +8,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 
+import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
@@ -183,6 +184,13 @@ const NotificationsView = () => {
             <DataTable
               data={history?.items ?? []}
               columns={columns}
+              mobileCard={entry => (
+                <MobileRow
+                  title={entry.title}
+                  trailing={<StatusChip value={entry.kind} />}
+                  meta={[entry.tier || 'All customers', formatDateTime(entry.createdAt), entry.body]}
+                />
+              )}
               total={history?.total ?? 0}
               pagination={pagination}
               onPaginationChange={setPagination}
