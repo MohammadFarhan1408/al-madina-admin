@@ -11,13 +11,15 @@ import { clearTokens, getAccessToken, getRefreshToken, setTokens } from '../auth
 
 const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5001/v1/'
 
+// A hung request should fail with a retryable error, not spin forever.
 export const api = axios.create({
   baseURL,
+  timeout: 20_000,
   headers: { 'Content-Type': 'application/json' }
 })
 
 // Bare client for the refresh call so it never loops through the interceptor.
-const refreshClient = axios.create({ baseURL, headers: { 'Content-Type': 'application/json' } })
+const refreshClient = axios.create({ baseURL, timeout: 20_000, headers: { 'Content-Type': 'application/json' } })
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getAccessToken()

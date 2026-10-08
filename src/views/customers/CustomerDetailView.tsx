@@ -162,7 +162,7 @@ const CustomerDetailView = ({ id }: Props) => {
             ]}
           />
 
-          <TabPanel active={activeTab === 'overview'} className='p-0'>
+          <TabPanel active={activeTab === 'overview'} value='overview' className='p-0'>
             <DetailSection title='Recent orders'>
               {data.recentOrders.length ? (
                 data.recentOrders.map(order => (
@@ -188,7 +188,7 @@ const CustomerDetailView = ({ id }: Props) => {
             </DetailSection>
           </TabPanel>
 
-          <TabPanel active={activeTab === 'addresses'} className='p-0'>
+          <TabPanel active={activeTab === 'addresses'} value='addresses' className='p-0'>
             <DetailSection title='Saved addresses'>
               {data.addresses.length ? (
                 data.addresses.map(addr => (
@@ -210,7 +210,7 @@ const CustomerDetailView = ({ id }: Props) => {
             </DetailSection>
           </TabPanel>
 
-          <TabPanel active={activeTab === 'cart'} className='p-0'>
+          <TabPanel active={activeTab === 'cart'} value='cart' className='p-0'>
             <DetailSection title='Current cart'>
               {data.cart.length ? (
                 data.cart.map((item, idx) => {

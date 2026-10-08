@@ -75,10 +75,7 @@ const Pagination = ({ page, count, onChange, compact = false, className }: Pagin
         )}
       </span>
 
-      <span
-        aria-hidden
-        className={classnames('px-2 text-sm tabular-nums text-textSecondary', compact ? 'block' : 'sm:hidden')}
-      >
+      <span className={classnames('px-2 text-sm tabular-nums text-textSecondary', compact ? 'block' : 'sm:hidden')}>
         {`${page} / ${count}`}
       </span>
 

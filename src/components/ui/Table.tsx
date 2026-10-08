@@ -49,7 +49,7 @@ export type TableRowProps = HTMLAttributes<HTMLTableRowElement> & {
 
 export const TableRow = ({ hover = false, selected = false, className, children, ...props }: TableRowProps) => (
   <tr
-    aria-selected={selected || undefined}
+    data-selected={selected || undefined}
     className={classnames('transition-colors', hover && 'hover:bg-primary/6', selected && 'bg-primary/10', className)}
     {...props}
   >

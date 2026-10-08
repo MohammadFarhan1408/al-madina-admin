@@ -65,12 +65,13 @@
 
   /* ---- Text -----------------------------------------------------------------
      Four steps only. `textMuted` is the floor for anything a user must be
-     able to read — placeholders, timestamps, counts, helper text (5.2:1 AA).
+     able to read — placeholders, timestamps, counts, helper text (6.0:1 on cards,
+     4.9:1 on the sunken surface — AA on both).
      `textDisabled` is reserved for genuinely inert controls, which WCAG
      exempts; never use it for live content. */
   --color-textPrimary: rgb(11 11 11 / 92%);
   --color-textSecondary: #5f5a4f; /* warm, 6.5:1 on ivory */
-  --color-textMuted: #6b6559;
+  --color-textMuted: #625c50;
   --color-textDisabled: #9c9585;
 
   /* ---- Interaction ---------------------------------------------------------- */

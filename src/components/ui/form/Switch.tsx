@@ -20,7 +20,7 @@ export type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & 
 const Switch = forwardRef<HTMLInputElement, SwitchProps>(
   ({ label, description, reverse = false, className, id, ...props }, ref) => {
     const reactId = useId()
-    const switchId = id ?? props.name ?? reactId
+    const switchId = id ?? reactId
 
     return (
       <label
