@@ -81,3 +81,9 @@ export type AdminOrderListParams = {
   sortBy?: 'reference' | 'placedAt' | 'total' | 'status'
   sortOrder?: 'asc' | 'desc'
 }
+
+/** `PATCH /admin/orders/status` — what moved and why anything was skipped. */
+export type BulkStatusResult = {
+  updated: string[]
+  skipped: { id: string; reference?: string; reason: string }[]
+}
