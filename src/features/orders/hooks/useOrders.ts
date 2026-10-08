@@ -34,6 +34,15 @@ export const useUpdateOrderStatus = () => {
   })
 }
 
+export const useBulkUpdateOrderStatus = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ ids, status }: { ids: string[]; status: OrderStatus }) => ordersApi.bulkUpdateStatus(ids, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.all })
+  })
+}
+
 export const useOrderTransactions = (id: string | undefined) =>
   useQuery({
     queryKey: [...orderKeys.detail(id ?? ''), 'transactions'] as const,

@@ -15,14 +15,18 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Alert from '@/components/ui/Alert'
+import Button from '@/components/ui/Button'
 import IconButton from '@/components/ui/IconButton'
+import { useToast } from '@/contexts/ToastContext'
+import { getErrorMessage } from '@/libs/api/types'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatCurrency, formatDate } from '@/libs/format'
 import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
 import { ordersApi } from '@/features/orders/api/ordersApi'
-import { useOrders } from '@/features/orders/hooks/useOrders'
+import { useBulkUpdateOrderStatus, useOrders } from '@/features/orders/hooks/useOrders'
 import type { Order, OrderStatus, PaymentStatus } from '@/features/orders/types'
 
 const EXPORT_COLUMNS: ExportColumn<Order>[] = [
@@ -52,6 +56,10 @@ const OrdersView = () => {
   const [to, setTo] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const debouncedSearch = useDebouncedValue(search)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus | null>(null)
+  const bulkMutation = useBulkUpdateOrderStatus()
+  const { success, error: toastError, toast } = useToast()
   const hasFilters = Boolean(search || paymentStatus || status || from || to)
   const resetOnChange = useFilterReset(setPagination)
 
@@ -79,6 +87,35 @@ const OrdersView = () => {
     limit: pagination.pageSize,
     ...filters
   })
+
+  const applyBulkStatus = async () => {
+    if (!bulkStatus) return
+
+    try {
+      const { updated, skipped } = await bulkMutation.mutateAsync({ ids: [...selectedIds], status: bulkStatus })
+
+      // Say exactly why anything was skipped — a silent partial update is worse than none.
+      if (skipped.length) {
+        const why = skipped
+          .slice(0, 3)
+          .map(s => `${s.reference ?? 'Order'}: ${s.reason}`)
+          .join('; ')
+
+        toast(
+          `${updated.length} updated, ${skipped.length} skipped — ${why}${skipped.length > 3 ? '…' : ''}`,
+          'warning'
+        )
+      } else {
+        success(`${updated.length} order${updated.length === 1 ? '' : 's'} marked ${bulkStatus}`)
+      }
+
+      setSelectedIds(new Set())
+    } catch (err) {
+      toastError(getErrorMessage(err, 'Failed to update the selected orders'))
+    } finally {
+      setBulkStatus(null)
+    }
+  }
 
   const columns = useMemo<ColumnDef<Order, any>[]>(
     () => [
@@ -171,6 +208,24 @@ const OrdersView = () => {
       <DataTable
         data={data?.items ?? []}
         columns={columns}
+        selection={{
+          selected: selectedIds,
+          onChange: setSelectedIds,
+          getId: o => o.id,
+          actions: (
+            <>
+              <Button size='sm' variant='outlined' onClick={() => setBulkStatus('shipped')}>
+                Mark shipped
+              </Button>
+              <Button size='sm' variant='outlined' onClick={() => setBulkStatus('delivered')}>
+                Mark delivered
+              </Button>
+              <Button size='sm' variant='outlined' color='error' onClick={() => setBulkStatus('cancelled')}>
+                Cancel orders
+              </Button>
+            </>
+          )
+        }}
         mobileCard={order => (
           <MobileRow
             onClick={() => router.push(`/orders/${order.id}`)}
@@ -216,6 +271,16 @@ const OrdersView = () => {
             onClearFilters={clearFilters}
           />
         }
+      />
+      <ConfirmDialog
+        open={bulkStatus !== null}
+        title={bulkStatus === 'cancelled' ? 'Cancel orders' : `Mark orders ${bulkStatus}`}
+        description={`${selectedIds.size} selected order${selectedIds.size === 1 ? '' : 's'} will be marked ${bulkStatus} and their customers notified. Orders that can't make this move (for example delivered or cancelled ones) are skipped and reported.`}
+        confirmText={bulkStatus === 'cancelled' ? 'Cancel orders' : 'Confirm'}
+        confirmColor={bulkStatus === 'cancelled' ? 'error' : 'primary'}
+        loading={bulkMutation.isPending}
+        onConfirm={applyBulkStatus}
+        onClose={() => setBulkStatus(null)}
       />
     </>
   )
