@@ -46,6 +46,14 @@
   --color-secondaryLight: #c8a24b;
   --color-secondaryDark: #6e5722; /* AA with white text (6.9:1) */
 
+  /* ---- Collection accents ---------------------------------------------------
+     The three storefront collection accents, matching the mobile app's
+     CollectionCard (gold, emeraldLight, burgundyLight). Swatches only —
+     not for text or UI chrome. */
+  --color-accentGold: #d4af37;
+  --color-accentEmerald: #1b7a4d;
+  --color-accentBurgundy: #7c2438;
+
   /* ---- Semantic state -------------------------------------------------------
      Each family has a fill (`x`), a tint for soft backgrounds (`xLight`) and
      an ink (`xDark`) guaranteed AA as text on light surfaces. */
