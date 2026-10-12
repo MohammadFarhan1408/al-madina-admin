@@ -4,13 +4,8 @@ import CopyValueButton from '@/components/shared/CopyValueButton'
 import Fact from '@/components/shared/Fact'
 import SubHeading from '@/components/shared/SubHeading'
 import { humanize } from '@/libs/format'
-import type { Collection, CollectionAccent } from '@/features/collections/types'
-
-const accentSwatch: Record<CollectionAccent, string> = {
-  gold: 'bg-accentGold',
-  emerald: 'bg-accentEmerald',
-  burgundy: 'bg-accentBurgundy'
-}
+import { accentSwatch } from '@/features/collections/accent'
+import type { Collection } from '@/features/collections/types'
 
 /** The hero's right column: subtitle plus accent, product count, order and slug. */
 const CollectionSummary = ({ collection }: { collection: Collection }) => (
