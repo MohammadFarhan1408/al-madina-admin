@@ -153,7 +153,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
       <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
         <div className='flex flex-col gap-6 md:col-span-2'>
           <Card>
-            <CardHeader title='Product information' />
+            <CardHeader title='Product information' icon='tabler-info-circle' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='name'
@@ -195,7 +195,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader title='Gallery' />
+            <CardHeader title='Gallery' icon='tabler-photo' />
             <CardBody>
               <ImageUpload
                 type='product'
@@ -211,6 +211,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           <Card>
             <CardHeader
               title='Variants'
+              icon='tabler-versions'
               description='Sizes this fragrance is sold in'
               action={
                 <Button
@@ -313,7 +314,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
 
         <div className='flex flex-col gap-6'>
           <Card>
-            <CardHeader title='Pricing' />
+            <CardHeader title='Pricing' icon='tabler-cash' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='volumeMl'
@@ -348,7 +349,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader title='Organize' />
+            <CardHeader title='Organize' icon='tabler-category' />
             <CardBody className='flex flex-col gap-5'>
               <Controller
                 name='categoryId'
@@ -447,7 +448,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
           </Card>
 
           <Card>
-            <CardHeader title='SEO' />
+            <CardHeader title='SEO' icon='tabler-world-search' />
             <CardBody>
               <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} bare />
             </CardBody>
@@ -459,6 +460,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
         dirty={isDirty}
         submitting={submitting}
         submitLabel={isEdit ? 'Save changes' : 'Create'}
+        submitIcon={isEdit ? undefined : 'tabler-check'}
         onCancel={onCancel}
       />
     </form>

@@ -126,7 +126,7 @@ const ReviewsView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Reviews' subtitle='Moderate customer product reviews' />
+      <PageHeader title='Reviews' icon='tabler-star' subtitle='Moderate customer product reviews' />
 
       <ReviewsSummary />
 

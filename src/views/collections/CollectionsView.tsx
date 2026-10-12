@@ -37,6 +37,7 @@ const CollectionsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Collections'
+        icon='tabler-stack-2'
         subtitle='Curated groupings of your fragrances'
         action={
           <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/collections/new')}>

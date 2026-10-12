@@ -53,6 +53,7 @@ export function useConfirmDelete<T>({ entity, remove, name, onDeleted, descripti
       title={`Delete ${entity}`}
       description={target ? (description?.(target) ?? `Delete "${name(target)}"? This cannot be undone.`) : undefined}
       confirmText='Delete'
+      confirmIcon='tabler-trash'
       loading={pending}
       onConfirm={confirm}
       onClose={() => setTarget(null)}

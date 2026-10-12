@@ -119,6 +119,7 @@ const CouponsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Coupons'
+        icon='tabler-discount'
         subtitle='Discount codes for campaigns and promotions'
         action={
           <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/coupons/new')}>

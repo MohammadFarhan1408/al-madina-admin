@@ -205,6 +205,7 @@ const OrdersView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Orders'
+        icon='tabler-shopping-cart'
         subtitle='Track and fulfil customer orders'
         action={
           <ExportButton
@@ -224,13 +225,29 @@ const OrdersView = () => {
           getId: o => o.id,
           actions: (
             <>
-              <Button size='sm' variant='outlined' onClick={() => setBulkStatus('shipped')}>
+              <Button
+                size='sm'
+                variant='outlined'
+                startIcon={<i className='tabler-truck' />}
+                onClick={() => setBulkStatus('shipped')}
+              >
                 Mark shipped
               </Button>
-              <Button size='sm' variant='outlined' onClick={() => setBulkStatus('delivered')}>
+              <Button
+                size='sm'
+                variant='outlined'
+                startIcon={<i className='tabler-package-export' />}
+                onClick={() => setBulkStatus('delivered')}
+              >
                 Mark delivered
               </Button>
-              <Button size='sm' variant='outlined' color='error' onClick={() => setBulkStatus('cancelled')}>
+              <Button
+                size='sm'
+                variant='outlined'
+                color='error'
+                startIcon={<i className='tabler-ban' />}
+                onClick={() => setBulkStatus('cancelled')}
+              >
                 Cancel orders
               </Button>
             </>
@@ -293,6 +310,7 @@ const OrdersView = () => {
         title={bulkStatus === 'cancelled' ? 'Cancel orders' : `Mark orders ${bulkStatus}`}
         description={`${selectedIds.size} selected order${selectedIds.size === 1 ? '' : 's'} will be marked ${bulkStatus} and their customers notified. Orders that can't make this move (for example delivered or cancelled ones) are skipped and reported.`}
         confirmText={bulkStatus === 'cancelled' ? 'Cancel orders' : 'Confirm'}
+        confirmIcon={bulkStatus === 'cancelled' ? 'tabler-ban' : 'tabler-check'}
         confirmColor={bulkStatus === 'cancelled' ? 'error' : 'primary'}
         loading={bulkMutation.isPending}
         onConfirm={applyBulkStatus}

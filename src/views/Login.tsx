@@ -107,7 +107,14 @@ const Login = () => {
           </Link>
         </div>
 
-        <Button fullWidth size='lg' type='submit' loading={isSubmitting} className='mt-1'>
+        <Button
+          fullWidth
+          size='lg'
+          type='submit'
+          loading={isSubmitting}
+          startIcon={<i className='tabler-login' />}
+          className='mt-1'
+        >
           Sign in
         </Button>
       </form>

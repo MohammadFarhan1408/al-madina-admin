@@ -102,10 +102,10 @@ const PriceRangeFilter = ({ value, onChange, currency = 'AED', className }: Pric
             </p>
           )}
           <div className='mt-3 flex items-center justify-end gap-2'>
-            <Button size='sm' variant='text' color='secondary' onClick={clear}>
+            <Button size='sm' variant='text' color='secondary' startIcon={<i className='tabler-x' />} onClick={clear}>
               Clear
             </Button>
-            <Button size='sm' type='submit' disabled={invalid}>
+            <Button size='sm' type='submit' startIcon={<i className='tabler-check' />} disabled={invalid}>
               Apply
             </Button>
           </div>

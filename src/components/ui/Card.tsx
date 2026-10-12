@@ -41,6 +41,9 @@ export type CardHeaderProps = HTMLAttributes<HTMLDivElement> & {
   /** Renders the standard section heading, so callers stop hand-rolling
    *  `<h2 className='text-base font-semibold'>` at three different sizes. */
   title?: ReactNode
+
+  /** Tabler class shown before the title, e.g. `tabler-cash` for Pricing. */
+  icon?: string
   description?: ReactNode
   action?: ReactNode
   padding?: CardPadding
@@ -52,6 +55,7 @@ export type CardHeaderProps = HTMLAttributes<HTMLDivElement> & {
 
 export const CardHeader = ({
   title,
+  icon,
   description,
   action,
   padding = 'md',
@@ -73,7 +77,12 @@ export const CardHeader = ({
         never both, so there's one obvious way to write a header. */}
     {title || description ? (
       <div className='flex min-w-0 flex-col gap-0.5'>
-        {title && <CardTitle>{title}</CardTitle>}
+        {title && (
+          <div className='flex min-w-0 items-center gap-2'>
+            {icon && <i aria-hidden className={classnames(icon, 'shrink-0 text-[18px] text-primaryInk')} />}
+            <CardTitle>{title}</CardTitle>
+          </div>
+        )}
         {description && <p className='text-sm text-textMuted'>{description}</p>}
       </div>
     ) : (

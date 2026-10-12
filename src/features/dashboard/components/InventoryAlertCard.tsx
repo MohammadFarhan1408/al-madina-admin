@@ -17,6 +17,7 @@ const InventoryAlertCard = () => {
   return (
     <ChartCard
       title='Out of stock'
+      icon='tabler-alert-triangle'
       description={total ? `${total} product${total === 1 ? '' : 's'} can't be ordered` : undefined}
       isLoading={isLoading}
       height={240}

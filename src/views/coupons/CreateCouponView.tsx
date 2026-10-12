@@ -12,7 +12,12 @@ const CreateCouponView = () => {
   return (
     <>
       <Breadcrumbs extra={[{ label: 'New Coupon' }]} />
-      <PageHeader title='New Coupon' subtitle='Create a new discount code' />
+      <PageHeader
+        title='New Coupon'
+        backHref='/coupons'
+        backLabel='Back to coupons'
+        subtitle='Create a new discount code'
+      />
       <CouponForm onSuccess={() => router.push('/coupons')} onCancel={() => router.push('/coupons')} />
     </>
   )

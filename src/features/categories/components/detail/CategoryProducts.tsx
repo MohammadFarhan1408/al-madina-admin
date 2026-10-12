@@ -35,6 +35,7 @@ const CategoryProducts = ({ category }: { category: Category }) => {
     <Card className='overflow-hidden'>
       <CardHeader
         title='Products'
+        icon='tabler-package'
         description={
           isLoading
             ? 'Loading…'

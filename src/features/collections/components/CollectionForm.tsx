@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import Card, { CardBody } from '@/components/ui/Card'
+import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import Input from '@/components/ui/form/Input'
 import NumberInput from '@/components/ui/form/NumberInput'
 import Select from '@/components/ui/form/Select'
@@ -94,8 +94,9 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending || imageUploading
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-6'>
       <Card>
+        <CardHeader title='Details' icon='tabler-info-circle' />
         <CardBody className='flex flex-col gap-5'>
           <Controller
             name='title'
@@ -123,6 +124,12 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
             control={control}
             render={({ field }) => <NumberInput {...field} label='Sort order' error={errors.sortOrder?.message} />}
           />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title='Image' icon='tabler-photo' />
+        <CardBody>
           <ImageUpload
             type='collection'
             value={image ? [image] : []}
@@ -131,9 +138,13 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
             label='Collection image'
             error={errors.image?.message}
           />
+        </CardBody>
+      </Card>
 
-          <hr className='border-border' />
-          <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' />
+      <Card>
+        <CardHeader title='SEO' icon='tabler-world-search' />
+        <CardBody>
+          <SeoFieldsSection control={control} metaKeywords={metaKeywords ?? []} sourceFieldLabel='title' bare />
         </CardBody>
       </Card>
 
@@ -141,6 +152,7 @@ const CollectionForm = ({ collection, onSuccess, onCancel }: Props) => {
         dirty={isDirty}
         submitting={submitting}
         submitLabel={isEdit ? 'Save changes' : 'Create'}
+        submitIcon={isEdit ? undefined : 'tabler-check'}
         onCancel={onCancel}
       />
     </form>

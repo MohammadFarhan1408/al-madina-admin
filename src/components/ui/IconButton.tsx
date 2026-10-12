@@ -63,6 +63,28 @@ const colorClasses: Record<IconButtonColor, Record<IconButtonVariant, string>> =
   }
 }
 
+type IconButtonStyle = Pick<IconButtonProps, 'variant' | 'color' | 'size' | 'rounded'>
+
+/** The IconButton look as a class string, for a `next/link` that should match
+ *  it (a real link keeps middle-click and "open in new tab"). */
+export const iconButtonClasses = ({
+  variant = 'ghost',
+  color = 'default',
+  size = 'md',
+  rounded = false
+}: IconButtonStyle = {}) =>
+  classnames(
+    'relative inline-flex shrink-0 items-center justify-center transition-[color,background-color,border-color,box-shadow]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2',
+    'disabled:pointer-events-none disabled:opacity-45',
+
+    // Expand the touch target without changing the painted box.
+    "pointer-coarse:after:absolute pointer-coarse:after:left-1/2 pointer-coarse:after:top-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-x-1/2 pointer-coarse:after:-translate-y-1/2 pointer-coarse:after:content-['']",
+    rounded ? 'rounded-full' : 'rounded-sm',
+    sizeClasses[size],
+    colorClasses[color][variant]
+  )
+
 /** Square icon-only button. Replaces the ad-hoc `rounded p-1 hover:bg-black/5`
  *  buttons that each list view, dialog and toolbar was re-inventing at a
  *  slightly different size, radius and hover treatment.
@@ -89,18 +111,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       ref={ref}
       type='button'
       disabled={disabled || loading}
-      className={classnames(
-        'relative inline-flex shrink-0 items-center justify-center transition-[color,background-color,border-color,box-shadow]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2',
-        'disabled:pointer-events-none disabled:opacity-45',
-
-        // Expand the touch target without changing the painted box.
-        "pointer-coarse:after:absolute pointer-coarse:after:left-1/2 pointer-coarse:after:top-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-x-1/2 pointer-coarse:after:-translate-y-1/2 pointer-coarse:after:content-['']",
-        rounded ? 'rounded-full' : 'rounded-sm',
-        sizeClasses[size],
-        colorClasses[color][variant],
-        className
-      )}
+      className={classnames(iconButtonClasses({ variant, color, size, rounded }), className)}
       {...props}
     >
       {loading ? <Spinner size={spinnerSize[size]} /> : children}

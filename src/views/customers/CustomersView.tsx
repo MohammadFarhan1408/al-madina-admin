@@ -207,6 +207,7 @@ const CustomersView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Customers'
+        icon='tabler-users'
         subtitle='Your registered account holders'
         action={
           <ExportButton
@@ -296,6 +297,7 @@ const CustomersView = () => {
         title='Deactivate customer'
         description={`Deactivate ${toDeactivate?.fullName}? They will lose account access.`}
         confirmText='Deactivate'
+        confirmIcon='tabler-user-off'
         loading={deactivateMutation.isPending}
         onConfirm={confirmDeactivate}
         onClose={() => setToDeactivate(null)}

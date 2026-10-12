@@ -24,7 +24,7 @@ const ProductMerchandising = ({ product, tags }: { product: Product; tags: Tag[]
 
   return (
     <Card>
-      <CardHeader title='Tags & merchandising' />
+      <CardHeader title='Tags & merchandising' icon='tabler-tags' />
       <CardBody className='flex flex-col gap-5'>
         <section aria-labelledby='product-tags' className='flex flex-col gap-2'>
           <SubHeading id='product-tags'>Tags</SubHeading>

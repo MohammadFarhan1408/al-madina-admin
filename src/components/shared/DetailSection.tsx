@@ -9,6 +9,7 @@ import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 
 type DetailSectionProps = {
   title?: string
+  icon?: string
   description?: string
   action?: ReactNode
 
@@ -27,6 +28,7 @@ type DetailSectionProps = {
  *  one description list instead of a series of unrelated single-item lists. */
 const DetailSection = ({
   title,
+  icon,
   description,
   action,
   columns = 1,
@@ -40,7 +42,7 @@ const DetailSection = ({
 
   return (
     <Card className={className}>
-      {(title || action) && <CardHeader title={title} description={description} action={action} />}
+      {(title || action) && <CardHeader title={title} icon={icon} description={description} action={action} />}
       <CardBody>
         {asList ? <dl className={bodyClasses}>{children}</dl> : <div className={bodyClasses}>{children}</div>}
       </CardBody>

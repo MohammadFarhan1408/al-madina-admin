@@ -29,7 +29,7 @@ const NotFound = () => (
         <Button startIcon={<i className='tabler-layout-dashboard' />}>Back to dashboard</Button>
       </Link>
       <Link href='/products'>
-        <Button variant='outlined' color='secondary'>
+        <Button variant='outlined' color='secondary' startIcon={<i className='tabler-package' />}>
           Browse products
         </Button>
       </Link>

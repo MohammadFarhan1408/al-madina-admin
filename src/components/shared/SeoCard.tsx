@@ -36,7 +36,7 @@ const SeoCard = ({ slug, showSlug = true, metaTitle, metaDescription, metaKeywor
 
   return (
     <Card className={className}>
-      <CardHeader title='SEO' description={hasSeo ? undefined : 'No SEO fields set'} />
+      <CardHeader title='SEO' icon='tabler-world-search' description={hasSeo ? undefined : 'No SEO fields set'} />
       {hasSeo && (
         <CardBody>
           <dl className='flex flex-col gap-3'>

@@ -53,6 +53,8 @@ const ProductDetailView = ({ id }: { id: string }) => {
     return (
       <DetailLoading
         title='Product'
+        backHref='/products'
+        backLabel='Back to products'
         skeleton={<DetailHeroSkeleton aspect='square' />}
         isLoading={isLoading}
         isError={isError}
@@ -67,16 +69,12 @@ const ProductDetailView = ({ id }: { id: string }) => {
     <>
       <Breadcrumbs extra={[{ label: product.name }]} />
       <PageHeader
+        backHref='/products'
+        backLabel='Back to products'
         title={product.name}
         subtitle={[product.brand, categoryName ?? humanize(product.scentFamily)].filter(Boolean).join(' · ')}
         action={
-          <DetailActions
-            backHref='/products'
-            backLabel='Back to products'
-            editHref={`/products/${id}/edit`}
-            editLabel='Edit product'
-            onDelete={() => ask(product)}
-          />
+          <DetailActions editHref={`/products/${id}/edit`} editLabel='Edit product' onDelete={() => ask(product)} />
         }
       >
         <RecordMeta id={product.id} idLabel='Product ID' createdAt={product.createdAt} updatedAt={product.updatedAt} />

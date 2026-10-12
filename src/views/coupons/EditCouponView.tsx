@@ -18,7 +18,7 @@ const EditCouponView = ({ id }: Props) => {
     return (
       <>
         <Breadcrumbs />
-        <PageHeader title='Edit Coupon' />
+        <PageHeader title='Edit Coupon' backHref='/coupons' backLabel='Back to coupons' />
         <QueryState
           isError={isError}
           error={error}
@@ -32,7 +32,7 @@ const EditCouponView = ({ id }: Props) => {
   return (
     <>
       <Breadcrumbs extra={[{ label: coupon.code, href: '/coupons' }, { label: 'Edit' }]} />
-      <PageHeader title={`Edit ${coupon.code}`} />
+      <PageHeader title={`Edit ${coupon.code}`} backHref='/coupons' backLabel='Back to coupons' />
       <CouponForm coupon={coupon} onSuccess={() => router.push('/coupons')} onCancel={() => router.push('/coupons')} />
     </>
   )

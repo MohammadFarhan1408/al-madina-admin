@@ -4,7 +4,7 @@
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import Card, { CardBody } from '@/components/ui/Card'
+import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import DateInput from '@/components/ui/form/DateInput'
 import Input from '@/components/ui/form/Input'
 import NumberInput from '@/components/ui/form/NumberInput'
@@ -78,8 +78,9 @@ const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
   const submitting = createMutation.isPending || updateMutation.isPending
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-6'>
       <Card>
+        <CardHeader title='Details' icon='tabler-info-circle' />
         <CardBody className='flex flex-col gap-5'>
           <Controller
             name='code'
@@ -95,53 +96,6 @@ const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
               <Input {...field} required label='Description' error={errors.description?.message} />
             )}
           />
-          <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
-            <Controller
-              name='discountType'
-              control={control}
-              render={({ field }) => (
-                <div className='flex flex-col gap-1.5'>
-                  <span className='text-sm font-medium text-textPrimary'>Discount type</span>
-                  <SegmentedControl
-                    aria-label='Discount type'
-                    value={field.value}
-                    onChange={field.onChange}
-                    options={DISCOUNT_TYPES.map(type => ({
-                      value: type,
-                      label: type === 'percentage' ? 'Percentage' : 'Fixed amount'
-                    }))}
-                  />
-                </div>
-              )}
-            />
-            <Controller
-              name='value'
-              control={control}
-              render={({ field }) => <NumberInput {...field} required label='Value' error={errors.value?.message} />}
-            />
-            <Controller
-              name='minPurchase'
-              control={control}
-              render={({ field }) => <NumberInput {...field} label='Minimum purchase (optional)' />}
-            />
-            <Controller
-              name='maxDiscount'
-              control={control}
-              render={({ field }) => <NumberInput {...field} label='Maximum discount (optional)' />}
-            />
-            <Controller
-              name='usageLimit'
-              control={control}
-              render={({ field }) => <NumberInput {...field} label='Usage limit (optional)' />}
-            />
-            <Controller
-              name='expiresAt'
-              control={control}
-              render={({ field }) => (
-                <DateInput {...field} required label='Expires on' error={errors.expiresAt?.message} />
-              )}
-            />
-          </div>
           <Controller
             name='isActive'
             control={control}
@@ -152,10 +106,62 @@ const CouponForm = ({ coupon, onSuccess, onCancel }: Props) => {
         </CardBody>
       </Card>
 
+      <Card>
+        <CardHeader title='Discount' icon='tabler-discount' />
+        <CardBody className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
+          <Controller
+            name='discountType'
+            control={control}
+            render={({ field }) => (
+              <div className='flex flex-col gap-1.5'>
+                <span className='text-sm font-medium text-textPrimary'>Discount type</span>
+                <SegmentedControl
+                  aria-label='Discount type'
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={DISCOUNT_TYPES.map(type => ({
+                    value: type,
+                    label: type === 'percentage' ? 'Percentage' : 'Fixed amount'
+                  }))}
+                />
+              </div>
+            )}
+          />
+          <Controller
+            name='value'
+            control={control}
+            render={({ field }) => <NumberInput {...field} required label='Value' error={errors.value?.message} />}
+          />
+          <Controller
+            name='minPurchase'
+            control={control}
+            render={({ field }) => <NumberInput {...field} label='Minimum purchase (optional)' />}
+          />
+          <Controller
+            name='maxDiscount'
+            control={control}
+            render={({ field }) => <NumberInput {...field} label='Maximum discount (optional)' />}
+          />
+          <Controller
+            name='usageLimit'
+            control={control}
+            render={({ field }) => <NumberInput {...field} label='Usage limit (optional)' />}
+          />
+          <Controller
+            name='expiresAt'
+            control={control}
+            render={({ field }) => (
+              <DateInput {...field} required label='Expires on' error={errors.expiresAt?.message} />
+            )}
+          />
+        </CardBody>
+      </Card>
+
       <FormActions
         dirty={isDirty}
         submitting={submitting}
         submitLabel={isEdit ? 'Save changes' : 'Create'}
+        submitIcon={isEdit ? undefined : 'tabler-check'}
         onCancel={onCancel}
       />
     </form>

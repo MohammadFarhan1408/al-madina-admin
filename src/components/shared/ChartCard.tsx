@@ -6,6 +6,7 @@ import Skeleton from '@/components/ui/Skeleton'
 
 type ChartCardProps = {
   title: string
+  icon?: string
   description?: string
   action?: ReactNode
   isLoading?: boolean
@@ -21,6 +22,7 @@ type ChartCardProps = {
  *  (so nothing reflows when data lands) and a built-in empty state. */
 const ChartCard = ({
   title,
+  icon,
   description,
   action,
   isLoading,
@@ -30,7 +32,7 @@ const ChartCard = ({
   children
 }: ChartCardProps) => (
   <Card className={className}>
-    <CardHeader title={title} description={description} action={action} />
+    <CardHeader title={title} icon={icon} description={description} action={action} />
     <CardBody>
       {isLoading ? (
         <Skeleton variant='block' className='w-full' style={{ height }} />

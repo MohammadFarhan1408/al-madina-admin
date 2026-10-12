@@ -100,7 +100,14 @@ const ResetPassword = () => {
             />
           )}
         />
-        <Button fullWidth size='lg' type='submit' loading={isSubmitting} className='mt-1'>
+        <Button
+          fullWidth
+          size='lg'
+          type='submit'
+          loading={isSubmitting}
+          startIcon={<i className='tabler-lock-check' />}
+          className='mt-1'
+        >
           Set new password
         </Button>
         <Link

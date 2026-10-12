@@ -18,7 +18,7 @@ const EditCollectionView = ({ id }: Props) => {
     return (
       <>
         <Breadcrumbs />
-        <PageHeader title='Edit Collection' />
+        <PageHeader title='Edit Collection' backHref={`/collections/${id}`} backLabel='Back to collection' />
         <QueryState
           isError={isError}
           error={error}
@@ -32,7 +32,7 @@ const EditCollectionView = ({ id }: Props) => {
   return (
     <>
       <Breadcrumbs extra={[{ label: collection.title, href: `/collections/${id}` }, { label: 'Edit' }]} />
-      <PageHeader title={`Edit ${collection.title}`} />
+      <PageHeader title={`Edit ${collection.title}`} backHref={`/collections/${id}`} backLabel='Back to collection' />
       <CollectionForm
         collection={collection}
         onSuccess={() => router.push(`/collections/${id}`)}

@@ -93,6 +93,7 @@ const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterPro
                 size='sm'
                 variant='text'
                 color='secondary'
+                startIcon={<i className='tabler-x' />}
                 onClick={() => apply({})}
                 disabled={!hasDateRange(value) && !hasDateRange(draft)}
               >
@@ -100,6 +101,7 @@ const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterPro
               </Button>
               <Button
                 size='sm'
+                startIcon={<i className='tabler-check' />}
                 disabled={!draft.from}
                 onClick={() => apply({ from: draft.from, to: draft.to ?? draft.from })}
               >

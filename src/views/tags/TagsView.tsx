@@ -68,6 +68,7 @@ const TagsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Tags'
+        icon='tabler-tags'
         subtitle='Reusable labels for product merchandising'
         action={
           <Button startIcon={<i className='tabler-plus' />} onClick={() => setEditing({})}>
