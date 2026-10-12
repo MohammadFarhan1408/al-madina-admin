@@ -5,9 +5,11 @@
 export const ACCESS_TOKEN_COOKIE = 'am_access_token'
 export const REFRESH_TOKEN_COOKIE = 'am_refresh_token'
 
-// Access token is short-lived (15m); refresh token drives silent renewal (30d).
-const ACCESS_MAX_AGE = 60 * 60 // 1h ceiling; renewed on refresh
-const REFRESH_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
+// The access cookie lives exactly as long as the 15-minute JWT inside it, so an
+// expired token is never sent. The refresh cookie lives until the server says the
+// session ends (`refreshExpiresAt` — 24h after sign-in for admin accounts).
+const ACCESS_MAX_AGE = 15 * 60
+const FALLBACK_REFRESH_MAX_AGE = 60 * 60 * 24
 
 const isBrowser = () => typeof document !== 'undefined'
 
@@ -36,10 +38,16 @@ function deleteCookie(name: string) {
 export const getAccessToken = () => readCookie(ACCESS_TOKEN_COOKIE)
 export const getRefreshToken = () => readCookie(REFRESH_TOKEN_COOKIE)
 
-export function setTokens(accessToken: string, refreshToken?: string) {
+export function setTokens(accessToken: string, refreshToken?: string, refreshExpiresAt?: string) {
   writeCookie(ACCESS_TOKEN_COOKIE, accessToken, ACCESS_MAX_AGE)
 
-  if (refreshToken) writeCookie(REFRESH_TOKEN_COOKIE, refreshToken, REFRESH_MAX_AGE)
+  if (refreshToken) {
+    const seconds = refreshExpiresAt
+      ? Math.max(0, Math.floor((new Date(refreshExpiresAt).getTime() - Date.now()) / 1000))
+      : FALLBACK_REFRESH_MAX_AGE
+
+    writeCookie(REFRESH_TOKEN_COOKIE, refreshToken, seconds)
+  }
 }
 
 export function clearTokens() {
