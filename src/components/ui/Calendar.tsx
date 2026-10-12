@@ -14,6 +14,13 @@ export type CalendarProps = {
   onClear?: () => void
   min?: string
   max?: string
+
+  /** Highlight a span of days (`YYYY-MM-DD` keys) — for range pickers, which
+   *  drive selection themselves through `onSelect`. */
+  range?: { from?: string; to?: string }
+
+  /** Hide the Clear / Today footer (a range picker supplies its own actions). */
+  hideFooter?: boolean
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -33,10 +40,14 @@ const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 /** Month-grid date picker used inside DateInput's popover — replaces the
  *  browser's native calendar, which renders with mismatched fonts/spacing on
  *  every platform and can't be themed at all. */
-const Calendar = ({ value, onSelect, onClear, min, max }: CalendarProps) => {
+const Calendar = ({ value, onSelect, onClear, min, max, range, hideFooter = false }: CalendarProps) => {
   const selected = parseKey(value)
+  const rangeFrom = parseKey(range?.from)
+  const rangeTo = parseKey(range?.to)
+  const isEndpoint = (d: Date) => Boolean((rangeFrom && isSameDay(d, rangeFrom)) || (rangeTo && isSameDay(d, rangeTo)))
+  const isInside = (d: Date) => Boolean(rangeFrom && rangeTo && d > rangeFrom && d < rangeTo)
   const today = new Date()
-  const [cursor, setCursor] = useState(selected ?? today)
+  const [cursor, setCursor] = useState(selected ?? rangeFrom ?? today)
 
   const minDate = parseKey(min)
   const maxDate = parseKey(max)
@@ -85,14 +96,19 @@ const Calendar = ({ value, onSelect, onClear, min, max }: CalendarProps) => {
               type='button'
               disabled={isDisabled(d)}
               onClick={() => onSelect(toKey(d))}
+              aria-pressed={range ? isEndpoint(d) : undefined}
+              aria-label={d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
               className={classnames(
                 'flex size-8 items-center justify-center rounded-full text-sm transition-colors',
                 'disabled:cursor-not-allowed disabled:opacity-35',
-                selected && isSameDay(d, selected)
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+                (selected && isSameDay(d, selected)) || isEndpoint(d)
                   ? 'bg-primary font-semibold text-richBlack'
-                  : isSameDay(d, today)
-                    ? 'border border-primary text-primaryInk'
-                    : 'text-textPrimary hover:bg-actionHover'
+                  : isInside(d)
+                    ? 'rounded-md bg-primary/16 text-primaryInk'
+                    : isSameDay(d, today)
+                      ? 'border border-primary text-primaryInk'
+                      : 'text-textPrimary hover:bg-actionHover'
               )}
             >
               {d.getDate()}
@@ -103,29 +119,31 @@ const Calendar = ({ value, onSelect, onClear, min, max }: CalendarProps) => {
         )}
       </div>
 
-      <div className='mt-2 flex items-center justify-between border-t border-border pt-2'>
-        {onClear ? (
+      {!hideFooter && (
+        <div className='mt-2 flex items-center justify-between border-t border-border pt-2'>
+          {onClear ? (
+            <button
+              type='button'
+              onClick={onClear}
+              className='rounded-sm text-xs font-medium text-primaryInk hover:underline'
+            >
+              Clear
+            </button>
+          ) : (
+            <span />
+          )}
           <button
             type='button'
-            onClick={onClear}
+            onClick={() => {
+              setCursor(today)
+              onSelect(toKey(today))
+            }}
             className='rounded-sm text-xs font-medium text-primaryInk hover:underline'
           >
-            Clear
+            Today
           </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type='button'
-          onClick={() => {
-            setCursor(today)
-            onSelect(toKey(today))
-          }}
-          className='rounded-sm text-xs font-medium text-primaryInk hover:underline'
-        >
-          Today
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

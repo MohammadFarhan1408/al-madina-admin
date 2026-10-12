@@ -4,6 +4,8 @@ import { useId, type ReactNode } from 'react'
 
 import classnames from 'classnames'
 
+import Field, { controlHeight } from './Field'
+
 export type SegmentedOption<T extends string> = { value: T; label?: ReactNode; icon?: string; ariaLabel?: string }
 
 type SegmentedControlProps<T extends string> = {
@@ -11,35 +13,47 @@ type SegmentedControlProps<T extends string> = {
   onChange: (value: T) => void
   options: SegmentedOption<T>[]
   'aria-label': string
+
+  /** Visible label above the group, so it lines up with labelled Selects in a toolbar. */
+  label?: ReactNode
+
+  /** `sm` for dense chrome such as a table footer; `md` matches form controls. */
+  size?: 'sm' | 'md'
   className?: string
 }
 
-/** 2–4 mutually exclusive choices, all visible at once (view toggle, status
+/** 2–5 mutually exclusive choices, all visible at once (view toggle, status
  *  filter). Native radios underneath, so arrow keys and form semantics are free.
- *  More than ~4 options → use Select. */
+ *  More options, or a dynamic list → use Select. Scrolls sideways rather than
+ *  overflowing a narrow toolbar. */
 const SegmentedControl = <T extends string>({
   value,
   onChange,
   options,
+  label,
+  size = 'md',
   className,
   ...rest
 }: SegmentedControlProps<T>) => {
   const name = useId()
 
-  return (
+  const group = (
     <div
       role='radiogroup'
       aria-label={rest['aria-label']}
       className={classnames(
-        'inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-surfaceSunken/40 p-0.5',
-        className
+        'inline-flex max-w-full shrink-0 items-stretch gap-0.5 overflow-x-auto rounded-md border border-border bg-surfaceSunken/40 p-0.5',
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        size === 'sm' ? 'h-8 pointer-coarse:h-11' : controlHeight,
+        !label && className
       )}
     >
       {options.map(o => (
         <label
           key={o.value}
           className={classnames(
-            'relative flex min-h-8 cursor-pointer items-center justify-center gap-1.5 rounded px-3 text-sm pointer-coarse:min-h-11',
+            'relative flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded whitespace-nowrap',
+            size === 'sm' ? 'px-2.5 text-xs' : 'px-3 text-sm',
             'transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/60',
             value === o.value ? 'bg-primary text-richBlack shadow-xs' : 'text-textSecondary hover:bg-actionHover'
           )}
@@ -58,6 +72,14 @@ const SegmentedControl = <T extends string>({
         </label>
       ))}
     </div>
+  )
+
+  return label ? (
+    <Field asLabel label={label} className={classnames('max-w-full', className)}>
+      {group}
+    </Field>
+  ) : (
+    group
   )
 }
 
