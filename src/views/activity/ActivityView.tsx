@@ -12,15 +12,25 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import SearchField from '@/components/shared/SearchField'
 import StatusChip from '@/components/shared/StatusChip'
-import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
-import DateInput from '@/components/ui/form/DateInput'
-import Select from '@/components/ui/form/Select'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import DateRangeFilter from '@/components/shared/DateRangeFilter'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
+import { useListTotals } from '@/hooks/useListTotals'
+import { dateRangeParams, hasDateRange, type DateRange } from '@/libs/dateRange'
+import { activityApi } from '@/features/activity/api/activityApi'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { formatDateTime } from '@/libs/format'
 import { useActivity } from '@/features/activity/hooks/useActivity'
-import { ACTIVITY_METHODS, describeAction, type ActivityEntry, type ActivityMethod } from '@/features/activity/types'
+import { describeAction, type ActivityEntry, type ActivityMethod } from '@/features/activity/types'
+
+// The admin API has no PUT routes, so "Replaced" would always be an empty tab.
+const TAB_METHODS = ['POST', 'PATCH', 'DELETE'] as const satisfies readonly ActivityMethod[]
+
+const METHOD_LABELS: Record<(typeof TAB_METHODS)[number], string> = {
+  POST: 'Created',
+  PATCH: 'Updated',
+  DELETE: 'Deleted'
+}
 
 const resultChip = (code?: number) =>
   code ? (
@@ -31,30 +41,32 @@ const resultChip = (code?: number) =>
 
 const ActivityView = () => {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState('')
   const [method, setMethod] = useState<ActivityMethod | ''>('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const debouncedSearch = useDebouncedValue(search)
+  const [dateRange, setDateRange] = useState<DateRange>({})
+  const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination)
   const resetOnChange = useFilterReset(setPagination)
-  const hasFilters = Boolean(search || method || from || to)
+  const hasFilters = Boolean(search || method || hasDateRange(dateRange))
+
+  // Calendar days in local time: from the start of `from` to the end of `to`.
+  const baseFilters = { q: debouncedSearch || undefined, ...dateRangeParams(dateRange) }
 
   const { data, isLoading, isFetching, isError, error, refetch } = useActivity({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
-    q: debouncedSearch || undefined,
-    method: method || undefined,
-
-    // Calendar days: from the start of `from` to the end of `to`, in local time.
-    from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
-    to: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined
+    ...baseFilters,
+    method: method || undefined
   })
+
+  const methodTotals = useListTotals(
+    ['activity', 'method-totals', baseFilters],
+    ['all', ...TAB_METHODS] as const,
+    key => activityApi.list({ ...baseFilters, method: key === 'all' ? undefined : key, page: 1, limit: 1 })
+  )
 
   const clearFilters = () => {
     setSearch('')
     setMethod('')
-    setFrom('')
-    setTo('')
+    setDateRange({})
     setPagination(p => ({ ...p, pageIndex: 0 }))
   }
 
@@ -93,20 +105,6 @@ const ActivityView = () => {
       <Breadcrumbs />
       <PageHeader title='Activity' subtitle='Every change made in the admin, newest first' />
 
-      {isError && (
-        <Alert
-          severity='error'
-          className='mb-4'
-          action={
-            <Button size='sm' variant='outlined' color='error' onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        >
-          {(error as Error)?.message || 'Failed to load activity.'}
-        </Alert>
-      )}
-
       <DataTable
         data={data?.items ?? []}
         columns={columns}
@@ -122,6 +120,19 @@ const ActivityView = () => {
         onPaginationChange={setPagination}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'change', other: 'changes' }}
+        tabs={{
+          label: 'Change type',
+          value: method ? method.toLowerCase() : 'all',
+          onChange: v => resetOnChange(setMethod)(TAB_METHODS.find(m => m.toLowerCase() === v) ?? ''),
+          items: [
+            { value: 'all', label: 'All changes', count: methodTotals.all },
+            ...TAB_METHODS.map(m => ({ value: m.toLowerCase(), label: METHOD_LABELS[m], count: methodTotals[m] }))
+          ]
+        }}
         emptyIcon='tabler-history'
         emptyMessage={hasFilters ? 'No activity matches these filters' : 'No activity yet'}
         emptyDescription={
@@ -131,47 +142,14 @@ const ActivityView = () => {
           <>
             <SearchField
               value={search}
-              onChange={resetOnChange(setSearch)}
-              placeholder='Search person or area'
-              className='min-w-56 flex-1 self-end'
+              onChange={setSearch}
+              placeholder='Search person or area…'
+              tone='subtle'
+              className='min-w-full flex-1 sm:min-w-56'
             />
-            <Select
-              label='Change'
-              value={method}
-              onChange={e => resetOnChange(setMethod)(e.target.value as ActivityMethod | '')}
-              containerClassName='min-w-36 flex-1 sm:flex-none'
-              options={[
-                { label: 'All changes', value: '' },
-                ...ACTIVITY_METHODS.map(m => ({
-                  label: { POST: 'Created', PATCH: 'Updated', PUT: 'Replaced', DELETE: 'Deleted' }[m],
-                  value: m
-                }))
-              ]}
-            />
-            <DateInput
-              clearable
-              label='From'
-              value={from}
-              max={to || undefined}
-              onChange={e => resetOnChange(setFrom)(e.target.value)}
-              containerClassName='min-w-36 flex-1 sm:flex-none sm:min-w-44'
-            />
-            <DateInput
-              clearable
-              label='To'
-              value={to}
-              min={from || undefined}
-              onChange={e => resetOnChange(setTo)(e.target.value)}
-              containerClassName='min-w-36 flex-1 sm:flex-none sm:min-w-44'
-            />
+            <DateRangeFilter label='When' value={dateRange} onChange={resetOnChange(setDateRange)} />
             {hasFilters && (
-              <Button
-                startIcon={<i className='tabler-x' />}
-                size='sm'
-                variant='text'
-                color='secondary'
-                onClick={clearFilters}
-              >
+              <Button startIcon={<i className='tabler-x' />} variant='text' color='secondary' onClick={clearFilters}>
                 Clear filters
               </Button>
             )}
