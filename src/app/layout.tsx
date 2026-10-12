@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { connection } from 'next/server'
 import { Geist } from 'next/font/google'
 
 // Style Imports
@@ -15,10 +16,16 @@ export const metadata = {
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' })
 
-const RootLayout = ({ children }: { children: ReactNode }) => (
-  <html lang='en' className={geist.variable}>
-    <body className='flex min-h-full w-full flex-auto flex-col bg-backgroundDefault text-textPrimary'>{children}</body>
-  </html>
-)
+// Render per request: the CSP nonce set in src/middleware.ts only reaches Next's
+// scripts during a request-time render (a prebuilt static page has no nonce).
+const RootLayout = async ({ children }: { children: ReactNode }) => {
+  await connection()
+
+  return (
+    <html lang='en' className={geist.variable}>
+      <body className='flex min-h-full w-full flex-auto flex-col bg-backgroundDefault text-textPrimary'>{children}</body>
+    </html>
+  )
+}
 
 export default RootLayout

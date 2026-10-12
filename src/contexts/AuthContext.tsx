@@ -38,7 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authApi.me,
-    enabled: typeof window !== 'undefined' && !!getAccessToken(),
+
+    // A refresh cookie alone is a live session too: the first call refreshes it.
+    enabled: typeof window !== 'undefined' && !!(getAccessToken() || getRefreshToken()),
     retry: false,
     staleTime: 5 * 60_000
   })
@@ -48,6 +50,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await authApi.signIn(values)
 
       if (!isAdminRole(result.user.role)) {
+        // The server already issued a session; don't leave it alive.
+        await authApi.signOut(result.refreshToken).catch(() => undefined)
+
         throw new ApiError({
           status: 403,
           message: 'This account does not have admin access.',
@@ -55,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
       }
 
-      setTokens(result.accessToken, result.refreshToken)
+      setTokens(result.accessToken, result.refreshToken, result.refreshExpiresAt)
       queryClient.setQueryData(['auth', 'me'], result.user)
       await refetch()
 

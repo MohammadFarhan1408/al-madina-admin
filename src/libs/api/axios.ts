@@ -41,15 +41,24 @@ async function refreshAccessToken(): Promise<string | null> {
     const { data } = await refreshClient.post(endpoints.auth.refresh, { refreshToken })
     const payload = data?.data ?? data
 
-    setTokens(payload.accessToken, payload.refreshToken)
+    setTokens(payload.accessToken, payload.refreshToken, payload.refreshExpiresAt)
 
     return payload.accessToken as string
   } catch {
+    // Another tab may have rotated the same refresh token a moment earlier: the
+    // server rejected ours, but the cookies already hold the new pair. Use it
+    // instead of logging this tab (and, via the shared cookies, every tab) out.
+    if (getRefreshToken() !== refreshToken && getAccessToken()) return getAccessToken() ?? null
+
     clearTokens()
 
     return null
   }
 }
+
+// Calls that must not trigger a refresh: the credential endpoints themselves.
+// (`/auth/me` is deliberately not here — it needs a refresh like any other call.)
+const NO_REFRESH = [endpoints.auth.refresh, endpoints.auth.signIn, endpoints.auth.signOut, endpoints.auth.forgotPassword, endpoints.auth.resetPassword]
 
 api.interceptors.response.use(
   response => response,
@@ -57,11 +66,21 @@ api.interceptors.response.use(
     const original = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
     const status = error.response?.status
 
-    // Attempt one silent refresh + retry on 401 (skip auth endpoints themselves).
-    const isAuthCall = original?.url?.includes('/auth/')
+    // Attempt one silent refresh + retry on 401 (skip the credential endpoints).
+    const isAuthCall = NO_REFRESH.some(path => original?.url?.endsWith(path))
 
     if (status === 401 && original && !original._retry && !isAuthCall) {
       original._retry = true
+
+      // Another tab may already have refreshed: retry with its token first.
+      const current = getAccessToken()
+      const sent = String(original.headers?.Authorization ?? '')
+
+      if (current && sent !== `Bearer ${current}`) {
+        original.headers = { ...original.headers, Authorization: `Bearer ${current}` }
+
+        return api(original)
+      }
 
       refreshPromise = refreshPromise ?? refreshAccessToken()
       const newToken = await refreshPromise

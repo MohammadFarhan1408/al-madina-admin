@@ -31,5 +31,14 @@ export const describeTarget = (path: string) =>
     .filter(seg => seg && !/^[0-9a-f]{24}$/i.test(seg))
     .join(' › ')
 
-export const describeAction = (e: Pick<ActivityEntry, 'method' | 'path'>) =>
-  `${VERBS[e.method]} · ${describeTarget(e.path)}`
+const SIGN_IN_RESULTS: Record<number, string> = {
+  200: 'Signed in',
+  401: 'Failed sign-in (wrong password)',
+  403: 'Sign-in refused (account deactivated)',
+  429: 'Sign-in blocked (account locked)'
+}
+
+export const describeAction = (e: Pick<ActivityEntry, 'method' | 'path' | 'statusCode'>) =>
+  e.path === '/v1/auth/sign-in'
+    ? (SIGN_IN_RESULTS[e.statusCode ?? 0] ?? 'Sign-in attempt')
+    : `${VERBS[e.method]} · ${describeTarget(e.path)}`
