@@ -20,12 +20,12 @@ import EntityCell from '@/components/shared/EntityCell'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import RowActions from '@/components/shared/RowActions'
 import type { PriceRange } from '@/components/shared/PriceRangeFilter'
-import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import Rating from '@/components/ui/Rating'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
+import { useListTotals } from '@/hooks/useListTotals'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { formatCurrency } from '@/libs/format'
@@ -35,8 +35,30 @@ import ProductsFilterBar, {
   type StockFilter
 } from '@/features/products/components/ProductsFilterBar'
 import { productsApi } from '@/features/products/api/productsApi'
-import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
-import type { Product, ScentFamily, ProductListParams } from '@/features/products/types'
+import { productKeys, useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
+import { SCENT_FAMILIES, type Product, type ScentFamily, type ProductListParams } from '@/features/products/types'
+
+const parsePrice = (value: string | null) => {
+  const n = value === null || value === '' ? NaN : Number(value)
+
+  return Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
+const parsePriceRange = (params: URLSearchParams): PriceRange => {
+  const min = parsePrice(params.get('minPrice'))
+  const max = parsePrice(params.get('maxPrice'))
+
+  // A reversed range from a hand-edited URL would match nothing; drop it.
+  return min !== undefined && max !== undefined && min > max ? {} : { min, max }
+}
+
+// URL params are user-editable: anything outside the known values falls back
+// to "no filter" instead of reaching the API (an unknown family is a 422) or
+// silently filtering while the control shows nothing selected.
+const parseStock = (value: string | null): StockFilter => (value === 'true' || value === 'false' ? value : '')
+
+const parseFamily = (value: string | null): ScentFamily | '' =>
+  (SCENT_FAMILIES as readonly string[]).includes(value ?? '') ? (value as ScentFamily) : ''
 
 const ProductsView = () => {
   const router = useRouter()
@@ -44,16 +66,15 @@ const ProductsView = () => {
   const searchParams = useSearchParams()
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') ?? '')
-  const [family, setFamily] = useState<ScentFamily | ''>(() => (searchParams.get('family') as ScentFamily) ?? '')
-  const [stock, setStock] = useState<StockFilter>(() => (searchParams.get('stock') as StockFilter) ?? '')
-  const [priceRange, setPriceRange] = useState<PriceRange>({})
+  const [family, setFamily] = useState<ScentFamily | ''>(() => parseFamily(searchParams.get('family')))
+  const [stock, setStock] = useState<StockFilter>(() => parseStock(searchParams.get('stock')))
+  const [priceRange, setPriceRange] = useState<PriceRange>(() => parsePriceRange(searchParams))
   const [sorting, setSorting] = useState<SortingState>([])
   const [view, setView] = useState<ProductsListView>('table')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
+  const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination, searchParams.get('q') ?? '')
 
   const [bulkConfirm, setBulkConfirm] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
@@ -70,32 +91,49 @@ const ProductsView = () => {
     if (categoryId) params.set('categoryId', categoryId)
     if (family) params.set('family', family)
     if (stock) params.set('stock', stock)
+    if (priceRange.min !== undefined) params.set('minPrice', String(priceRange.min))
+    if (priceRange.max !== undefined) params.set('maxPrice', String(priceRange.max))
     router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, categoryId, family, stock])
+  }, [debouncedSearch, categoryId, family, stock, priceRange])
 
   const categoryMap = useMemo(() => new Map((categories ?? []).map(c => [c.id, c.name])), [categories])
 
   const sort = sorting[0]?.id === 'price' ? (sorting[0].desc ? 'price_desc' : 'price_asc') : 'featured'
 
-  const filters: ProductListParams = {
+  // Everything but stock — shared by the table query and the Stock tab counts
+  // so the two can never disagree about what's being counted.
+  const baseFilters = {
     q: debouncedSearch || undefined,
     categoryId: categoryId || undefined,
     family: family || undefined,
-    inStock: stock === '' ? undefined : stock === 'true',
     minPrice: priceRange.min,
-    maxPrice: priceRange.max,
+    maxPrice: priceRange.max
+  }
+
+  const filters: ProductListParams = {
+    ...baseFilters,
+    inStock: stock === '' ? undefined : stock === 'true',
     sort
   }
 
-  const { data, isLoading, isFetching, isError, error } = useProducts({
+  const { data, isLoading, isFetching, isError, error, refetch } = useProducts({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...filters
   })
 
+  const stockCounts = useListTotals(
+    [...productKeys.all, 'stock-totals', baseFilters],
+    ['all', 'in', 'out'] as const,
+    key => productsApi.list({ ...baseFilters, inStock: key === 'all' ? undefined : key === 'in', page: 1, limit: 1 })
+  )
+
   const items = data?.items ?? []
-  const hasFilters = Boolean(search || categoryId || family || stock || priceRange.min || priceRange.max)
+
+  const hasFilters = Boolean(
+    search || categoryId || family || stock || priceRange.min !== undefined || priceRange.max !== undefined
+  )
 
   const clearFilters = () => {
     setSearch('')
@@ -309,12 +347,6 @@ const ProductsView = () => {
         }
       />
 
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load products.'}
-        </Alert>
-      )}
-
       <DataTable
         data={items}
         columns={columns}
@@ -352,11 +384,25 @@ const ProductsView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'product', other: 'products' }}
+        tabs={{
+          label: 'Stock',
+          value: stock === '' ? 'all' : stock === 'true' ? 'in-stock' : 'out-of-stock',
+          onChange: v => resetOnChange(setStock)(v === 'in-stock' ? 'true' : v === 'out-of-stock' ? 'false' : ''),
+          items: [
+            { value: 'all', label: 'All products', count: stockCounts.all },
+            { value: 'in-stock', label: 'In stock', count: stockCounts.in },
+            { value: 'out-of-stock', label: 'Out of stock', count: stockCounts.out }
+          ]
+        }}
         emptyIcon='tabler-package-off'
         emptyMessage={hasFilters ? 'No products match these filters' : 'No products yet'}
         emptyDescription={
           hasFilters
-            ? 'Try a broader search, or clear the category and scent filters.'
+            ? 'Try a broader search or another tab, or clear the filters.'
             : 'Add your first fragrance to start building the catalogue.'
         }
         emptyAction={
@@ -385,14 +431,12 @@ const ProductsView = () => {
         toolbar={
           <ProductsFilterBar
             search={search}
-            onSearchChange={resetOnChange(setSearch)}
+            onSearchChange={setSearch}
             categoryId={categoryId}
             onCategoryIdChange={resetOnChange(setCategoryId)}
             categories={categories ?? []}
             family={family}
             onFamilyChange={resetOnChange(setFamily)}
-            stock={stock}
-            onStockChange={resetOnChange(setStock)}
             priceRange={priceRange}
             onPriceRangeChange={resetOnChange(setPriceRange)}
             view={view}

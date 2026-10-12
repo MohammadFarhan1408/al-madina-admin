@@ -30,7 +30,13 @@ export const useUpdateOrderStatus = () => {
 
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: OrderStatus }) => ordersApi.updateStatus(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.all })
+
+    // Status moves shift the dashboard and Orders-tab counts too.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: orderKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      ])
   })
 }
 
@@ -39,7 +45,13 @@ export const useBulkUpdateOrderStatus = () => {
 
   return useMutation({
     mutationFn: ({ ids, status }: { ids: string[]; status: OrderStatus }) => ordersApi.bulkUpdateStatus(ids, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.all })
+
+    // Status moves shift the dashboard and Orders-tab counts too.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: orderKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      ])
   })
 }
 

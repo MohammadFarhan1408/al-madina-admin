@@ -14,7 +14,6 @@ import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import EntityCell from '@/components/shared/EntityCell'
 import RowActions from '@/components/shared/RowActions'
-import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
@@ -23,7 +22,7 @@ import type { Category } from '@/features/categories/types'
 
 const CategoriesView = () => {
   const router = useRouter()
-  const { data: categories, isLoading, isError, error } = useCategories()
+  const { data: categories, isLoading, isError, error, refetch } = useCategories()
   const deleteMutation = useDeleteCategory()
 
   const [search, setSearch] = useState('')
@@ -108,12 +107,6 @@ const CategoriesView = () => {
         }
       />
 
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load categories.'}
-        </Alert>
-      )}
-
       <DataTable
         manualPagination={false}
         data={filtered}
@@ -126,12 +119,19 @@ const CategoriesView = () => {
               image={category.image}
               onClick={() => router.push(`/categories/${category.id}`)}
             />
-            <IconButton aria-label={`Edit ${category.name}`} onClick={() => router.push(`/categories/${category.id}/edit`)}>
+            <IconButton
+              aria-label={`Edit ${category.name}`}
+              onClick={() => router.push(`/categories/${category.id}/edit`)}
+            >
               <i className='tabler-edit' />
             </IconButton>
           </div>
         )}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'category', other: 'categories' }}
         emptyIcon='tabler-category'
         emptyMessage={search ? 'No categories match your search' : 'No categories yet'}
         emptyDescription={

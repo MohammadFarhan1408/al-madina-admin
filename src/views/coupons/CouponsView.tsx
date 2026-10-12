@@ -15,14 +15,16 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import RowActions from '@/components/shared/RowActions'
-import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import IconButton from '@/components/ui/IconButton'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatCurrency, formatDate } from '@/libs/format'
-import CouponsFilterBar, { type CouponsStatusFilter } from '@/features/coupons/components/CouponsFilterBar'
-import { useCoupons, useDeleteCoupon } from '@/features/coupons/hooks/useCoupons'
+import { couponsApi } from '@/features/coupons/api/couponsApi'
+import { couponKeys, useCoupons, useDeleteCoupon } from '@/features/coupons/hooks/useCoupons'
+import { useListTotals } from '@/hooks/useListTotals'
+
+type CouponsStatusFilter = '' | 'true' | 'false'
 import type { Coupon } from '@/features/coupons/types'
 
 /** `isActive` alone says "Active" for a coupon that can no longer be redeemed;
@@ -42,11 +44,6 @@ const CouponsView = () => {
   const hasFilters = isActive !== ''
   const resetOnChange = useFilterReset(setPagination)
 
-  const clearFilters = () => {
-    setIsActive('')
-    setPagination(p => ({ ...p, pageIndex: 0 }))
-  }
-
   const deleteMutation = useDeleteCoupon()
 
   const { ask, dialog } = useConfirmDelete<Coupon>({
@@ -55,11 +52,15 @@ const CouponsView = () => {
     name: c => c.code
   })
 
-  const { data, isLoading, isFetching, isError, error } = useCoupons({
+  const { data, isLoading, isFetching, isError, error, refetch } = useCoupons({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     isActive: isActive === '' ? undefined : isActive === 'true'
   })
+
+  const statusTotals = useListTotals([...couponKeys.all, 'status-totals'], ['all', 'true', 'false'] as const, key =>
+    couponsApi.list({ isActive: key === 'all' ? undefined : key === 'true', page: 1, limit: 1 })
+  )
 
   const columns = useMemo<ColumnDef<Coupon, any>[]>(
     () => [
@@ -126,12 +127,6 @@ const CouponsView = () => {
         }
       />
 
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load coupons.'}
-        </Alert>
-      )}
-
       <DataTable
         data={data?.items ?? []}
         columns={columns}
@@ -157,12 +152,28 @@ const CouponsView = () => {
         onPaginationChange={setPagination}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'coupon', other: 'coupons' }}
+
+        // The API filters on the on/off switch (isActive) only, so the tabs
+        // say Enabled/Disabled: an enabled coupon can still show Expired or
+        // Exhausted in its Status column.
+        tabs={{
+          label: 'Coupon status',
+          value: isActive === '' ? 'all' : isActive === 'true' ? 'enabled' : 'disabled',
+          onChange: v => resetOnChange(setIsActive)(v === 'enabled' ? 'true' : v === 'disabled' ? 'false' : ''),
+          items: [
+            { value: 'all', label: 'All coupons', count: statusTotals.all },
+            { value: 'enabled', label: 'Enabled', count: statusTotals.true },
+            { value: 'disabled', label: 'Disabled', count: statusTotals.false }
+          ]
+        }}
         emptyIcon='tabler-discount-off'
-        emptyMessage={hasFilters ? 'No coupons with this status' : 'No coupons yet'}
+        emptyMessage={hasFilters ? `No ${isActive === 'true' ? 'enabled' : 'disabled'} coupons` : 'No coupons yet'}
         emptyDescription={
-          hasFilters
-            ? 'Switch the status filter to see the rest of your coupons.'
-            : 'Create a discount code to run a promotion.'
+          hasFilters ? 'Switch tabs to see the rest of your coupons.' : 'Create a discount code to run a promotion.'
         }
         emptyAction={
           !hasFilters && (
@@ -170,14 +181,6 @@ const CouponsView = () => {
               Add Coupon
             </Button>
           )
-        }
-        toolbar={
-          <CouponsFilterBar
-            isActive={isActive}
-            onIsActiveChange={resetOnChange(setIsActive)}
-            hasFilters={hasFilters}
-            onClearFilters={clearFilters}
-          />
         }
       />
 

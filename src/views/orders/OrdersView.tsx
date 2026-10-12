@@ -16,18 +16,19 @@ import DataTable from '@/components/shared/DataTable'
 import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import IconButton from '@/components/ui/IconButton'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
+import { useListTotals } from '@/hooks/useListTotals'
+import { dateRangeParams, hasDateRange, type DateRange } from '@/libs/dateRange'
 import { useFilterReset } from '@/hooks/useFilterReset'
-import { formatCurrency, formatDate } from '@/libs/format'
+import { formatCurrency, formatDate, humanize } from '@/libs/format'
 import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
 import { ordersApi } from '@/features/orders/api/ordersApi'
-import { useBulkUpdateOrderStatus, useOrders } from '@/features/orders/hooks/useOrders'
-import type { Order, OrderStatus, PaymentStatus } from '@/features/orders/types'
+import { orderKeys, useBulkUpdateOrderStatus, useOrders } from '@/features/orders/hooks/useOrders'
+import { ORDER_STATUSES, type Order, type OrderStatus, type PaymentStatus } from '@/features/orders/types'
 
 const EXPORT_COLUMNS: ExportColumn<Order>[] = [
   { header: 'Reference', value: o => o.reference },
@@ -49,44 +50,59 @@ const EXPORT_COLUMNS: ExportColumn<Order>[] = [
 const OrdersView = () => {
   const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>('')
   const [status, setStatus] = useState<OrderStatus | ''>('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange>({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const debouncedSearch = useDebouncedValue(search)
+  const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<OrderStatus | null>(null)
   const bulkMutation = useBulkUpdateOrderStatus()
   const { success, error: toastError, toast } = useToast()
-  const hasFilters = Boolean(search || paymentStatus || status || from || to)
+  const hasFilters = Boolean(search || paymentStatus || status || hasDateRange(dateRange))
   const resetOnChange = useFilterReset(setPagination)
 
   const clearFilters = () => {
     setSearch('')
     setPaymentStatus('')
     setStatus('')
-    setFrom('')
-    setTo('')
+    setDateRange({})
     setPagination(p => ({ ...p, pageIndex: 0 }))
   }
 
-  const filters = {
+  // Everything except status: shared by the table and the status-tab counts,
+  // so each tab's number is exactly the rows it shows. (The tabs used to show
+  // the dashboard's all-time totals, which ignored search, payment and dates.)
+  const baseFilters = {
     q: debouncedSearch || undefined,
     paymentStatus: paymentStatus || undefined,
+    ...dateRangeParams(dateRange)
+  }
+
+  const filters = {
+    ...baseFilters,
     status: status || undefined,
-    from: from || undefined,
-    to: to || undefined,
     sortBy: (sorting[0]?.id as 'reference' | 'placedAt' | 'total' | 'status') || undefined,
     sortOrder: sorting[0] ? (sorting[0].desc ? ('desc' as const) : ('asc' as const)) : undefined
   }
 
-  const { data, isLoading, isFetching, isError, error } = useOrders({
+  const { data, isLoading, isFetching, isError, error, refetch } = useOrders({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...filters
   })
+
+  const statusTotals = useListTotals(
+    [...orderKeys.all, 'status-totals', baseFilters],
+    ['all', ...ORDER_STATUSES] as const,
+    key => ordersApi.list({ ...baseFilters, status: key === 'all' ? undefined : key, page: 1, limit: 1 })
+  )
+
+  // 'all' rather than '' so the tab gets a real id (`all-tab`).
+  const statusTabs = [
+    { value: 'all', label: 'All', count: statusTotals.all },
+    ...ORDER_STATUSES.map(s => ({ value: s, label: humanize(s), count: statusTotals[s] }))
+  ]
 
   const applyBulkStatus = async () => {
     if (!bulkStatus) return
@@ -199,12 +215,6 @@ const OrdersView = () => {
         }
       />
 
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load orders.'}
-        </Alert>
-      )}
-
       <DataTable
         data={data?.items ?? []}
         columns={columns}
@@ -248,6 +258,16 @@ const OrdersView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'order', other: 'orders' }}
+        tabs={{
+          label: 'Order status',
+          items: statusTabs,
+          value: status || 'all',
+          onChange: v => resetOnChange(setStatus)(v === 'all' ? '' : (v as OrderStatus))
+        }}
         emptyIcon='tabler-shopping-cart-off'
         emptyMessage={hasFilters ? 'No orders match these filters' : 'No orders yet'}
         emptyDescription={
@@ -258,15 +278,11 @@ const OrdersView = () => {
         toolbar={
           <OrdersFilterBar
             search={search}
-            onSearchChange={resetOnChange(setSearch)}
+            onSearchChange={setSearch}
             paymentStatus={paymentStatus}
             onPaymentStatusChange={resetOnChange(setPaymentStatus)}
-            status={status}
-            onStatusChange={resetOnChange(setStatus)}
-            from={from}
-            onFromChange={resetOnChange(setFrom)}
-            to={to}
-            onToChange={resetOnChange(setTo)}
+            dateRange={dateRange}
+            onDateRangeChange={resetOnChange(setDateRange)}
             hasFilters={hasFilters}
             onClearFilters={clearFilters}
           />
