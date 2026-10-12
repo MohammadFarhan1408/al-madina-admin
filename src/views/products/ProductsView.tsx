@@ -332,6 +332,7 @@ const ProductsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Products'
+        icon='tabler-package'
         subtitle='Manage your fragrance catalogue'
         action={
           <>
@@ -423,7 +424,13 @@ const ProductsView = () => {
           onChange: setSelectedIds,
           getId: p => p.id,
           actions: (
-            <Button size='sm' variant='outlined' color='error' onClick={() => setBulkConfirm(true)}>
+            <Button
+              size='sm'
+              variant='outlined'
+              color='error'
+              startIcon={<i className='tabler-trash' />}
+              onClick={() => setBulkConfirm(true)}
+            >
               Delete
             </Button>
           )
@@ -453,6 +460,7 @@ const ProductsView = () => {
         title='Delete products'
         description={`Delete ${selectedIds.size} selected product${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`}
         confirmText={`Delete ${selectedIds.size}`}
+        confirmIcon='tabler-trash'
         loading={bulkDeleting}
         onConfirm={deleteSelected}
         onClose={() => setBulkConfirm(false)}

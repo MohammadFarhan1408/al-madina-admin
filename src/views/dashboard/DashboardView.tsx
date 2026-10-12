@@ -43,6 +43,7 @@ const DashboardView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Dashboard'
+        icon='tabler-layout-dashboard'
         subtitle={`Store performance — ${rangeCaption(range)}`}
         action={<DateRangeControl range={range} onChange={setRange} error={rangeError} />}
       />
@@ -109,6 +110,7 @@ const DashboardView = () => {
         <div className='grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5'>
           <ChartCard
             title='Revenue'
+            icon='tabler-chart-line'
             description='Excludes cancelled orders'
             isLoading={pending}
             empty={!hasOrders && { title: 'No orders in this range', description: 'Try a longer date range.' }}
@@ -118,6 +120,7 @@ const DashboardView = () => {
           </ChartCard>
           <ChartCard
             title='Orders by status'
+            icon='tabler-chart-donut'
             isLoading={pending}
             empty={!hasOrders && { title: 'No orders in this range' }}
             className='lg:col-span-4'
@@ -129,6 +132,7 @@ const DashboardView = () => {
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5'>
           <ChartCard
             title='Orders'
+            icon='tabler-chart-bar'
             isLoading={pending}
             height={180}
             empty={!hasOrders && { title: 'No orders in this range' }}
@@ -137,6 +141,7 @@ const DashboardView = () => {
           </ChartCard>
           <ChartCard
             title='New customers'
+            icon='tabler-user-plus'
             isLoading={pending}
             height={180}
             empty={!!data && data.totals.newCustomers === 0 && { title: 'No sign-ups in this range' }}
@@ -149,6 +154,7 @@ const DashboardView = () => {
           <Card className='lg:col-span-7'>
             <CardHeader
               title='Top selling products'
+              icon='tabler-trophy'
               description='By revenue in this range'
               action={
                 data?.topProducts.length ? (
@@ -172,6 +178,7 @@ const DashboardView = () => {
         <Card>
           <CardHeader
             title='Recent orders'
+            icon='tabler-receipt'
             action={
               overview.data?.recentOrders.length ? (
                 <Link href='/orders'>

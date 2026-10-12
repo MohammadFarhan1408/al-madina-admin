@@ -104,7 +104,7 @@ const NotificationsView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Notifications' subtitle='Send an announcement to your customers' />
+      <PageHeader title='Notifications' icon='tabler-bell' subtitle='Send an announcement to your customers' />
 
       <div className='flex flex-col gap-6'>
         <div className='md:w-2/3 lg:w-1/2'>
@@ -152,7 +152,7 @@ const NotificationsView = () => {
                   )}
                 />
                 <div className='flex items-center gap-4'>
-                  <Button type='submit' loading={broadcast.isPending}>
+                  <Button type='submit' loading={broadcast.isPending} startIcon={<i className='tabler-send' />}>
                     Send broadcast
                   </Button>
                   <span className='text-xs text-textSecondary'>
@@ -166,7 +166,11 @@ const NotificationsView = () => {
 
         <div>
           <Card>
-            <CardHeader title='Broadcast history' description='Past announcements sent from this panel' />
+            <CardHeader
+              title='Broadcast history'
+              icon='tabler-history'
+              description='Past announcements sent from this panel'
+            />
             <DataTable
               data={history?.items ?? []}
               columns={columns}
@@ -200,6 +204,7 @@ const NotificationsView = () => {
         title='Send broadcast'
         description={`Send "${pending?.title}" to ${pending?.tier || 'all customers'}? This reaches every matching customer immediately and can't be recalled.`}
         confirmText='Send'
+        confirmIcon='tabler-send'
         confirmColor='primary'
         loading={broadcast.isPending}
         onConfirm={confirmSend}

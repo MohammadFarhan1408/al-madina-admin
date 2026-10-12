@@ -21,6 +21,7 @@ const ProductInventoryTable = ({ product }: { product: Product }) => {
     <Card className='overflow-hidden'>
       <CardHeader
         title='Pricing & inventory'
+        icon='tabler-cash'
         description={
           variantCount
             ? `Default size and ${variantCount} variant${variantCount === 1 ? '' : 's'}`

@@ -11,7 +11,6 @@ import { useState } from 'react'
 
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import DetailActions from '@/components/shared/DetailActions'
 import DetailLoading from '@/components/shared/DetailLoading'
 import PageHeader from '@/components/shared/PageHeader'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
@@ -74,6 +73,8 @@ const OrderDetailView = ({ id }: { id: string }) => {
     return (
       <DetailLoading
         title='Order'
+        backHref='/orders'
+        backLabel='Back to orders'
         skeleton={<OrderDetailSkeleton />}
         isLoading={isLoading}
         isError={isError}
@@ -96,7 +97,8 @@ const OrderDetailView = ({ id }: { id: string }) => {
       <PageHeader
         title={`Order ${order.reference}`}
         subtitle={`Placed ${formatDateTime(order.placedAt)} · ${itemCount} item${itemCount === 1 ? '' : 's'} · ${formatCurrency(order.total, order.currency)}`}
-        action={<DetailActions backHref='/orders' backLabel='Back to orders' />}
+        backHref='/orders'
+        backLabel='Back to orders'
       >
         <OrderHeaderMeta order={order} />
       </PageHeader>
@@ -119,7 +121,7 @@ const OrderDetailView = ({ id }: { id: string }) => {
             <OrderCustomerCard order={order} />
             <OrderDeliveryCard order={order} />
             <Card>
-              <CardHeader title='Status history' />
+              <CardHeader title='Status history' icon='tabler-timeline' />
               <CardBody>
                 <OrderTimeline history={order.statusHistory} />
               </CardBody>
@@ -137,6 +139,7 @@ const OrderDetailView = ({ id }: { id: string }) => {
             : undefined
         }
         confirmText='Update status'
+        confirmIcon={pendingStatus === 'cancelled' ? 'tabler-ban' : 'tabler-check'}
         confirmColor={pendingStatus === 'cancelled' ? 'error' : 'primary'}
         loading={updateStatus.isPending}
         onConfirm={applyStatusChange}
@@ -148,6 +151,7 @@ const OrderDetailView = ({ id }: { id: string }) => {
         title='Refund payment'
         description={`Refund ${formatCurrency(refundable?.amount ?? order.total, refundable?.currency ?? order.currency)} for order ${order.reference}? This cannot be undone.`}
         confirmText='Refund'
+        confirmIcon='tabler-receipt-refund'
         confirmColor='error'
         loading={refundPayment.isPending}
         onConfirm={applyRefund}

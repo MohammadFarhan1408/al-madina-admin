@@ -40,6 +40,8 @@ const CategoryDetailView = ({ id }: { id: string }) => {
     return (
       <DetailLoading
         title='Category'
+        backHref='/categories'
+        backLabel='Back to categories'
         skeleton={<DetailHeroSkeleton />}
         isLoading={isLoading}
         isError={isError}
@@ -54,16 +56,12 @@ const CategoryDetailView = ({ id }: { id: string }) => {
     <>
       <Breadcrumbs extra={[{ label: category.name }]} />
       <PageHeader
+        backHref='/categories'
+        backLabel='Back to categories'
         title={category.name}
         subtitle={category.tagline}
         action={
-          <DetailActions
-            backHref='/categories'
-            backLabel='Back to categories'
-            editHref={`/categories/${id}/edit`}
-            editLabel='Edit category'
-            onDelete={() => ask(category)}
-          />
+          <DetailActions editHref={`/categories/${id}/edit`} editLabel='Edit category' onDelete={() => ask(category)} />
         }
       >
         <RecordMeta

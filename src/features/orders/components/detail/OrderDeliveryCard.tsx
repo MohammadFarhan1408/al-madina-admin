@@ -6,7 +6,7 @@ import type { AdminOrder } from '@/features/orders/types'
 /** Where the order is going and how. */
 const OrderDeliveryCard = ({ order }: { order: AdminOrder }) => (
   <Card>
-    <CardHeader title='Delivery' />
+    <CardHeader title='Delivery' icon='tabler-truck-delivery' />
     <CardBody>
       <dl className='flex flex-col gap-3'>
         <Fact label='Ship to'>

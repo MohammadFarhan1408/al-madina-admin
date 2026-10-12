@@ -65,7 +65,7 @@ CRUD page is assembled from these:
   `CategoriesView.tsx`) + a toolbar + `RowActions` (the "⋮" kebab menu,
   built on `ui/Dropdown`) for 2+ row actions — skip it for a single action.
 - `useConfirmDelete` (hooks/) for the ask → confirm → delete → toast flow;
-  `DetailActions` for a detail page's Back/Edit/Delete header.
+  `DetailActions` for a detail page's Edit/Delete header; Back is `PageHeader`'s `backHref` (also on create/edit pages).
 - Forms: `FormActions` (sticky Cancel/Save + unsaved-changes guard),
   `useFormSync` (seed an edit form once per record — never `reset()` in a
   `[entity]` effect, it wipes edits on refetch), `NumberInput` for any numeric

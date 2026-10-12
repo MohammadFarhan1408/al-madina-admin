@@ -103,7 +103,7 @@ const ActivityView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Activity' subtitle='Every change made in the admin, newest first' />
+      <PageHeader title='Activity' icon='tabler-history' subtitle='Every change made in the admin, newest first' />
 
       <DataTable
         data={data?.items ?? []}

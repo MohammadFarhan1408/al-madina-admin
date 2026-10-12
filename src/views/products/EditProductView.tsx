@@ -18,8 +18,13 @@ const EditProductView = ({ id }: Props) => {
     return (
       <>
         <Breadcrumbs />
-        <PageHeader title='Edit Product' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load product.' />
+        <PageHeader title='Edit Product' backHref={`/products/${id}`} backLabel='Back to product' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load product.'
+        />
       </>
     )
   }
@@ -27,7 +32,7 @@ const EditProductView = ({ id }: Props) => {
   return (
     <>
       <Breadcrumbs extra={[{ label: product.name, href: `/products/${id}` }, { label: 'Edit' }]} />
-      <PageHeader title={`Edit ${product.name}`} />
+      <PageHeader title={`Edit ${product.name}`} backHref={`/products/${id}`} backLabel='Back to product' />
       <ProductForm
         product={product}
         onSuccess={() => router.push(`/products/${id}`)}

@@ -29,6 +29,7 @@ const OrderItemsCard = ({ order }: { order: AdminOrder }) => {
     <Card className='overflow-hidden'>
       <CardHeader
         title='Items'
+        icon='tabler-package'
         description={`${order.items.length} product${order.items.length === 1 ? '' : 's'} · ${itemCount} unit${itemCount === 1 ? '' : 's'}`}
         divided={false}
       />

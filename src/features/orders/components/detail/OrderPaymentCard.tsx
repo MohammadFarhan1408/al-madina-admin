@@ -25,6 +25,7 @@ const OrderPaymentCard = ({ order, transactions, refundable, onRefund }: OrderPa
     <Card className='overflow-hidden'>
       <CardHeader
         title='Payment'
+        icon='tabler-credit-card'
         action={
           refundable ? (
             <Button

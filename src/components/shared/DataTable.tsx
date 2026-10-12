@@ -309,7 +309,13 @@ function DataTable<T>({
       {selection && selection.selected.size > 0 && (
         <div className='flex flex-wrap items-center gap-3 border-b border-border bg-primary/10 px-4 py-2.5 text-sm'>
           <span className='font-medium'>{selection.selected.size} selected</span>
-          <Button size='sm' variant='text' color='secondary' onClick={() => selection.onChange(new Set())}>
+          <Button
+            size='sm'
+            variant='text'
+            color='secondary'
+            startIcon={<i className='tabler-x' />}
+            onClick={() => selection.onChange(new Set())}
+          >
             Clear
           </Button>
           <div className='ml-auto flex items-center gap-2'>{selection.actions}</div>

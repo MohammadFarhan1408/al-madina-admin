@@ -11,6 +11,10 @@ type DetailLoadingProps = {
   /** Generic page title (e.g. "Product") — the record's own name isn't known yet. */
   title: string
 
+  /** Same ← target the loaded page uses, so the way out is there while loading. */
+  backHref: string
+  backLabel?: string
+
   /** Shaped like the page that's coming, so nothing jumps when data lands. */
   skeleton: ReactNode
   isLoading: boolean
@@ -24,6 +28,8 @@ type DetailLoadingProps = {
  *  loading, a retryable error if the fetch failed. */
 const DetailLoading = ({
   title,
+  backHref,
+  backLabel,
   skeleton,
   isLoading,
   isError,
@@ -33,7 +39,7 @@ const DetailLoading = ({
 }: DetailLoadingProps) => (
   <>
     <Breadcrumbs />
-    <PageHeader title={title} />
+    <PageHeader title={title} backHref={backHref} backLabel={backLabel} />
     {isLoading && !isError ? (
       skeleton
     ) : (

@@ -72,7 +72,14 @@ const ForgotPassword = () => {
               />
             )}
           />
-          <Button fullWidth size='lg' type='submit' loading={isSubmitting} className='mt-1'>
+          <Button
+            fullWidth
+            size='lg'
+            type='submit'
+            loading={isSubmitting}
+            startIcon={<i className='tabler-mail' />}
+            className='mt-1'
+          >
             Send reset link
           </Button>
         </form>

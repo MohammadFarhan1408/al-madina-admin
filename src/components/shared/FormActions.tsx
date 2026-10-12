@@ -7,13 +7,22 @@ type FormActionsProps = {
   submitting?: boolean
   dirty?: boolean
   submitLabel?: string
+
+  /** Tabler class for the submit button — `tabler-check` on a create form. */
+  submitIcon?: string
   onCancel: () => void
 }
 
 /** Sticky Cancel/Save bar for a form, plus the unsaved-changes guard — so a
  *  long form's Save is always on screen and abandoning edits asks first. Place
  *  it inside the `<form>`, after the cards. */
-const FormActions = ({ submitting = false, dirty = false, submitLabel = 'Save changes', onCancel }: FormActionsProps) => {
+const FormActions = ({
+  submitting = false,
+  dirty = false,
+  submitLabel = 'Save changes',
+  submitIcon = 'tabler-device-floppy',
+  onCancel
+}: FormActionsProps) => {
   const confirmLeave = useUnsavedGuard(dirty)
 
   return (
@@ -23,13 +32,14 @@ const FormActions = ({ submitting = false, dirty = false, submitLabel = 'Save ch
         type='button'
         variant='outlined'
         color='secondary'
+        startIcon={<i className='tabler-x' />}
         disabled={submitting}
         onClick={() => confirmLeave() && onCancel()}
         className='max-sm:flex-1'
       >
         Cancel
       </Button>
-      <Button type='submit' loading={submitting} className='max-sm:flex-1'>
+      <Button type='submit' loading={submitting} startIcon={<i className={submitIcon} />} className='max-sm:flex-1'>
         {submitLabel}
       </Button>
     </div>

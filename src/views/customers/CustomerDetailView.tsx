@@ -10,7 +10,6 @@ import Link from 'next/link'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
-import DetailActions from '@/components/shared/DetailActions'
 import DetailSection from '@/components/shared/DetailSection'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -62,7 +61,7 @@ const CustomerDetailView = ({ id }: Props) => {
     return (
       <>
         <Breadcrumbs />
-        <PageHeader title='Customer' />
+        <PageHeader title='Customer' backHref='/customers' backLabel='Back to customers' />
         <QueryState
           isError={isError}
           error={fetchError}
@@ -79,20 +78,19 @@ const CustomerDetailView = ({ id }: Props) => {
       <PageHeader
         title={data.user.fullName}
         subtitle={data.user.email}
+        backHref='/customers'
+        backLabel='Back to customers'
         action={
-          <div className='flex flex-wrap items-center gap-2'>
-            <DetailActions backHref='/customers' backLabel='Back to customers' />
-            {!data.user.isActive && (
-              <Button
-                variant='outlined'
-                startIcon={<i className='tabler-user-check' />}
-                loading={reactivate.isPending}
-                onClick={reactivateNow}
-              >
-                Reactivate
-              </Button>
-            )}
-          </div>
+          !data.user.isActive && (
+            <Button
+              variant='outlined'
+              startIcon={<i className='tabler-user-check' />}
+              loading={reactivate.isPending}
+              onClick={reactivateNow}
+            >
+              Reactivate
+            </Button>
+          )
         }
       />
 
@@ -160,7 +158,7 @@ const CustomerDetailView = ({ id }: Props) => {
           />
 
           <TabPanel active={activeTab === 'overview'} value='overview' className='p-0'>
-            <DetailSection title='Recent orders'>
+            <DetailSection title='Recent orders' icon='tabler-shopping-cart'>
               {data.recentOrders.length ? (
                 data.recentOrders.map(order => (
                   <div key={order.id} className='flex items-center justify-between gap-2'>
@@ -186,7 +184,7 @@ const CustomerDetailView = ({ id }: Props) => {
           </TabPanel>
 
           <TabPanel active={activeTab === 'addresses'} value='addresses' className='p-0'>
-            <DetailSection title='Saved addresses'>
+            <DetailSection title='Saved addresses' icon='tabler-map-pin'>
               {data.addresses.length ? (
                 data.addresses.map(addr => (
                   <div key={addr.id} className='flex flex-col gap-0.5'>
@@ -208,7 +206,7 @@ const CustomerDetailView = ({ id }: Props) => {
           </TabPanel>
 
           <TabPanel active={activeTab === 'cart'} value='cart' className='p-0'>
-            <DetailSection title='Current cart'>
+            <DetailSection title='Current cart' icon='tabler-basket'>
               {data.cart.length ? (
                 data.cart.map((item, idx) => {
                   const product = typeof item.productId === 'string' ? null : item.productId
@@ -242,6 +240,7 @@ const CustomerDetailView = ({ id }: Props) => {
         title='Change loyalty tier'
         description={`Move ${data.user.fullName} to "${pendingTier ?? ''}"?`}
         confirmText='Change tier'
+        confirmIcon='tabler-crown'
         confirmColor='primary'
         loading={updateTier.isPending}
         onConfirm={applyTierChange}

@@ -17,6 +17,7 @@ const CollectionProducts = ({ collectionId, title }: { collectionId: string; tit
     <Card className='overflow-hidden'>
       <CardHeader
         title='Products'
+        icon='tabler-package'
         description={isLoading ? 'Loading…' : `${count} product${count === 1 ? '' : 's'} in this collection`}
       />
 
@@ -29,7 +30,7 @@ const CollectionProducts = ({ collectionId, title }: { collectionId: string; tit
       {isError ? (
         <CardBody className='flex flex-col items-center gap-2 py-8 text-center'>
           <p className='text-sm text-errorDark'>Couldn&apos;t load this collection&apos;s products.</p>
-          <Button size='sm' variant='outlined' onClick={() => refetch()}>
+          <Button size='sm' variant='outlined' startIcon={<i className='tabler-refresh' />} onClick={() => refetch()}>
             Retry
           </Button>
         </CardBody>

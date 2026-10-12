@@ -22,6 +22,7 @@ const OrderCustomerCard = ({ order }: { order: AdminOrder }) => {
     <Card>
       <CardHeader
         title='Customer'
+        icon='tabler-user'
         action={
           <Badge size='sm' color={order.customer ? 'info' : 'neutral'}>
             {order.customer ? 'Registered' : 'Guest'}

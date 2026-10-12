@@ -99,6 +99,7 @@ const CategoriesView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Categories'
+        icon='tabler-category'
         subtitle='Organize your fragrance catalogue'
         action={
           <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/categories/new')}>

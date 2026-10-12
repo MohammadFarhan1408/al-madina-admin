@@ -12,7 +12,12 @@ const CreateProductView = () => {
   return (
     <>
       <Breadcrumbs extra={[{ label: 'New Product' }]} />
-      <PageHeader title='New Product' subtitle='Add a new fragrance to the catalogue' />
+      <PageHeader
+        title='New Product'
+        backHref='/products'
+        backLabel='Back to products'
+        subtitle='Add a new fragrance to the catalogue'
+      />
       <ProductForm
         onSuccess={product => router.push(`/products/${product.id}`)}
         onCancel={() => router.push('/products')}

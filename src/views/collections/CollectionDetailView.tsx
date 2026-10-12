@@ -36,6 +36,8 @@ const CollectionDetailView = ({ id }: { id: string }) => {
     return (
       <DetailLoading
         title='Collection'
+        backHref='/collections'
+        backLabel='Back to collections'
         skeleton={<DetailHeroSkeleton />}
         isLoading={isLoading}
         isError={isError}
@@ -50,12 +52,12 @@ const CollectionDetailView = ({ id }: { id: string }) => {
     <>
       <Breadcrumbs extra={[{ label: collection.title }]} />
       <PageHeader
+        backHref='/collections'
+        backLabel='Back to collections'
         title={collection.title}
         subtitle={collection.subtitle}
         action={
           <DetailActions
-            backHref='/collections'
-            backLabel='Back to collections'
             editHref={`/collections/${id}/edit`}
             editLabel='Edit collection'
             onDelete={() => ask(collection)}

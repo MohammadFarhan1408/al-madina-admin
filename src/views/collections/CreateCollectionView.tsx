@@ -12,7 +12,12 @@ const CreateCollectionView = () => {
   return (
     <>
       <Breadcrumbs extra={[{ label: 'New Collection' }]} />
-      <PageHeader title='New Collection' subtitle='Curate a new fragrance collection' />
+      <PageHeader
+        title='New Collection'
+        backHref='/collections'
+        backLabel='Back to collections'
+        subtitle='Curate a new fragrance collection'
+      />
       <CollectionForm
         onSuccess={collection => router.push(`/collections/${collection.id}`)}
         onCancel={() => router.push('/collections')}
