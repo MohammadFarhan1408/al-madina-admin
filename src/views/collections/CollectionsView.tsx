@@ -2,21 +2,24 @@
 
 // Collections management — grid of collection cards, navigates to dedicated
 // Create/Detail/Edit pages (product membership lives on the Detail page).
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
+import classnames from 'classnames'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
-import StatusChip from '@/components/shared/StatusChip'
 import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
-import Card, { CardBody } from '@/components/ui/Card'
+import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
+import IconButton from '@/components/ui/IconButton'
 import Skeleton from '@/components/ui/Skeleton'
+import { humanize } from '@/libs/format'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { useCollections, useDeleteCollection } from '@/features/collections/hooks/useCollections'
+import { accentSwatch } from '@/features/collections/accent'
 import type { Collection } from '@/features/collections/types'
-
-const ACCENT_COLOR = { gold: 'warning', emerald: 'success', burgundy: 'error' } as const
 
 // ponytail: one row's worth; not breakpoint-aware, bump if the grid changes.
 const SKELETON_COUNT = 4
@@ -55,39 +58,69 @@ const CollectionsView = () => {
       <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
         {isLoading ? (
           [...Array(SKELETON_COUNT)].map((_, i) => (
-            <Skeleton key={i} variant='block' className='h-[280px] rounded-lg' />
+            <Card key={i} aria-hidden className='overflow-hidden'>
+              <Skeleton variant='block' className='aspect-[4/3] w-full rounded-none' />
+              <div className='flex flex-col gap-2 p-3'>
+                <Skeleton className='h-5 w-2/3' />
+                <Skeleton className='h-4 w-full' />
+                <Skeleton className='h-4 w-1/2' />
+              </div>
+            </Card>
           ))
         ) : collections?.length ? (
           collections.map(collection => (
-            <Card key={collection.id} className='flex h-full flex-col'>
-              <div
-                className='h-60 rounded-t-lg bg-cover bg-center'
-                style={{ backgroundImage: `url(${collection.image})` }}
-              />
-              <CardBody className='flex flex-1 flex-col gap-2'>
-                <div className='flex items-center justify-between gap-2'>
-                  <h2 className='text-base font-semibold'>{collection.title}</h2>
-                  <StatusChip value={collection.accent} color={ACCENT_COLOR[collection.accent]} />
+            <Card key={collection.id} hoverable className='flex h-full flex-col overflow-hidden'>
+              <button
+                type='button'
+                aria-label={`Open ${collection.title}`}
+                className='block aspect-[4/3] w-full shrink-0 overflow-hidden bg-surfaceSunken'
+                onClick={() => router.push(`/collections/${collection.id}`)}
+              >
+                {collection.image && <img src={collection.image} alt='' className='size-full object-cover' />}
+              </button>
+              <div className='flex flex-1 flex-col gap-1.5 p-3'>
+                <Link
+                  href={`/collections/${collection.id}`}
+                  className='truncate text-sm font-medium text-textPrimary hover:underline'
+                >
+                  {collection.title}
+                </Link>
+                <p className='truncate text-xs text-textSecondary'>{collection.subtitle}</p>
+                <span className='flex items-center gap-1.5 text-xs text-textMuted'>
+                  <span
+                    aria-hidden
+                    className={classnames(
+                      'size-2.5 shrink-0 rounded-full ring-1 ring-richBlack/15',
+                      accentSwatch[collection.accent]
+                    )}
+                  />
+                  {humanize(collection.accent)}
+                </span>
+                <div className='mt-auto flex items-center justify-between pt-1.5'>
+                  <span className='text-xs text-textMuted'>
+                    {collection.productCount} {collection.productCount === 1 ? 'product' : 'products'}
+                  </span>
+                  <div className='flex items-center gap-1'>
+                    <IconButton
+                      size='sm'
+                      variant='outlined'
+                      aria-label={`Edit ${collection.title}`}
+                      onClick={() => router.push(`/collections/${collection.id}/edit`)}
+                    >
+                      <i className='tabler-edit' />
+                    </IconButton>
+                    <IconButton
+                      size='sm'
+                      variant='outlined'
+                      color='error'
+                      aria-label={`Delete ${collection.title}`}
+                      onClick={() => ask(collection)}
+                    >
+                      <i className='tabler-trash' />
+                    </IconButton>
+                  </div>
                 </div>
-                <p className='text-sm text-textSecondary'>{collection.subtitle}</p>
-                <span className='text-xs text-textDisabled'>{collection.productCount} products</span>
-                <div className='mt-auto flex flex-wrap items-center gap-2 pt-3'>
-                  <Button size='sm' variant='outlined' onClick={() => router.push(`/collections/${collection.id}`)}>
-                    Products
-                  </Button>
-                  <Button
-                    size='sm'
-                    variant='outlined'
-                    color='secondary'
-                    onClick={() => router.push(`/collections/${collection.id}/edit`)}
-                  >
-                    Edit
-                  </Button>
-                  <Button size='sm' variant='outlined' color='error' onClick={() => ask(collection)}>
-                    Delete
-                  </Button>
-                </div>
-              </CardBody>
+              </div>
             </Card>
           ))
         ) : (

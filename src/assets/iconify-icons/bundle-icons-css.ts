@@ -80,13 +80,7 @@ async function generateIconsCSS() {
     ],
 
     icons: [
-      'bx-basket',
-      'bi-airplane-engines',
-      'ri-anchor-line',
-      'uit-adobe-alt',
-
       // 'fa6-regular-comment',
-      'twemoji-auto-rickshaw'
     ],
 
     svg: [

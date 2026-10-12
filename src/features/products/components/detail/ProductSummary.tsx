@@ -7,6 +7,7 @@ import { useState } from 'react'
 import classnames from 'classnames'
 
 import StatusChip from '@/components/shared/StatusChip'
+import SubHeading from '@/components/shared/SubHeading'
 import Badge from '@/components/ui/Badge'
 import Rating from '@/components/ui/Rating'
 import { formatCurrency, humanize } from '@/libs/format'
@@ -21,10 +22,6 @@ type ProductSummaryProps = {
 
 // Long enough that most descriptions show in full; clamp only the outliers.
 const DESCRIPTION_CLAMP_CHARS = 320
-
-const SubHeading = ({ children }: { children: string }) => (
-  <h3 className='text-xs font-semibold tracking-[0.06em] text-textMuted uppercase'>{children}</h3>
-)
 
 const Fact = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className='flex min-w-0 flex-col gap-0.5'>
@@ -105,9 +102,7 @@ const ProductSummary = ({ product, categoryName }: ProductSummaryProps) => {
 
       {/* Overview */}
       <section aria-labelledby='product-description' className='flex flex-col gap-2'>
-        <h3 id='product-description' className='text-xs font-semibold tracking-[0.06em] text-textMuted uppercase'>
-          Description
-        </h3>
+        <SubHeading id='product-description'>Description</SubHeading>
         {product.description ? (
           <>
             <p
