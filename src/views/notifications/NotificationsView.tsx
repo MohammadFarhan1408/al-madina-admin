@@ -15,7 +15,6 @@ import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Button from '@/components/ui/Button'
-import Alert from '@/components/ui/Alert'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import Input from '@/components/ui/form/Input'
 import Select from '@/components/ui/form/Select'
@@ -168,19 +167,6 @@ const NotificationsView = () => {
         <div>
           <Card>
             <CardHeader title='Broadcast history' description='Past announcements sent from this panel' />
-            {historyError && (
-              <Alert
-                severity='error'
-                className='m-4'
-                action={
-                  <Button size='sm' variant='outlined' color='error' onClick={() => refetchHistory()}>
-                    Try again
-                  </Button>
-                }
-              >
-                Could not load the broadcast history.
-              </Alert>
-            )}
             <DataTable
               data={history?.items ?? []}
               columns={columns}
@@ -196,6 +182,10 @@ const NotificationsView = () => {
               onPaginationChange={setPagination}
               isLoading={historyLoading}
               isRefetching={historyFetching && !historyLoading}
+              isError={historyError}
+              errorMessage='Could not load the broadcast history.'
+              onRetry={() => refetchHistory()}
+              itemLabel={{ one: 'broadcast', other: 'broadcasts' }}
               pageSizeOptions={[10, 20, 50]}
               emptyIcon='tabler-bell-off'
               emptyMessage='No broadcasts sent yet'
