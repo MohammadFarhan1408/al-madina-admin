@@ -10,9 +10,11 @@ export type TableProps = HTMLAttributes<HTMLTableElement> & {
 
 /** Horizontal overflow is contained here rather than allowed to widen the
  *  page, so a wide table scrolls inside its own card instead of making the
- *  whole document scroll sideways on mobile. */
+ *  whole document scroll sideways on mobile. `relative` makes the wrapper the
+ *  containing block for `sr-only` cells, which are absolutely positioned and
+ *  would otherwise escape the clip and widen the page. */
 export const Table = ({ className, containerClassName, children, ...props }: TableProps) => (
-  <div className={classnames('w-full overflow-x-auto overscroll-x-contain', containerClassName)}>
+  <div className={classnames('relative w-full overflow-x-auto overscroll-x-contain', containerClassName)}>
     <table className={classnames('w-full border-collapse text-sm', className)} {...props}>
       {children}
     </table>
