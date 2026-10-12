@@ -7,10 +7,10 @@
 import { useState } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
+import DetailActions from '@/components/shared/DetailActions'
 import DetailSection from '@/components/shared/DetailSection'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -29,7 +29,6 @@ import { USER_TIERS, type UserTier } from '@/features/customers/types'
 type Props = { id: string }
 
 const CustomerDetailView = ({ id }: Props) => {
-  const router = useRouter()
   const { success, error } = useToast()
   const { data, isLoading, isError, error: fetchError, refetch } = useCustomer(id)
   const updateTier = useUpdateCustomerTier()
@@ -82,9 +81,7 @@ const CustomerDetailView = ({ id }: Props) => {
         subtitle={data.user.email}
         action={
           <div className='flex flex-wrap items-center gap-2'>
-            <Button variant='outlined' color='secondary' onClick={() => router.push('/customers')}>
-              Back
-            </Button>
+            <DetailActions backHref='/customers' backLabel='Back to customers' />
             {!data.user.isActive && (
               <Button
                 variant='outlined'
