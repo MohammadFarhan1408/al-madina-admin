@@ -1,49 +1,46 @@
-'use client'
-
-import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-
 import { humanize } from '@/libs/format'
 import { ORDER_STATUSES } from '@/features/orders/types'
 import type { OrderStatusCounts } from '@/features/dashboard/types'
-import { CHART_COLORS } from './constants'
 
 type OrdersStatusChartProps = { byStatus: Partial<OrderStatusCounts> }
 
-/** Orders per status for the selected range. One colour: the status name on
- *  the axis and the count at the end of each bar already say which is which, and
- *  the four status hues are not colour-blind-safe side by side (red and green
- *  collapse for deuteranopes). The status chips elsewhere keep their hues. */
+/** Orders per status as horizontal bars on one shared scale (share of all
+ *  orders in the range), not a pie or donut: four close values compare by
+ *  length far better than by angle, and every bar is direct-labelled with its
+ *  count and share, so nothing needs a legend or hover to read.
+ *
+ *  One colour for every bar: the status name on each row already says which is
+ *  which, and the four status hues aren't colour-blind-safe side by side (red
+ *  and green collapse for deuteranopes). Plain HTML, so it's a real list for
+ *  screen readers. */
 const OrdersStatusChart = ({ byStatus }: OrdersStatusChartProps) => {
-  const data = ORDER_STATUSES.map(status => ({ label: humanize(status), count: byStatus[status] ?? 0 }))
+  const rows = ORDER_STATUSES.map(status => ({ status, count: byStatus[status] ?? 0 }))
+  const total = rows.reduce((sum, r) => sum + r.count, 0)
 
   return (
-    <div role='img' aria-label={`Orders by status: ${data.map(d => `${d.label} ${d.count}`).join(', ')}`}>
-      <ResponsiveContainer width='100%' height={240}>
-        <BarChart data={data} layout='vertical' margin={{ top: 8, right: 32, left: 0, bottom: 0 }}>
-          <XAxis type='number' hide />
-          <YAxis
-            type='category'
-            dataKey='label'
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: 'var(--color-textPrimary)', fontSize: 13 }}
-            width={84}
-          />
-          <Tooltip
-            cursor={{ fill: 'var(--color-actionHover)' }}
-            contentStyle={{
-              background: 'var(--color-backgroundPaper)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 8,
-              fontSize: 13
-            }}
-          />
-          <Bar dataKey='count' name='Orders' fill={CHART_COLORS.primaryInk} radius={[0, 4, 4, 0]} maxBarSize={26}>
-            <LabelList dataKey='count' position='right' fill='var(--color-textPrimary)' fontSize={13} />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ul className='flex flex-col gap-3.5'>
+      {rows.map(({ status, count }) => {
+        const share = total ? count / total : 0
+
+        return (
+          <li key={status} className='grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-3 text-sm'>
+            <span className='text-textPrimary'>{humanize(status)}</span>
+            <span aria-hidden className='h-2.5 overflow-hidden rounded-xs bg-actionHover'>
+              {count > 0 && (
+                <span
+                  className='block h-full rounded-r-xs bg-primaryInk'
+                  style={{ width: `max(${share * 100}%, 4px)` }}
+                />
+              )}
+            </span>
+            <span className='min-w-[5.5rem] text-right tabular-nums'>
+              <span className='font-medium text-textPrimary'>{count}</span>
+              <span className='text-textMuted'> · {Math.round(share * 100)}%</span>
+            </span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
