@@ -33,7 +33,27 @@ export const hasDateRange = (range: DateRange) => Boolean(range.from || range.to
 
 export type DatePreset = { id: string; label: string; range: () => Required<DateRange> }
 
-const daysAgo = (n: number) => {
+/** Calendar days a range covers, both ends included (0 when incomplete). */
+export function daysInRange(range: DateRange) {
+  const from = parseDateKey(range.from)
+  const to = parseDateKey(range.to)
+
+  if (!from || !to) return 0
+
+  // Round, so a daylight-saving shift inside the range doesn't lose a day.
+  return Math.round((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) + 1
+}
+
+/** The browser's IANA time zone, so the API can cut days where the admin does. */
+export const localTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch {
+    return undefined
+  }
+}
+
+export const daysAgo = (n: number) => {
   const d = new Date()
 
   d.setDate(d.getDate() - n)
@@ -69,8 +89,8 @@ export const DATE_PRESETS: DatePreset[] = [
 ]
 
 /** The preset a range exactly matches, if any — so the trigger can say "Last 7 days". */
-export const matchPreset = (range: DateRange) =>
-  DATE_PRESETS.find(p => {
+export const matchPreset = (range: DateRange, presets: DatePreset[] = DATE_PRESETS) =>
+  presets.find(p => {
     const r = p.range()
 
     return r.from === range.from && r.to === range.to
@@ -82,8 +102,8 @@ const shortDate = (key: string, withYear: boolean) =>
   )
 
 /** "Last 7 days" · "3 Oct – 12 Oct 2026" · "From 3 Oct 2026" · "Until 12 Oct 2026". */
-export function formatDateRange(range: DateRange) {
-  const preset = matchPreset(range)
+export function formatDateRange(range: DateRange, presets: DatePreset[] = DATE_PRESETS) {
+  const preset = matchPreset(range, presets)
 
   if (preset) return preset.label
 

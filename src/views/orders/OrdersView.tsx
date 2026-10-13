@@ -3,9 +3,9 @@
 // Orders management — server-paginated table with status + date filters,
 // navigates to a dedicated Detail page (also drives status transitions).
 // No create/edit routes — orders aren't admin-created.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table'
 
@@ -28,7 +28,13 @@ import { formatCurrency, formatDate, humanize } from '@/libs/format'
 import OrdersFilterBar from '@/features/orders/components/OrdersFilterBar'
 import { ordersApi } from '@/features/orders/api/ordersApi'
 import { orderKeys, useBulkUpdateOrderStatus, useOrders } from '@/features/orders/hooks/useOrders'
-import { ORDER_STATUSES, type Order, type OrderStatus, type PaymentStatus } from '@/features/orders/types'
+import {
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+  type Order,
+  type OrderStatus,
+  type PaymentStatus
+} from '@/features/orders/types'
 
 const EXPORT_COLUMNS: ExportColumn<Order>[] = [
   { header: 'Reference', value: o => o.reference },
@@ -47,11 +53,26 @@ const EXPORT_COLUMNS: ExportColumn<Order>[] = [
   { header: 'Currency', value: o => o.currency }
 ]
 
+// URL params are user-editable (and linked from the dashboard): anything
+// outside the known values falls back to "no filter" rather than reaching the
+// API as a 422 or filtering while the control shows nothing selected.
+const parseStatus = (value: string | null): OrderStatus | '' =>
+  (ORDER_STATUSES as readonly string[]).includes(value ?? '') ? (value as OrderStatus) : ''
+
+const parsePaymentStatus = (value: string | null): PaymentStatus | '' =>
+  (PAYMENT_STATUSES as readonly string[]).includes(value ?? '') ? (value as PaymentStatus) : ''
+
 const OrdersView = () => {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>('')
-  const [status, setStatus] = useState<OrderStatus | ''>('')
+
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>(() =>
+    parsePaymentStatus(searchParams.get('paymentStatus'))
+  )
+
+  const [status, setStatus] = useState<OrderStatus | ''>(() => parseStatus(searchParams.get('status')))
   const [dateRange, setDateRange] = useState<DateRange>({})
   const [sorting, setSorting] = useState<SortingState>([])
   const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination)
@@ -61,6 +82,17 @@ const OrdersView = () => {
   const { success, error: toastError, toast } = useToast()
   const hasFilters = Boolean(search || paymentStatus || status || hasDateRange(dateRange))
   const resetOnChange = useFilterReset(setPagination)
+
+  // Keep the status/payment filters in the URL (as ProductsView does), so a
+  // filtered view can be linked to, reloaded and shared.
+  useEffect(() => {
+    const params = new URLSearchParams()
+
+    if (status) params.set('status', status)
+    if (paymentStatus) params.set('paymentStatus', paymentStatus)
+    router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, paymentStatus])
 
   const clearFilters = () => {
     setSearch('')

@@ -5,7 +5,7 @@ import type { DashboardData, DashboardSummary, Granularity, OrderStats } from '.
 
 export const dashboardApi = {
   overview: () => apiGet<DashboardData>(endpoints.admin.dashboard),
-  summary: (params: { from: string; to: string; granularity: Granularity }) =>
+  summary: (params: { from: string; to: string; granularity: Granularity; tz?: string }) =>
     apiGet<DashboardSummary>(endpoints.admin.dashboardSummary, { params }),
   orderStats: () => apiGet<OrderStats>(endpoints.admin.ordersStats)
 }

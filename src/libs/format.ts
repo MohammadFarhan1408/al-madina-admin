@@ -42,6 +42,11 @@ export function humanize(value?: string) {
   return value.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
+/** A whole count with thousands separators: 1284 → "1,284". */
+export function formatNumber(value: number) {
+  return new Intl.NumberFormat('en').format(value)
+}
+
 /** Compact number for chart axes: 12400 → "12K". */
 export function formatCompact(value: number) {
   return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value)

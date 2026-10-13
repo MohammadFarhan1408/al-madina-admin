@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import classnames from 'classnames'
 
 import Card from '@/components/ui/Card'
@@ -15,26 +17,44 @@ type StatCardProps = {
   /** Change vs the previous period: `change` is a fraction (0.12 = +12%), null
    *  when there is no prior value to compare with. */
   trend?: { change: number | null; caption: string }
+
+  /** Optional small trend graphic (e.g. a sparkline) along the card's foot. */
+  chart?: ReactNode
 }
 
 /** Fractional change, or null when the baseline is zero. */
 export const changeBetween = (current: number, previous: number) => (previous ? (current - previous) / previous : null)
 
+type TrendDirection = 'up' | 'down' | 'flat'
+
+const trendClasses: Record<TrendDirection, string> = {
+  up: 'text-successDark',
+  down: 'text-errorDark',
+  flat: 'text-textMuted'
+}
+
+const trendIcons: Record<TrendDirection, string> = {
+  up: 'tabler-trending-up',
+  down: 'tabler-trending-down',
+  flat: 'tabler-minus'
+}
+
+const trendWords: Record<TrendDirection, string> = { up: 'Up', down: 'Down', flat: 'Unchanged' }
+
 const TrendLine = ({ change, caption }: NonNullable<StatCardProps['trend']>) => {
   if (change === null) return <span className='truncate text-xs text-textMuted'>No prior data to compare</span>
 
-  const up = change >= 0
+  const pct = Math.abs(change * 100).toFixed(1)
+  const direction = pct === '0.0' ? 'flat' : change > 0 ? 'up' : 'down'
 
   // Arrow + sign + text: direction never relies on colour alone.
   return (
-    <span
-      className={classnames('flex items-center gap-1 truncate text-xs', up ? 'text-successDark' : 'text-errorDark')}
-    >
-      <i aria-hidden className={up ? 'tabler-trend-up' : 'tabler-trend-down'} />
-      <span className='sr-only'>{up ? 'Up' : 'Down'}</span>
+    <span className={classnames('flex items-center gap-1 truncate text-xs', trendClasses[direction])}>
+      <i aria-hidden className={classnames(trendIcons[direction], 'shrink-0 text-sm')} />
+      <span className='sr-only'>{trendWords[direction]}</span>
       <span className='font-medium tabular-nums'>
-        {up ? '+' : '−'}
-        {Math.abs(change * 100).toFixed(1)}%
+        {direction === 'up' ? '+' : direction === 'down' ? '−' : '±'}
+        {pct}%
       </span>
       <span className='truncate text-textMuted'>vs {caption}</span>
     </span>
@@ -57,8 +77,8 @@ const iconClasses: Record<StatCardColor, string> = {
  *
  *  Tabular figures (set globally on `body`) keep a row of these optically
  *  aligned as the numbers change. */
-const StatCard = ({ title, value, icon, color = 'primary', subtitle, trend }: StatCardProps) => (
-  <Card hoverable>
+const StatCard = ({ title, value, icon, color = 'primary', subtitle, trend, chart }: StatCardProps) => (
+  <Card hoverable className='flex min-w-0 flex-col'>
     <div className='flex items-start gap-3.5 px-4 py-4'>
       <span
         aria-hidden
@@ -76,20 +96,27 @@ const StatCard = ({ title, value, icon, color = 'primary', subtitle, trend }: St
         )}
       </div>
     </div>
+    {chart && <div className='mt-auto px-4 pb-3'>{chart}</div>}
   </Card>
 )
 
 /** Loading twin of StatCard — identical box model, so the grid doesn't reflow
  *  when the real numbers arrive. */
-export const StatCardSkeleton = () => (
+export const StatCardSkeleton = ({ chartHeight }: { chartHeight?: number }) => (
   <Card>
     <div className='flex items-start gap-3.5 px-4 py-4'>
       <Skeleton variant='block' className='size-10' />
       <div className='flex flex-1 flex-col gap-1.5 pt-0.5'>
         <Skeleton className='h-5 w-24' />
         <Skeleton className='h-3.5 w-32' />
+        <Skeleton className='h-3 w-40' />
       </div>
     </div>
+    {chartHeight && (
+      <div className='px-4 pb-3'>
+        <Skeleton variant='block' style={{ height: chartHeight }} />
+      </div>
+    )}
   </Card>
 )
 
