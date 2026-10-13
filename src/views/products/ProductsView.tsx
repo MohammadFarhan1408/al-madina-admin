@@ -22,7 +22,6 @@ import RowActions from '@/components/shared/RowActions'
 import type { PriceRange } from '@/components/shared/PriceRangeFilter'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
-import Card from '@/components/ui/Card'
 import Rating from '@/components/ui/Rating'
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
 import { useListTotals } from '@/hooks/useListTotals'
@@ -30,6 +29,7 @@ import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { formatCurrency } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
+import ProductCard, { ProductCardSkeleton } from '@/features/products/components/ProductCard'
 import ProductsFilterBar, {
   type ProductsView as ProductsListView,
   type StockFilter
@@ -275,56 +275,12 @@ const ProductsView = () => {
   )
 
   const renderCard = (product: Product) => (
-    <Card hoverable className='flex h-full flex-col overflow-hidden'>
-      <button
-        type='button'
-        className='block aspect-square w-full shrink-0 overflow-hidden bg-surfaceSunken'
-        onClick={() => router.push(`/products/${product.id}`)}
-      >
-        <img src={product.images?.[0]} alt='' className='size-full object-cover' />
-      </button>
-      <div className='flex flex-1 flex-col gap-1.5 p-3'>
-        <div className='flex items-start justify-between gap-2'>
-          <button
-            type='button'
-            className='min-w-0 truncate text-left text-sm font-medium text-textPrimary hover:underline'
-            onClick={() => router.push(`/products/${product.id}`)}
-          >
-            {product.name}
-          </button>
-          <StatusChip value={product.inStock ? 'in-stock' : 'out-of-stock'} className='shrink-0' />
-        </div>
-        <span className='truncate text-xs text-textSecondary'>by {product.brand}</span>
-        <div className='flex items-center gap-1.5'>
-          <Rating value={product.rating} size='sm' />
-          <span className='text-xs text-textMuted'>({product.reviewCount})</span>
-        </div>
-        <div className='mt-auto flex items-center justify-between pt-1.5'>
-          <span className='text-sm font-semibold text-textPrimary'>
-            {formatCurrency(product.price, product.currency)}
-          </span>
-          <div className='flex items-center gap-1'>
-            <IconButton
-              size='sm'
-              variant='outlined'
-              aria-label={`Edit ${product.name}`}
-              onClick={() => router.push(`/products/${product.id}/edit`)}
-            >
-              <i className='tabler-edit' />
-            </IconButton>
-            <IconButton
-              size='sm'
-              variant='outlined'
-              color='error'
-              aria-label={`Delete ${product.name}`}
-              onClick={() => askDelete(product)}
-            >
-              <i className='tabler-trash' />
-            </IconButton>
-          </div>
-        </div>
-      </div>
-    </Card>
+    <ProductCard
+      product={product}
+      categoryName={categoryMap.get(product.categoryId)}
+      onEdit={() => router.push(`/products/${product.id}/edit`)}
+      onDelete={() => askDelete(product)}
+    />
   )
 
   return (
@@ -419,6 +375,8 @@ const ProductsView = () => {
         }
         view={view}
         renderCard={renderCard}
+        renderCardSkeleton={() => <ProductCardSkeleton />}
+        gridClassName='grid grid-cols-2 gap-3 p-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4 sm:p-4'
         selection={{
           selected: selectedIds,
           onChange: setSelectedIds,
