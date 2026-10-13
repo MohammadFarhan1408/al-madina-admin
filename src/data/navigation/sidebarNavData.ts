@@ -28,7 +28,10 @@ const sidebarNavData: NavSection[] = [
   },
   {
     title: 'Engagement',
-    items: [{ label: 'Notifications', href: '/notifications', icon: 'tabler-bell' }]
+    items: [
+      { label: 'Notifications', href: '/notifications', icon: 'tabler-bell' },
+      { label: 'Messages', href: '/contact', icon: 'tabler-mail' }
+    ]
   },
   {
     title: 'System',
