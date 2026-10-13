@@ -10,7 +10,14 @@ import classnames from 'classnames'
 import Button from '@/components/ui/Button'
 import Calendar from '@/components/ui/Calendar'
 import { popoverSurface } from '@/components/ui/Popover'
-import { DATE_PRESETS, formatDateRange, hasDateRange, matchPreset, type DateRange } from '@/libs/dateRange'
+import {
+  DATE_PRESETS,
+  formatDateRange,
+  hasDateRange,
+  matchPreset,
+  type DatePreset,
+  type DateRange
+} from '@/libs/dateRange'
 
 import { FilterPill, useFilterPopover } from './FilterPill'
 
@@ -18,12 +25,24 @@ type DateRangeFilterProps = {
   label?: string
   value: DateRange
   onChange: (value: DateRange) => void
+
+  /** Preset rows; defaults to the list-page set (today, 7/30 days, months). */
+  presets?: DatePreset[]
+
+  /** False where a range is always required (the dashboard): hides Clear. */
+  clearable?: boolean
 }
 
-const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterProps) => {
+const DateRangeFilter = ({
+  label = 'Date',
+  value,
+  onChange,
+  presets = DATE_PRESETS,
+  clearable = true
+}: DateRangeFilterProps) => {
   const [draft, setDraft] = useState<DateRange>(value)
   const popover = useFilterPopover({ onOpen: () => setDraft(value) })
-  const activePreset = matchPreset(draft)
+  const activePreset = matchPreset(draft, presets)
 
   const apply = (next: DateRange) => {
     onChange(next)
@@ -44,7 +63,7 @@ const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterPro
       <FilterPill
         label={label}
         icon='tabler-calendar'
-        valueLabel={hasDateRange(value) ? formatDateRange(value) : undefined}
+        valueLabel={hasDateRange(value) ? formatDateRange(value, presets) : undefined}
         open={popover.open}
         {...popover.reference()}
       />
@@ -59,7 +78,7 @@ const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterPro
             aria-label='Presets'
             className='flex gap-1 overflow-x-auto border-b border-border p-2 sm:w-36 sm:flex-col sm:border-r sm:border-b-0'
           >
-            {DATE_PRESETS.map(preset => (
+            {presets.map(preset => (
               <li key={preset.id} className='shrink-0'>
                 <button
                   type='button'
@@ -84,21 +103,28 @@ const DateRangeFilter = ({ label = 'Date', value, onChange }: DateRangeFilterPro
               {draft.from && !draft.to
                 ? 'Now pick the end date (or Apply for a single day)'
                 : hasDateRange(draft)
-                  ? formatDateRange(draft)
+                  ? formatDateRange(draft, presets)
                   : 'Pick a start date'}
             </p>
             <Calendar hideFooter range={draft} onSelect={pick} />
-            <div className='flex items-center justify-between gap-2 border-t border-border px-3 py-2.5'>
-              <Button
-                size='sm'
-                variant='text'
-                color='secondary'
-                startIcon={<i className='tabler-x' />}
-                onClick={() => apply({})}
-                disabled={!hasDateRange(value) && !hasDateRange(draft)}
-              >
-                Clear
-              </Button>
+            <div
+              className={classnames(
+                'flex items-center gap-2 border-t border-border px-3 py-2.5',
+                clearable ? 'justify-between' : 'justify-end'
+              )}
+            >
+              {clearable && (
+                <Button
+                  size='sm'
+                  variant='text'
+                  color='secondary'
+                  startIcon={<i className='tabler-x' />}
+                  onClick={() => apply({})}
+                  disabled={!hasDateRange(value) && !hasDateRange(draft)}
+                >
+                  Clear
+                </Button>
+              )}
               <Button
                 size='sm'
                 startIcon={<i className='tabler-check' />}
