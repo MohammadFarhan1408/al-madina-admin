@@ -93,6 +93,10 @@ export type DataTableProps<T> = {
    *  second renderer for the middle, not a second surface. */
   view?: 'table' | 'grid'
   renderCard?: (item: T) => ReactNode
+
+  /** Loading placeholder for one grid card — pass the card's own skeleton so
+   *  the grid keeps its shape when data lands. */
+  renderCardSkeleton?: () => ReactNode
   gridClassName?: string
 
   /** Below `md`, render each row as a card instead of a scrolling table. Cards
@@ -136,6 +140,7 @@ function DataTable<T>({
   onSortingChange,
   view = 'table',
   renderCard,
+  renderCardSkeleton,
   gridClassName,
   mobileCard,
   selection
@@ -337,13 +342,17 @@ function DataTable<T>({
       ) : view === 'grid' && renderCard ? (
         showSkeleton ? (
           <div className={gridClassName ?? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 p-4'}>
-            {Array.from({ length: Math.min(activePagination?.pageSize ?? 8, 8) }).map((_, i) => (
-              <div key={`skeleton-${i}`} className='flex flex-col gap-2 rounded-lg border border-border p-3'>
-                <Skeleton variant='block' className='aspect-square w-full' />
-                <Skeleton className='w-3/4' />
-                <Skeleton className='w-1/2' />
-              </div>
-            ))}
+            {Array.from({ length: Math.min(activePagination?.pageSize ?? 8, 8) }).map((_, i) =>
+              renderCardSkeleton ? (
+                <div key={`skeleton-${i}`}>{renderCardSkeleton()}</div>
+              ) : (
+                <div key={`skeleton-${i}`} className='flex flex-col gap-2 rounded-lg border border-border p-3'>
+                  <Skeleton variant='block' className='aspect-square w-full' />
+                  <Skeleton className='w-3/4' />
+                  <Skeleton className='w-1/2' />
+                </div>
+              )
+            )}
           </div>
         ) : showEmpty ? (
           <EmptyState icon={emptyIcon} title={emptyMessage} description={emptyDescription} action={emptyAction} />
