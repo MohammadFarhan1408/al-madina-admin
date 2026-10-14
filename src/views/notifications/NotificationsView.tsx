@@ -63,8 +63,9 @@ const NotificationsView = () => {
     if (!pending) return
 
     try {
-      await broadcast.mutateAsync(pending)
-      success('Broadcast queued for delivery')
+      const { recipients } = await broadcast.mutateAsync(pending)
+
+      success(`Broadcast sent to ${recipients} ${recipients === 1 ? 'customer' : 'customers'}`)
       reset(defaultBroadcastValues)
     } catch (err) {
       error(getErrorMessage(err, 'Failed to send broadcast'))

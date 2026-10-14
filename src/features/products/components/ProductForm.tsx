@@ -113,7 +113,6 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
       volumeMl: p.volumeMl,
       price: p.price,
       originalPrice: p.originalPrice,
-      currency: p.currency,
       notes: p.notes ?? [],
       images: p.images ?? [],
       badge: p.badge,
@@ -150,22 +149,14 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
 
   const selectedTags = useMemo(() => (tags ?? []).filter(t => tagIds.includes(t.id)), [tags, tagIds])
 
-  // Not blocking (the API accepts them), but each is almost always a mistake:
-  // two variants of one size, or a variant repeating the default size, make
-  // the price a customer pays for that size ambiguous.
-  const sizeWarnings = useMemo(() => {
-    const seen = new Map<number, number>()
-
-    ;(variants ?? []).forEach(v => seen.set(v.volumeMl, (seen.get(v.volumeMl) ?? 0) + 1))
-
-    return (variants ?? []).map(v =>
-      v.volumeMl === volumeMl
-        ? `${v.volumeMl}ml is already the default size`
-        : (seen.get(v.volumeMl) ?? 0) > 1
-          ? `${v.volumeMl}ml is listed more than once`
-          : undefined
-    )
-  }, [variants, volumeMl])
+  // Not blocking (the API accepts it), but almost always a mistake: a variant
+  // repeating the default size makes that size's price ambiguous. Duplicate
+  // variant sizes/SKUs are blocking — see productSchema.
+  const sizeWarnings = useMemo(
+    () =>
+      (variants ?? []).map(v => (v.volumeMl === volumeMl ? `${v.volumeMl}ml is already the default size` : undefined)),
+    [variants, volumeMl]
+  )
 
   const discountPercent =
     originalPrice !== undefined && price !== undefined && originalPrice > price && originalPrice > 0
@@ -444,7 +435,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                   />
                 )}
               />
-              <div className='grid grid-cols-1 gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]'>
+              <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
                 <Controller
                   name='price'
                   control={control}
@@ -454,7 +445,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                       required
                       min={0}
                       label='Price'
-                      startAdornment={<span className='text-xs text-textMuted'>{watch('currency') || 'AED'}</span>}
+                      startAdornment={<span className='text-xs text-textMuted'>AED</span>}
                       error={errors.price?.message}
                     />
                   )}
@@ -467,26 +458,13 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                       {...field}
                       min={0}
                       label='Original price'
-                      startAdornment={<span className='text-xs text-textMuted'>{watch('currency') || 'AED'}</span>}
+                      startAdornment={<span className='text-xs text-textMuted'>AED</span>}
                       helperText={
                         discountPercent !== undefined
                           ? `Shown struck through — ${discountPercent}% off.`
                           : 'Optional. Set above the price to show a sale.'
                       }
                       error={errors.originalPrice?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name='currency'
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      label='Currency'
-                      maxLength={3}
-                      className='uppercase'
-                      error={errors.currency?.message}
                     />
                   )}
                 />
@@ -563,9 +541,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: Props) => {
                               min={0}
                               label='Price'
                               containerClassName={gridLabel}
-                              startAdornment={
-                                <span className='text-xs text-textMuted'>{watch('currency') || 'AED'}</span>
-                              }
+                              startAdornment={<span className='text-xs text-textMuted'>AED</span>}
                               error={errors.variants?.[index]?.price?.message}
                             />
                           )}

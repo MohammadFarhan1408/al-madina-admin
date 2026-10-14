@@ -9,8 +9,8 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 
 export const broadcastSchema = z.object({
   kind: z.enum(NOTIFICATION_KINDS),
-  title: z.string().trim().min(1, 'Title is required'),
-  body: z.string().trim().min(1, 'Message is required'),
+  title: z.string().trim().min(2, 'At least 2 characters'),
+  body: z.string().trim().min(2, 'At least 2 characters'),
 
   // Empty string = broadcast to everyone; otherwise target a loyalty tier.
   tier: z.union([z.enum(USER_TIERS as [string, ...string[]]), z.literal('')])

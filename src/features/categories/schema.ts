@@ -2,11 +2,11 @@
 import { z } from 'zod'
 
 export const categorySchema = z.object({
-  name: z.string().trim().min(1, 'Name is required'),
+  name: z.string().trim().min(2, 'At least 2 characters'),
   tagline: z.string().trim().optional().or(z.literal('')),
-  image: z.string().min(1, 'An image is required'),
+  image: z.string().min(1, 'An image is required').url('Must be a valid image URL'),
   sortOrder: z.number({ error: 'Enter a number' }).int('Must be a whole number').min(0, 'Must be 0 or greater'),
-  slug: z.string().trim().optional().or(z.literal('')),
+  slug: z.string().trim().min(2, 'At least 2 characters').optional().or(z.literal('')),
   metaTitle: z.string().trim().optional().or(z.literal('')),
   metaDescription: z.string().trim().optional().or(z.literal('')),
   metaKeywords: z.array(z.string())
