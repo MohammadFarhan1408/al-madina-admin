@@ -40,6 +40,7 @@ export const endpoints = {
     dashboard: '/admin/dashboard',
     dashboardSummary: '/admin/dashboard/summary',
     activity: '/admin/activity',
+    contact: '/admin/contact',
     search: '/admin/search',
     ordersStats: '/admin/orders/stats',
     products: '/admin/products',
