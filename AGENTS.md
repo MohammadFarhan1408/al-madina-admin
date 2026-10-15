@@ -65,16 +65,28 @@ CRUD page is assembled from these:
   `CategoriesView.tsx`) + a toolbar + `RowActions` (the "⋮" kebab menu,
   built on `ui/Dropdown`) for 2+ row actions — skip it for a single action.
 - `useConfirmDelete` (hooks/) for the ask → confirm → delete → toast flow;
-  `DetailActions` for a detail page's Back/Edit/Delete header.
+  `DetailActions` for a detail page's Edit/Delete header; Back is `PageHeader`'s `backHref` (also on create/edit pages).
 - Forms: `FormActions` (sticky Cancel/Save + unsaved-changes guard),
   `useFormSync` (seed an edit form once per record — never `reset()` in a
   `[entity]` effect, it wipes edits on refetch), `NumberInput` for any numeric
   field (empty is `undefined`; the schema message says what's missing).
 - `DataTable` takes `selection` (checkbox column + bulk bar) and `mobileCard`
   (rows become cards below `md`); `EntityCell` for thumbnail/initials cells;
-  `SegmentedControl` for 2–4 exclusive options. Toasts accept an action
+  `SegmentedControl` for 2–5 exclusive options (optional visible `label`). Toasts accept an action
   (`toast(msg, 'success', { label: 'Undo', onClick })`) — prefer Undo over a
   confirm for reversible actions.
+- List pages share one filter pattern: the primary split (status, stock,
+  tier, rating…) goes in `DataTable`'s `tabs` prop with counts from
+  `useListTotals` (the list endpoint at `limit: 1`, same filters as the table,
+  so counts always match the rows); the toolbar holds `SearchField` plus
+  popover pills — `FilterSelect` (single choice, auto-searchable from 8
+  options), `DateRangeFilter` (presets + calendar; send it through
+  `dateRangeParams` so `to` covers the whole day) and `PriceRangeFilter` —
+  then "Clear filters". Use `useDebouncedSearch` for server-side search (one
+  request per pause, page reset in the same render), and pass `isError`/
+  `onRetry`/`itemLabel` to `DataTable` instead of a separate error Alert.
+  `DataTable` itself resets to page 1 on sort changes and clamps an
+  out-of-range page; don't re-implement either in a view.
 - `DetailSection`/`DetailRow` for read-only key/value blocks on Detail
   pages; `ProductDetailView.tsx`/`OrderDetailView.tsx` are good references
   for a multi-section Detail layout.

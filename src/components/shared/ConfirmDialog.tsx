@@ -12,6 +12,9 @@ type ConfirmDialogProps = {
   confirmText?: string
   cancelText?: string
   confirmColor?: ButtonColor
+
+  /** Tabler class for the confirm button, naming the action (trash, send…). */
+  confirmIcon?: string
   loading?: boolean
   onConfirm: () => void
   onClose: () => void
@@ -37,6 +40,7 @@ const ConfirmDialog = ({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   confirmColor = 'error',
+  confirmIcon,
   loading = false,
   onConfirm,
   onClose
@@ -58,10 +62,21 @@ const ConfirmDialog = ({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button variant='outlined' color='secondary' onClick={onClose} disabled={loading}>
+        <Button
+          variant='outlined'
+          color='secondary'
+          startIcon={<i className='tabler-x' />}
+          onClick={onClose}
+          disabled={loading}
+        >
           {cancelText}
         </Button>
-        <Button color={confirmColor} onClick={onConfirm} loading={loading}>
+        <Button
+          color={confirmColor}
+          startIcon={confirmIcon && <i className={confirmIcon} />}
+          onClick={onConfirm}
+          loading={loading}
+        >
           {confirmText}
         </Button>
       </ModalFooter>

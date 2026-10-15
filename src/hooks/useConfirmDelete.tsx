@@ -13,11 +13,15 @@ type Options<T> = {
   remove: (item: T) => Promise<unknown>
   name: (item: T) => string
   onDeleted?: (item: T) => void
+
+  /** Replaces the default "Delete "X"? This cannot be undone." — for a delete
+   *  with consequences beyond the item itself (e.g. products left uncategorised). */
+  description?: (item: T) => string
 }
 
 /** The ask → confirm → delete → toast flow every list and detail page repeated.
  *  Render `dialog` once; call `ask(item)` from a row action or button. */
-export function useConfirmDelete<T>({ entity, remove, name, onDeleted }: Options<T>): {
+export function useConfirmDelete<T>({ entity, remove, name, onDeleted, description }: Options<T>): {
   ask: (item: T) => void
   dialog: ReactNode
 } {
@@ -47,8 +51,9 @@ export function useConfirmDelete<T>({ entity, remove, name, onDeleted }: Options
     <ConfirmDialog
       open={target !== null}
       title={`Delete ${entity}`}
-      description={target ? `Delete "${name(target)}"? This cannot be undone.` : undefined}
+      description={target ? (description?.(target) ?? `Delete "${name(target)}"? This cannot be undone.`) : undefined}
       confirmText='Delete'
+      confirmIcon='tabler-trash'
       loading={pending}
       onConfirm={confirm}
       onClose={() => setTarget(null)}

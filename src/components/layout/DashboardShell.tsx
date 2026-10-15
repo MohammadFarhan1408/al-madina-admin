@@ -12,9 +12,11 @@ import Sidebar from '@/components/ui/Sidebar'
 import Navbar from '@/components/ui/Navbar'
 import IconButton from '@/components/ui/IconButton'
 import Logo from '@/components/layout/shared/Logo'
+import CommandPalette from '@/components/layout/shared/CommandPalette'
 import NavbarSearch from '@/components/layout/shared/NavbarSearch'
 import UserDropdown from '@/components/layout/shared/UserDropdown'
-import sidebarNavData from '@/data/navigation/sidebarNavData'
+import { useAuth } from '@/contexts/AuthContext'
+import { visibleNav } from '@/data/navigation/sidebarNavData'
 
 const COLLAPSE_KEY = 'am-admin:sidebar-collapsed'
 
@@ -59,7 +61,9 @@ const ScrollToTopButton = () => {
 const DashboardShell = ({ children }: { children: ReactNode }) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const pathname = usePathname()
+  const { user } = useAuth()
 
   // Read the saved rail state after mount — reading localStorage during render
   // would desync the server and client markup.
@@ -73,6 +77,20 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
 
       return !prev
     })
+
+  // ⌘K / Ctrl+K opens the palette from anywhere (even while typing in a field).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen(true)
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   // A route change should always leave the mobile drawer closed, including
   // back/forward navigation that doesn't pass through a nav link's onClick.
@@ -115,8 +133,14 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className='min-h-dvh bg-backgroundDefault'>
+      <a
+        href='#main'
+        className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-(--z-toast) focus:rounded-md focus:bg-richBlack focus:px-4 focus:py-2 focus:text-sm focus:text-ivory'
+      >
+        Skip to content
+      </a>
       <Sidebar
-        sections={sidebarNavData}
+        sections={visibleNav(user?.role === 'admin')}
         open={drawerOpen}
 
         // The rail state is a desktop preference; a collapsed rail opened as a
@@ -149,15 +173,17 @@ const DashboardShell = ({ children }: { children: ReactNode }) => {
         )}
       >
         <Navbar onMenuToggle={() => setDrawerOpen(true)} actions={<UserDropdown />}>
-          <NavbarSearch className='w-full max-w-72 lg:max-w-80' />
+          <NavbarSearch onOpen={() => setPaletteOpen(true)} className='max-w-72 lg:max-w-80' />
         </Navbar>
 
         {/* Gutters step up with the viewport instead of sitting at a fixed 24px,
             which is too tight on phones and too cramped on a 27" display. */}
-        <main className='flex-1 px-4 py-5 md:px-6 md:py-6 xl:px-8'>
+        <main id='main' tabIndex={-1} className='flex-1 focus:outline-none px-4 py-5 md:px-6 md:py-6 xl:px-8'>
           <div className='mx-auto w-full max-w-[1600px]'>{children}</div>
         </main>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
       <ScrollToTopButton />
     </div>

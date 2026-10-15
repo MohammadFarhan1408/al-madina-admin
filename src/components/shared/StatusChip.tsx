@@ -48,18 +48,25 @@ type StatusChipProps = {
 
   /** Explicit colour override; otherwise derived from the value. */
   color?: BadgeColor
+
+  /** Prefix a status dot, so state reads from shape as well as colour. */
+  dot?: boolean
+
+  /** Text to show instead of the humanized value (the colour still follows
+   *  the value) — e.g. "Payment pending" where two chips sit side by side. */
+  label?: string
   className?: string
 }
 
 /** Renders a domain enum (status/tier/badge) as a coloured brand chip. */
-const StatusChip = ({ value, color, className }: StatusChipProps) => {
+const StatusChip = ({ value, color, dot, label, className }: StatusChipProps) => {
   if (!value) return <>—</>
 
   const resolved = color ?? COLOR_MAP[value.toLowerCase()] ?? 'secondary'
 
   return (
-    <Badge color={resolved} className={className}>
-      {humanize(value)}
+    <Badge color={resolved} dot={dot} className={className}>
+      {label ?? humanize(value)}
     </Badge>
   )
 }

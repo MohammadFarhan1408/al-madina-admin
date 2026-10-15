@@ -11,7 +11,6 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import SearchField from '@/components/shared/SearchField'
 import RowActions from '@/components/shared/RowActions'
-import Alert from '@/components/ui/Alert'
 import Button from '@/components/ui/Button'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import TagFormDialog from '@/features/tags/components/TagFormDialog'
@@ -19,7 +18,7 @@ import { useTags, useDeleteTag } from '@/features/tags/hooks/useTags'
 import type { Tag } from '@/features/tags/types'
 
 const TagsView = () => {
-  const { data: tags, isLoading, isError, error } = useTags()
+  const { data: tags, isLoading, isError, error, refetch } = useTags()
   const deleteMutation = useDeleteTag()
 
   const [search, setSearch] = useState('')
@@ -69,6 +68,7 @@ const TagsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Tags'
+        icon='tabler-tags'
         subtitle='Reusable labels for product merchandising'
         action={
           <Button startIcon={<i className='tabler-plus' />} onClick={() => setEditing({})}>
@@ -77,17 +77,15 @@ const TagsView = () => {
         }
       />
 
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load tags.'}
-        </Alert>
-      )}
-
       <DataTable
         manualPagination={false}
         data={filtered}
         columns={columns}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'tag', other: 'tags' }}
         emptyIcon='tabler-tag-off'
         emptyMessage={search ? 'No tags match your search' : 'No tags yet'}
         emptyDescription={

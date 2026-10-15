@@ -12,15 +12,13 @@ import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
 import StatusChip from '@/components/shared/StatusChip'
-import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Rating from '@/components/ui/Rating'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import { formatDate } from '@/libs/format'
 import ReviewsSummary from '@/features/reviews/components/ReviewsSummary'
-import ReviewsFilterBar from '@/features/reviews/components/ReviewsFilterBar'
-import { useDeleteReview, useReviews } from '@/features/reviews/hooks/useReviews'
+import { useDeleteReview, useReviewSummary, useReviews } from '@/features/reviews/hooks/useReviews'
 import type { Review } from '@/features/reviews/types'
 
 const ReviewsView = () => {
@@ -37,7 +35,9 @@ const ReviewsView = () => {
     name: r => r.title
   })
 
-  const { data, isLoading, isFetching, isError, error } = useReviews({
+  const { data: summary } = useReviewSummary()
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useReviews({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     rating: rating === '' ? undefined : rating,
@@ -126,13 +126,7 @@ const ReviewsView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Reviews' subtitle='Moderate customer product reviews' />
-
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load reviews.'}
-        </Alert>
-      )}
+      <PageHeader title='Reviews' icon='tabler-star' subtitle='Moderate customer product reviews' />
 
       <ReviewsSummary />
 
@@ -158,14 +152,39 @@ const ReviewsView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'review', other: 'reviews' }}
+        tabs={{
+          label: 'Rating',
+          value: rating === '' ? 'all' : `${rating}-star`,
+          onChange: v => resetOnChange(setRating)(v === 'all' ? '' : Number(v.charAt(0))),
+
+          // The summary's distribution is over the same unfiltered set the
+          // tabs split, so each count matches its tab's rows exactly.
+          items: [
+            { value: 'all', label: 'All reviews', count: summary?.total },
+            ...([5, 4, 3, 2, 1] as const).map(n => ({
+              value: `${n}-star`,
+              label: (
+                <span className='flex items-center gap-1'>
+                  {n}
+                  <i aria-hidden className='tabler-star-filled text-sm text-primaryDark' />
+                  <span className='sr-only'>star{n === 1 ? '' : 's'}</span>
+                </span>
+              ),
+              count: summary?.distribution[n]
+            }))
+          ]
+        }}
         emptyIcon='tabler-star-off'
         emptyMessage={rating === '' ? 'No reviews yet' : `No ${rating}-star reviews`}
         emptyDescription={
           rating === ''
             ? 'Customer reviews appear here once they start rating your fragrances.'
-            : 'Clear the rating filter to see all reviews.'
+            : 'Pick another rating, or All reviews.'
         }
-        toolbar={<ReviewsFilterBar rating={rating} onRatingChange={resetOnChange(setRating)} />}
       />
 
       {dialog}

@@ -12,7 +12,12 @@ const CreateCategoryView = () => {
   return (
     <>
       <Breadcrumbs extra={[{ label: 'New Category' }]} />
-      <PageHeader title='New Category' subtitle='Add a category to your fragrance catalogue' />
+      <PageHeader
+        title='New Category'
+        backHref='/categories'
+        backLabel='Back to categories'
+        subtitle='Add a category to your fragrance catalogue'
+      />
       <CategoryForm
         onSuccess={category => router.push(`/categories/${category.id}`)}
         onCancel={() => router.push('/categories')}

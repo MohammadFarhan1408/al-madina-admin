@@ -39,6 +39,9 @@ export const endpoints = {
   admin: {
     dashboard: '/admin/dashboard',
     dashboardSummary: '/admin/dashboard/summary',
+    activity: '/admin/activity',
+    contact: '/admin/contact',
+    search: '/admin/search',
     ordersStats: '/admin/orders/stats',
     products: '/admin/products',
     product: (id: string) => `/admin/products/${id}`,
@@ -51,6 +54,7 @@ export const endpoints = {
     collectionProduct: (id: string, productId: string) => `/admin/collections/${id}/products/${productId}`,
     orders: '/admin/orders',
     order: (id: string) => `/admin/orders/${id}`,
+    ordersBulkStatus: '/admin/orders/status',
     orderStatus: (id: string) => `/admin/orders/${id}/status`,
     orderTransactions: (id: string) => `/admin/orders/${id}/transactions`,
     paymentRefund: (id: string) => `/admin/orders/${id}/payments/refund`,

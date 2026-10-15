@@ -1,73 +1,49 @@
 'use client'
 
-// Enter-to-navigate product search shown in the navbar. Uses the shared
-// SearchField with debouncing off, so the icon, clear button and Escape
-// behaviour come from the same place as the per-page list filters rather than
-// being re-implemented here.
+// The navbar's search box is a trigger: it opens the command palette (also
+// reachable with ⌘K / Ctrl+K, wired in DashboardShell). A real input here would
+// duplicate the palette's, and could only search one thing.
 
-import { useEffect, useRef, useState } from 'react'
-
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 import classnames from 'classnames'
 
-import SearchField from '@/components/shared/SearchField'
-
 type NavbarSearchProps = {
+  onOpen: () => void
   className?: string
 }
 
-const NavbarSearch = ({ className }: NavbarSearchProps) => {
-  const router = useRouter()
-  const [query, setQuery] = useState('')
+const NavbarSearch = ({ onOpen, className }: NavbarSearchProps) => {
   const [modKey, setModKey] = useState('⌘')
-  const inputRef = useRef<HTMLInputElement>(null)
 
+  // The hint has to name the key that actually works, and the platform is only
+  // knowable on the client — rendering it during SSR would mismatch.
   useEffect(() => {
-    // The hint has to name the key that actually works, and the platform is
-    // only knowable on the client — rendering it during SSR would mismatch.
     if (!navigator.userAgent.includes('Mac')) setModKey('Ctrl ')
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-
-    return () => document.removeEventListener('keydown', onKeyDown)
   }, [])
 
   return (
-    <div className={classnames('group relative', className)}>
-      <SearchField
-        ref={inputRef}
-        value={query}
-        onChange={setQuery}
-        debounceMs={0}
-        onSubmit={trimmed => router.push(trimmed ? `/products?q=${encodeURIComponent(trimmed)}` : '/products')}
-        placeholder='Search products…'
-        inputSize='md'
-        tone='subtle'
-
-        // A pill needs more of a horizontal inset than a rectangle, or the icon
-        // sits in the curve. `!` because these collide with the base control.
-        controlClassName='rounded-full! px-4!'
-        fullWidth
-      />
-      {/* Fades out on focus and is dropped once there's a query, so it never
-          collides with the clear button or sits under the text being typed. */}
-      {!query && (
-        <kbd
-          aria-hidden
-          className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border px-1.5 py-0.5 font-sans text-[11px] font-medium leading-4 text-textMuted transition-opacity duration-150 group-focus-within:opacity-0 max-sm:hidden'
-        >
-          {modKey}K
-        </kbd>
+    <button
+      type='button'
+      aria-haspopup='dialog'
+      aria-label='Search pages, products, orders and customers'
+      onClick={onOpen}
+      className={classnames(
+        'flex h-10 w-full items-center gap-2 rounded-full border border-border bg-backgroundPaper px-4 pointer-coarse:h-11',
+        'text-left text-sm text-textMuted transition-colors hover:border-borderStrong',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        className
       )}
-    </div>
+    >
+      <i aria-hidden className='tabler-search text-[18px]' />
+      <span className='min-w-0 flex-1 truncate'>Search…</span>
+      <kbd
+        aria-hidden
+        className='rounded-md border border-border px-1.5 py-0.5 font-sans text-[11px] font-medium leading-4 max-sm:hidden'
+      >
+        {modKey}K
+      </kbd>
+    </button>
   )
 }
 

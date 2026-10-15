@@ -14,7 +14,10 @@ export async function uploadImage(file: File, type: UploadType): Promise<string>
   form.append('file', file)
 
   const data = await apiPost<UploadResponse>(`${endpoints.admin.upload}?type=${type}`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
+
+    // Images can be large; the default 20s would cut off a slow upload.
+    timeout: 120_000
   })
 
   if (typeof data === 'string') return data

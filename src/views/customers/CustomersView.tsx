@@ -14,27 +14,46 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
+import { useListTotals } from '@/hooks/useListTotals'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDate } from '@/libs/format'
 import CustomersFilterBar from '@/features/customers/components/CustomersFilterBar'
-import { useCustomers, useDeactivateCustomer, useReactivateCustomer } from '@/features/customers/hooks/useCustomers'
-import type { Customer, UserTier } from '@/features/customers/types'
+import { customersApi } from '@/features/customers/api/customersApi'
+import {
+  customerKeys,
+  useCustomers,
+  useDeactivateCustomer,
+  useReactivateCustomer
+} from '@/features/customers/hooks/useCustomers'
+import { USER_TIERS, type Customer, type UserTier } from '@/features/customers/types'
+
+/** Tab ids can't hold spaces ("Maison Elite"), so tabs use a slug. */
+const tierTabValue = (tier: UserTier) => tier.toLowerCase().replace(/\s+/g, '-')
+
+const EXPORT_COLUMNS: ExportColumn<Customer>[] = [
+  { header: 'Name', value: c => c.fullName },
+  { header: 'Email', value: c => c.email },
+  { header: 'Tier', value: c => c.tier },
+  { header: 'Status', value: c => (c.isActive ? 'active' : 'inactive') },
+  { header: 'Orders', value: c => c.orderCount ?? 0 },
+  { header: 'Total spent', value: c => c.totalSpent ?? 0 },
+  { header: 'Member since', value: c => c.memberSince || c.createdAt }
+]
 
 const CustomersView = () => {
   const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState('')
   const [tier, setTier] = useState<UserTier | ''>('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [toDeactivate, setToDeactivate] = useState<Customer | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
+  const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination)
   const hasFilters = Boolean(search || tier)
   const resetOnChange = useFilterReset(setPagination)
 
@@ -48,14 +67,27 @@ const CustomersView = () => {
   const reactivateMutation = useReactivateCustomer()
   const { success, error: toastError, toast } = useToast()
 
-  const { data, isLoading, isFetching, isError, error } = useCustomers({
+  const searchFilter = { q: debouncedSearch || undefined }
+
+  const filters = {
+    ...searchFilter,
+    tier: tier || undefined,
+    sortBy: (sorting[0]?.id as 'fullName' | 'email' | 'tier' | 'memberSince') || undefined,
+    sortOrder: sorting[0] ? (sorting[0].desc ? ('desc' as const) : ('asc' as const)) : undefined
+  }
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useCustomers({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
-    tier: tier || undefined,
-    q: debouncedSearch || undefined,
-    sortBy: (sorting[0]?.id as 'fullName' | 'email' | 'tier' | 'memberSince') || undefined,
-    sortOrder: sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : undefined
+    ...filters
   })
+
+  // Per-tier totals for the tabs, under the same search as the table.
+  const tierTotals = useListTotals(
+    [...customerKeys.all, 'tier-totals', searchFilter],
+    ['all', ...USER_TIERS] as const,
+    key => customersApi.list({ ...searchFilter, tier: key === 'all' ? undefined : key, page: 1, limit: 1 })
+  )
 
   const confirmDeactivate = async () => {
     if (!toDeactivate) return
@@ -173,13 +205,18 @@ const CustomersView = () => {
   return (
     <>
       <Breadcrumbs />
-      <PageHeader title='Customers' subtitle='Your registered account holders' />
-
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load customers.'}
-        </Alert>
-      )}
+      <PageHeader
+        title='Customers'
+        icon='tabler-users'
+        subtitle='Your registered account holders'
+        action={
+          <ExportButton
+            filename='customers'
+            columns={EXPORT_COLUMNS}
+            fetchPage={(page, limit) => customersApi.list({ ...filters, page, limit })}
+          />
+        }
+      />
 
       <DataTable
         data={data?.items ?? []}
@@ -225,19 +262,30 @@ const CustomersView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'customer', other: 'customers' }}
+        tabs={{
+          label: 'Loyalty tier',
+          value: tier ? tierTabValue(tier) : 'all',
+          onChange: v => resetOnChange(setTier)(USER_TIERS.find(t => tierTabValue(t) === v) ?? ''),
+          items: [
+            { value: 'all', label: 'All customers', count: tierTotals.all },
+            ...USER_TIERS.map(t => ({ value: tierTabValue(t), label: t, count: tierTotals[t] }))
+          ]
+        }}
         emptyIcon='tabler-users-group'
         emptyMessage={hasFilters ? 'No customers match these filters' : 'No customers yet'}
         emptyDescription={
           hasFilters
-            ? 'Try a different name, email or loyalty tier.'
+            ? 'Try a different name or email, or another tier.'
             : 'Customers appear here once they register in the mobile app.'
         }
         toolbar={
           <CustomersFilterBar
             search={search}
-            onSearchChange={resetOnChange(setSearch)}
-            tier={tier}
-            onTierChange={resetOnChange(setTier)}
+            onSearchChange={setSearch}
             hasFilters={hasFilters}
             onClearFilters={clearFilters}
           />
@@ -249,6 +297,7 @@ const CustomersView = () => {
         title='Deactivate customer'
         description={`Deactivate ${toDeactivate?.fullName}? They will lose account access.`}
         confirmText='Deactivate'
+        confirmIcon='tabler-user-off'
         loading={deactivateMutation.isPending}
         onConfirm={confirmDeactivate}
         onClose={() => setToDeactivate(null)}

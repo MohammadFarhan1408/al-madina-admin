@@ -1,48 +1,81 @@
-// Date-range model for the dashboard. Presets are rolling windows ending now;
-// "custom" is a calendar range picked by the user. The API caps a range at 366
-// days and buckets by day or month — months once a range gets too long to read
-// day by day.
+// Date-range model for the dashboard. A range is always whole calendar days in
+// the admin's own time zone (`YYYY-MM-DD` keys, both ends included), the same
+// model the list pages' DateRangeFilter uses. `resolveRange` turns it into the
+// instants the API compares against (start of `from`, end of `to`), the zone to
+// bucket in, and a granularity that suits the span: days up to ~3 months,
+// months beyond (a 365-point daily line is unreadable at card width).
+import {
+  DATE_PRESETS,
+  dateRangeParams,
+  daysAgo,
+  daysInRange,
+  localTimeZone,
+  toDateKey,
+  type DatePreset,
+  type DateRange
+} from '@/libs/dateRange'
+
 import type { Granularity } from './types'
 
-export const RANGE_PRESETS = [
-  { value: '7d', label: '7D', days: 7, caption: 'last 7 days' },
-  { value: '30d', label: '30D', days: 30, caption: 'last 30 days' },
-  { value: '90d', label: '90D', days: 90, caption: 'last 90 days' },
-  { value: '12m', label: '12M', days: 365, caption: 'last 12 months' }
+/** The API rejects ranges longer than this (admin.schema MAX_SUMMARY_DAYS). */
+export const MAX_RANGE_DAYS = 366
+
+const MONTHLY_FROM_DAYS = 93
+
+const lastDays = (n: number) => () => ({ from: toDateKey(daysAgo(n - 1)), to: toDateKey(new Date()) })
+
+const byId = (id: string) => DATE_PRESETS.find(p => p.id === id)!
+
+/** The list pages' presets plus the longer windows a dashboard needs. */
+export const DASHBOARD_PRESETS: DatePreset[] = [
+  byId('today'),
+  byId('7d'),
+  byId('30d'),
+  { id: '90d', label: 'Last 90 days', range: lastDays(90) },
+  { id: '12m', label: 'Last 12 months', range: lastDays(365) },
+  byId('month'),
+  byId('last-month')
+]
+
+/** One-click windows shown beside the custom picker. */
+export const QUICK_PRESETS = [
+  { id: '7d', label: '7D' },
+  { id: '30d', label: '30D' },
+  { id: '90d', label: '90D' },
+  { id: '12m', label: '12M' }
 ] as const
 
-export type RangePreset = (typeof RANGE_PRESETS)[number]['value'] | 'custom'
+export const presetRange = (id: string): Required<DateRange> =>
+  (DASHBOARD_PRESETS.find(p => p.id === id) ?? byId('30d')).range()
 
-export type DashboardRange = { preset: RangePreset; from: string; to: string } // from/to: YYYY-MM-DD, custom only
+export const defaultRange = () => presetRange('30d')
 
-export type ResolvedRange = { from: string; to: string; granularity: Granularity }
+export type ResolvedRange = { from: string; to: string; granularity: Granularity; tz?: string }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const MAX_DAYS = 366
+/** Why a picked range can't be queried, or null when it can. */
+export function rangeError(range: DateRange): string | null {
+  const days = daysInRange(range)
 
-/** Null when a custom range is incomplete, inverted or longer than the API allows. */
-export function resolveRange(r: DashboardRange, now = new Date()): ResolvedRange | null {
-  if (r.preset !== 'custom') {
-    const days = RANGE_PRESETS.find(p => p.value === r.preset)!.days
+  if (days <= 0) return 'Pick a start and an end date'
+  if (days > MAX_RANGE_DAYS) return `Pick a range of up to ${MAX_RANGE_DAYS} days`
 
-    return {
-      from: new Date(now.getTime() - days * DAY_MS).toISOString(),
-      to: now.toISOString(),
-      granularity: days > 92 ? 'month' : 'day'
-    }
-  }
-
-  if (!r.from || !r.to) return null
-
-  const from = new Date(`${r.from}T00:00:00`)
-  const to = new Date(`${r.to}T23:59:59.999`)
-  const span = to.getTime() - from.getTime()
-
-  if (Number.isNaN(span) || span <= 0 || span > MAX_DAYS * DAY_MS) return null
-
-  return { from: from.toISOString(), to: to.toISOString(), granularity: span > 92 * DAY_MS ? 'month' : 'day' }
+  return null
 }
 
-export function rangeCaption(r: DashboardRange) {
-  return r.preset === 'custom' ? 'selected range' : RANGE_PRESETS.find(p => p.value === r.preset)!.caption
+export function resolveRange(range: Required<DateRange>): ResolvedRange {
+  const { from, to } = dateRangeParams(range) as Required<DateRange>
+
+  return {
+    from,
+    to,
+    granularity: daysInRange(range) >= MONTHLY_FROM_DAYS ? 'month' : 'day',
+    tz: localTimeZone()
+  }
+}
+
+/** "previous 30 days" — the window the change figures compare against. */
+export function previousCaption(range: DateRange) {
+  const days = daysInRange(range)
+
+  return days === 1 ? 'previous day' : `previous ${days} days`
 }

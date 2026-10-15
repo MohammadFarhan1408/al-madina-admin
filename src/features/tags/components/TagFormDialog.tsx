@@ -16,6 +16,7 @@ import { useCreateTag, useUpdateTag } from '../hooks/useTags'
 import type { Tag } from '../types'
 
 type Props = {
+
   /** Omit to create. */
   tag?: Tag
   onClose: () => void
@@ -62,10 +63,21 @@ const TagFormDialog = ({ tag, onClose }: Props) => {
           />
         </ModalBody>
         <ModalFooter>
-          <Button type='button' variant='outlined' color='secondary' onClick={onClose} disabled={submitting}>
+          <Button
+            type='button'
+            variant='outlined'
+            color='secondary'
+            startIcon={<i className='tabler-x' />}
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button type='submit' loading={submitting}>
+          <Button
+            type='submit'
+            loading={submitting}
+            startIcon={<i className={tag ? 'tabler-device-floppy' : 'tabler-check'} />}
+          >
             {tag ? 'Save' : 'Create'}
           </Button>
         </ModalFooter>

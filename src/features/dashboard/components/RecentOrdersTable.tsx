@@ -106,7 +106,7 @@ const RecentOrdersTable = ({ orders, isLoading }: RecentOrdersTableProps) => {
                 </TableCell>
                 <TableCell align='right'>
                   <Link href={`/orders/${order.id}`}>
-                    <Button size='sm' variant='outlined' color='secondary'>
+                    <Button size='sm' variant='outlined' color='secondary' startIcon={<i className='tabler-eye' />}>
                       View
                     </Button>
                   </Link>

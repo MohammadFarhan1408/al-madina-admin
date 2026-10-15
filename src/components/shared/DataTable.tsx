@@ -26,7 +26,8 @@ import Card from '@/components/ui/Card'
 import Checkbox from '@/components/ui/form/Checkbox'
 import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
-import Select from '@/components/ui/form/Select'
+import SegmentedControl from '@/components/ui/form/SegmentedControl'
+import Tabs, { type TabItem } from '@/components/ui/Tabs'
 import Skeleton from '@/components/ui/Skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
 
@@ -57,6 +58,19 @@ export type DataTableProps<T> = {
   /** The action that resolves an empty table — "Add product", "Clear filters". */
   emptyAction?: ReactNode
 
+  /** True when the list query failed — shows an error state with Retry in
+   *  place of the rows, instead of an empty state that claims there's no data. */
+  isError?: boolean
+  errorMessage?: string
+  onRetry?: () => void
+
+  /** The list's primary segmentation (status, stock, tier…) as tabs across
+   *  the top of the card, above the toolbar. Counts go in each item. */
+  tabs?: { items: TabItem[]; value: string; onChange: (value: string) => void; label: string }
+
+  /** What a row is, for the footer's "Showing 1–20 of 132 orders". */
+  itemLabel?: { one: string; other: string }
+
   /** Filter/search controls. Pass the controls only — DataTable supplies the
    *  toolbar row, so its padding and alignment match the pagination footer
    *  instead of every view declaring its own wrapper. */
@@ -79,6 +93,10 @@ export type DataTableProps<T> = {
    *  second renderer for the middle, not a second surface. */
   view?: 'table' | 'grid'
   renderCard?: (item: T) => ReactNode
+
+  /** Loading placeholder for one grid card — pass the card's own skeleton so
+   *  the grid keeps its shape when data lands. */
+  renderCardSkeleton?: () => ReactNode
   gridClassName?: string
 
   /** Below `md`, render each row as a card instead of a scrolling table. Cards
@@ -107,6 +125,11 @@ function DataTable<T>({
   emptyIcon,
   emptyDescription,
   emptyAction,
+  isError = false,
+  errorMessage,
+  onRetry,
+  tabs,
+  itemLabel = { one: 'result', other: 'results' },
   toolbar,
   pageSizeOptions = [10, 20, 50],
   manualPagination = true,
@@ -117,6 +140,7 @@ function DataTable<T>({
   onSortingChange,
   view = 'table',
   renderCard,
+  renderCardSkeleton,
   gridClassName,
   mobileCard,
   selection
@@ -186,6 +210,16 @@ function DataTable<T>({
     if (kept.length !== selectedSet.size) onSelectionChange(new Set(kept))
   }, [data, selectedSet, getId, onSelectionChange])
 
+  // Client mode: a new dataset (a search narrowing a loaded list) restarts at
+  // page 1 — otherwise page 3 of the old list could show as an empty page 3
+  // of the new one. Done during render so no empty frame is ever painted.
+  const [clientDataLength, setClientDataLength] = useState(data.length)
+
+  if (!manualPagination && clientDataLength !== data.length) {
+    setClientDataLength(data.length)
+    if (internalPagination.pageIndex !== 0) setInternalPagination(p => ({ ...p, pageIndex: 0 }))
+  }
+
   const table = useReactTable({
     data,
     columns: allColumns,
@@ -207,8 +241,14 @@ function DataTable<T>({
       ? updater => {
           const next = typeof updater === 'function' ? updater(activeSorting) : updater
 
-          if (manualPagination) onSortingChange?.(next)
-          else setInternalSorting(next)
+          // A new order reshuffles every page, so go back to the first.
+          if (manualPagination) {
+            onSortingChange?.(next)
+            if (activePagination.pageIndex !== 0) onPaginationChange?.({ ...activePagination, pageIndex: 0 })
+          } else {
+            setInternalSorting(next)
+            setInternalPagination(p => ({ ...p, pageIndex: 0 }))
+          }
         }
       : undefined,
     enableSorting: sortingEnabled,
@@ -218,13 +258,25 @@ function DataTable<T>({
   })
 
   const rows = table.getRowModel().rows
-  const showSkeleton = isLoading && data.length === 0
-  const showEmpty = !isLoading && rows.length === 0
+  const showSkeleton = isLoading && data.length === 0 && !isError
+  const showError = isError && !isLoading && data.length === 0
+  const showEmpty = !isLoading && !showError && rows.length === 0
 
   const rowCount = manualPagination ? (total ?? 0) : data.length
   const pageCount = Math.max(1, Math.ceil(rowCount / activePagination.pageSize))
   const from = rowCount === 0 ? 0 : activePagination.pageIndex * activePagination.pageSize + 1
   const to = Math.min((activePagination.pageIndex + 1) * activePagination.pageSize, rowCount)
+
+  // Manual mode: if the current page no longer exists (the last row of the
+  // last page was deleted, or the total shrank under a refetch), step back to
+  // the last real page rather than showing an empty one.
+  useEffect(() => {
+    if (!manualPagination || isLoading || isRefetching || total === undefined) return
+
+    if (activePagination.pageIndex > 0 && activePagination.pageIndex >= pageCount) {
+      onPaginationChange?.({ ...activePagination, pageIndex: pageCount - 1 })
+    }
+  }, [manualPagination, isLoading, isRefetching, total, pageCount, activePagination, onPaginationChange])
 
   const setPage = (page: number) => {
     const next = { ...activePagination, pageIndex: page }
@@ -240,14 +292,35 @@ function DataTable<T>({
     else setInternalPagination(next)
   }
 
-  return (
-    <Card className='overflow-hidden'>
-      {toolbar && <div className='flex flex-wrap items-end gap-3 border-b border-border px-4 py-3.5'>{toolbar}</div>}
+  const errorState = (
+    <EmptyState
+      icon='tabler-alert-triangle'
+      title={`Couldn't load ${itemLabel.other}`}
+      description={errorMessage || 'Something went wrong while loading this list.'}
+      action={
+        onRetry ? (
+          <Button variant='outlined' startIcon={<i className='tabler-refresh' />} onClick={onRetry}>
+            Try again
+          </Button>
+        ) : undefined
+      }
+    />
+  )
+
+  const body = (
+    <>
+      {toolbar && <div className='flex flex-wrap items-center gap-2 border-b border-border px-4 py-3'>{toolbar}</div>}
 
       {selection && selection.selected.size > 0 && (
         <div className='flex flex-wrap items-center gap-3 border-b border-border bg-primary/10 px-4 py-2.5 text-sm'>
           <span className='font-medium'>{selection.selected.size} selected</span>
-          <Button size='sm' variant='text' color='secondary' onClick={() => selection.onChange(new Set())}>
+          <Button
+            size='sm'
+            variant='text'
+            color='secondary'
+            startIcon={<i className='tabler-x' />}
+            onClick={() => selection.onChange(new Set())}
+          >
             Clear
           </Button>
           <div className='ml-auto flex items-center gap-2'>{selection.actions}</div>
@@ -264,16 +337,22 @@ function DataTable<T>({
         )}
       </div>
 
-      {view === 'grid' && renderCard ? (
+      {showError ? (
+        errorState
+      ) : view === 'grid' && renderCard ? (
         showSkeleton ? (
           <div className={gridClassName ?? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 p-4'}>
-            {Array.from({ length: Math.min(activePagination?.pageSize ?? 8, 8) }).map((_, i) => (
-              <div key={`skeleton-${i}`} className='flex flex-col gap-2 rounded-lg border border-border p-3'>
-                <Skeleton variant='block' className='aspect-square w-full' />
-                <Skeleton className='w-3/4' />
-                <Skeleton className='w-1/2' />
-              </div>
-            ))}
+            {Array.from({ length: Math.min(activePagination?.pageSize ?? 8, 8) }).map((_, i) =>
+              renderCardSkeleton ? (
+                <div key={`skeleton-${i}`}>{renderCardSkeleton()}</div>
+              ) : (
+                <div key={`skeleton-${i}`} className='flex flex-col gap-2 rounded-lg border border-border p-3'>
+                  <Skeleton variant='block' className='aspect-square w-full' />
+                  <Skeleton className='w-3/4' />
+                  <Skeleton className='w-1/2' />
+                </div>
+              )
+            )}
           </div>
         ) : showEmpty ? (
           <EmptyState icon={emptyIcon} title={emptyMessage} description={emptyDescription} action={emptyAction} />
@@ -390,25 +469,63 @@ function DataTable<T>({
         </>
       )}
 
-      {/* The footer is dead weight on an empty table — hide it rather than show
-          "Showing 0 to 0 of 0" under an empty state that already says so. */}
-      {!showEmpty && (
-        <div className='flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3'>
-          <div className='flex items-center gap-2'>
-            <Select
-              aria-label='Rows per page'
-              value={activePagination.pageSize}
-              onChange={e => setPageSize(Number(e.target.value))}
-              options={pageSizeOptions.map(size => ({ label: String(size), value: size }))}
-              inputSize='sm'
-              containerClassName='w-19'
-            />
-            <span className='text-xs tabular-nums text-textMuted'>
-              {showSkeleton ? 'Loading…' : `${from}–${to} of ${rowCount}`}
-            </span>
+      {/* The footer is dead weight on an empty or failed table — hide it rather
+          than show "0 results" under a state that already says so. */}
+      {!showEmpty && !showError && (
+        <div className='flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
+          <p className='text-sm text-textSecondary' aria-live='polite'>
+            {showSkeleton ? (
+              'Loading…'
+            ) : pageCount > 1 ? (
+              <>
+                Showing{' '}
+                <span className='font-medium tabular-nums text-textPrimary'>
+                  {from}–{to}
+                </span>{' '}
+                of <span className='font-medium tabular-nums text-textPrimary'>{rowCount}</span>{' '}
+                {rowCount === 1 ? itemLabel.one : itemLabel.other}
+              </>
+            ) : (
+              <>
+                <span className='font-medium tabular-nums text-textPrimary'>{rowCount}</span>{' '}
+                {rowCount === 1 ? itemLabel.one : itemLabel.other}
+              </>
+            )}
+          </p>
+          <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-end'>
+            {/* Page size only matters once there's more than the smallest page. */}
+            {rowCount > (pageSizeOptions[0] ?? 0) && (
+              <div className='flex items-center gap-2'>
+                <span className='text-xs text-textMuted' aria-hidden>
+                  Rows
+                </span>
+                <SegmentedControl
+                  size='sm'
+                  aria-label='Rows per page'
+                  value={String(activePagination.pageSize)}
+                  onChange={v => setPageSize(Number(v))}
+                  options={pageSizeOptions.map(size => ({ label: String(size), value: String(size) }))}
+                />
+              </div>
+            )}
+            <Pagination count={pageCount} page={activePagination.pageIndex + 1} onChange={page => setPage(page - 1)} />
           </div>
-          <Pagination count={pageCount} page={activePagination.pageIndex + 1} onChange={page => setPage(page - 1)} />
         </div>
+      )}
+    </>
+  )
+
+  return (
+    <Card className='overflow-hidden'>
+      {tabs ? (
+        <>
+          <Tabs items={tabs.items} value={tabs.value} onChange={tabs.onChange} label={tabs.label} className='px-2' />
+          <div role='tabpanel' id={`${tabs.value}-panel`} aria-labelledby={`${tabs.value}-tab`}>
+            {body}
+          </div>
+        </>
+      ) : (
+        body
       )}
     </Card>
   )

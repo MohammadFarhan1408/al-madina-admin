@@ -3,12 +3,15 @@ import { apiGet, apiPatch, apiPost } from '@/libs/api/axios'
 import { endpoints } from '@/libs/api/endpoints'
 import type { Paginated } from '@/libs/api/types'
 
-import type { AdminOrder, AdminOrderListParams, Order, OrderStatus, Transaction } from '../types'
+import type { AdminOrder, AdminOrderListParams, BulkStatusResult, Order, OrderStatus, Transaction } from '../types'
 
 export const ordersApi = {
   list: (params: AdminOrderListParams) => apiGet<Paginated<Order>>(endpoints.admin.orders, { params }),
 
   detail: (id: string) => apiGet<AdminOrder>(endpoints.admin.order(id)),
+
+  bulkUpdateStatus: (ids: string[], status: OrderStatus) =>
+    apiPatch<BulkStatusResult>(endpoints.admin.ordersBulkStatus, { ids, status }),
 
   updateStatus: (id: string, status: OrderStatus) => apiPatch<Order>(endpoints.admin.orderStatus(id), { status }),
 

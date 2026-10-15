@@ -13,28 +13,52 @@ import MobileRow from '@/components/shared/MobileRow'
 import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import DataTable from '@/components/shared/DataTable'
+import ExportButton, { type ExportColumn } from '@/components/shared/ExportButton'
 import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import EntityCell from '@/components/shared/EntityCell'
 import { useConfirmDelete } from '@/hooks/useConfirmDelete'
 import RowActions from '@/components/shared/RowActions'
 import type { PriceRange } from '@/components/shared/PriceRangeFilter'
-import Alert from '@/components/ui/Alert'
 import IconButton from '@/components/ui/IconButton'
 import Button from '@/components/ui/Button'
-import Card from '@/components/ui/Card'
 import Rating from '@/components/ui/Rating'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
+import { useListTotals } from '@/hooks/useListTotals'
 import { useFilterReset } from '@/hooks/useFilterReset'
 import { useToast } from '@/contexts/ToastContext'
 import { formatCurrency } from '@/libs/format'
 import { useCategories } from '@/features/categories/hooks/useCategories'
+import ProductCard, { ProductCardSkeleton } from '@/features/products/components/ProductCard'
 import ProductsFilterBar, {
   type ProductsView as ProductsListView,
   type StockFilter
 } from '@/features/products/components/ProductsFilterBar'
-import { useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
-import type { Product, ScentFamily } from '@/features/products/types'
+import { productsApi } from '@/features/products/api/productsApi'
+import { productKeys, useDeleteProduct, useProducts } from '@/features/products/hooks/useProducts'
+import { SCENT_FAMILIES, type Product, type ScentFamily, type ProductListParams } from '@/features/products/types'
+
+const parsePrice = (value: string | null) => {
+  const n = value === null || value === '' ? NaN : Number(value)
+
+  return Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
+const parsePriceRange = (params: URLSearchParams): PriceRange => {
+  const min = parsePrice(params.get('minPrice'))
+  const max = parsePrice(params.get('maxPrice'))
+
+  // A reversed range from a hand-edited URL would match nothing; drop it.
+  return min !== undefined && max !== undefined && min > max ? {} : { min, max }
+}
+
+// URL params are user-editable: anything outside the known values falls back
+// to "no filter" instead of reaching the API (an unknown family is a 422) or
+// silently filtering while the control shows nothing selected.
+const parseStock = (value: string | null): StockFilter => (value === 'true' || value === 'false' ? value : '')
+
+const parseFamily = (value: string | null): ScentFamily | '' =>
+  (SCENT_FAMILIES as readonly string[]).includes(value ?? '') ? (value as ScentFamily) : ''
 
 const ProductsView = () => {
   const router = useRouter()
@@ -42,16 +66,15 @@ const ProductsView = () => {
   const searchParams = useSearchParams()
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 })
-  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') ?? '')
-  const [family, setFamily] = useState<ScentFamily | ''>(() => (searchParams.get('family') as ScentFamily) ?? '')
-  const [stock, setStock] = useState<StockFilter>(() => (searchParams.get('stock') as StockFilter) ?? '')
-  const [priceRange, setPriceRange] = useState<PriceRange>({})
+  const [family, setFamily] = useState<ScentFamily | ''>(() => parseFamily(searchParams.get('family')))
+  const [stock, setStock] = useState<StockFilter>(() => parseStock(searchParams.get('stock')))
+  const [priceRange, setPriceRange] = useState<PriceRange>(() => parsePriceRange(searchParams))
   const [sorting, setSorting] = useState<SortingState>([])
   const [view, setView] = useState<ProductsListView>('table')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const debouncedSearch = useDebouncedValue(search)
   const resetOnChange = useFilterReset(setPagination)
+  const { search, setSearch, debouncedSearch } = useDebouncedSearch(setPagination, searchParams.get('q') ?? '')
 
   const [bulkConfirm, setBulkConfirm] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
@@ -68,28 +91,49 @@ const ProductsView = () => {
     if (categoryId) params.set('categoryId', categoryId)
     if (family) params.set('family', family)
     if (stock) params.set('stock', stock)
+    if (priceRange.min !== undefined) params.set('minPrice', String(priceRange.min))
+    if (priceRange.max !== undefined) params.set('maxPrice', String(priceRange.max))
     router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, categoryId, family, stock])
+  }, [debouncedSearch, categoryId, family, stock, priceRange])
 
   const categoryMap = useMemo(() => new Map((categories ?? []).map(c => [c.id, c.name])), [categories])
 
   const sort = sorting[0]?.id === 'price' ? (sorting[0].desc ? 'price_desc' : 'price_asc') : 'featured'
 
-  const { data, isLoading, isFetching, isError, error } = useProducts({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+  // Everything but stock — shared by the table query and the Stock tab counts
+  // so the two can never disagree about what's being counted.
+  const baseFilters = {
     q: debouncedSearch || undefined,
     categoryId: categoryId || undefined,
     family: family || undefined,
-    inStock: stock === '' ? undefined : stock === 'true',
     minPrice: priceRange.min,
-    maxPrice: priceRange.max,
+    maxPrice: priceRange.max
+  }
+
+  const filters: ProductListParams = {
+    ...baseFilters,
+    inStock: stock === '' ? undefined : stock === 'true',
     sort
+  }
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useProducts({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...filters
   })
 
+  const stockCounts = useListTotals(
+    [...productKeys.all, 'stock-totals', baseFilters],
+    ['all', 'in', 'out'] as const,
+    key => productsApi.list({ ...baseFilters, inStock: key === 'all' ? undefined : key === 'in', page: 1, limit: 1 })
+  )
+
   const items = data?.items ?? []
-  const hasFilters = Boolean(search || categoryId || family || stock || priceRange.min || priceRange.max)
+
+  const hasFilters = Boolean(
+    search || categoryId || family || stock || priceRange.min !== undefined || priceRange.max !== undefined
+  )
 
   const clearFilters = () => {
     setSearch('')
@@ -123,6 +167,20 @@ const ProductsView = () => {
     setBulkConfirm(false)
     setBulkDeleting(false)
   }
+
+  const exportColumns: ExportColumn<Product>[] = [
+    { header: 'Name', value: p => p.name },
+    { header: 'Brand', value: p => p.brand },
+    { header: 'Category', value: p => categoryMap.get(p.categoryId) },
+    { header: 'Scent family', value: p => p.scentFamily },
+    { header: 'Price', value: p => p.price },
+    { header: 'Currency', value: p => p.currency },
+    { header: 'In stock', value: p => (p.inStock ? 'yes' : 'no') },
+    { header: 'Badge', value: p => p.badge },
+    { header: 'SKU', value: p => p.variants?.[0]?.sku },
+    { header: 'Rating', value: p => p.rating },
+    { header: 'Reviews', value: p => p.reviewCount }
+  ]
 
   const columns = useMemo<ColumnDef<Product, any>[]>(
     () => [
@@ -217,56 +275,12 @@ const ProductsView = () => {
   )
 
   const renderCard = (product: Product) => (
-    <Card hoverable className='flex h-full flex-col overflow-hidden'>
-      <button
-        type='button'
-        className='block aspect-square w-full shrink-0 overflow-hidden bg-surfaceSunken'
-        onClick={() => router.push(`/products/${product.id}`)}
-      >
-        <img src={product.images?.[0]} alt='' className='size-full object-cover' />
-      </button>
-      <div className='flex flex-1 flex-col gap-1.5 p-3'>
-        <div className='flex items-start justify-between gap-2'>
-          <button
-            type='button'
-            className='min-w-0 truncate text-left text-sm font-medium text-textPrimary hover:underline'
-            onClick={() => router.push(`/products/${product.id}`)}
-          >
-            {product.name}
-          </button>
-          <StatusChip value={product.inStock ? 'in-stock' : 'out-of-stock'} className='shrink-0' />
-        </div>
-        <span className='truncate text-xs text-textSecondary'>by {product.brand}</span>
-        <div className='flex items-center gap-1.5'>
-          <Rating value={product.rating} size='sm' />
-          <span className='text-xs text-textMuted'>({product.reviewCount})</span>
-        </div>
-        <div className='mt-auto flex items-center justify-between pt-1.5'>
-          <span className='text-sm font-semibold text-textPrimary'>
-            {formatCurrency(product.price, product.currency)}
-          </span>
-          <div className='flex items-center gap-1'>
-            <IconButton
-              size='sm'
-              variant='outlined'
-              aria-label={`Edit ${product.name}`}
-              onClick={() => router.push(`/products/${product.id}/edit`)}
-            >
-              <i className='tabler-edit' />
-            </IconButton>
-            <IconButton
-              size='sm'
-              variant='outlined'
-              color='error'
-              aria-label={`Delete ${product.name}`}
-              onClick={() => askDelete(product)}
-            >
-              <i className='tabler-trash' />
-            </IconButton>
-          </div>
-        </div>
-      </div>
-    </Card>
+    <ProductCard
+      product={product}
+      categoryName={categoryMap.get(product.categoryId)}
+      onEdit={() => router.push(`/products/${product.id}/edit`)}
+      onDelete={() => askDelete(product)}
+    />
   )
 
   return (
@@ -274,19 +288,21 @@ const ProductsView = () => {
       <Breadcrumbs />
       <PageHeader
         title='Products'
+        icon='tabler-package'
         subtitle='Manage your fragrance catalogue'
         action={
-          <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
-            Add Product
-          </Button>
+          <>
+            <ExportButton
+              filename='products'
+              columns={exportColumns}
+              fetchPage={(page, limit) => productsApi.list({ ...filters, page, limit })}
+            />
+            <Button startIcon={<i className='tabler-plus' />} onClick={() => router.push('/products/new')}>
+              Add Product
+            </Button>
+          </>
         }
       />
-
-      {isError && (
-        <Alert severity='error' className='mb-4'>
-          {(error as Error)?.message || 'Failed to load products.'}
-        </Alert>
-      )}
 
       <DataTable
         data={items}
@@ -325,11 +341,25 @@ const ProductsView = () => {
         onSortingChange={setSorting}
         isLoading={isLoading}
         isRefetching={isFetching && !isLoading}
+        isError={isError}
+        errorMessage={(error as Error)?.message}
+        onRetry={() => refetch()}
+        itemLabel={{ one: 'product', other: 'products' }}
+        tabs={{
+          label: 'Stock',
+          value: stock === '' ? 'all' : stock === 'true' ? 'in-stock' : 'out-of-stock',
+          onChange: v => resetOnChange(setStock)(v === 'in-stock' ? 'true' : v === 'out-of-stock' ? 'false' : ''),
+          items: [
+            { value: 'all', label: 'All products', count: stockCounts.all },
+            { value: 'in-stock', label: 'In stock', count: stockCounts.in },
+            { value: 'out-of-stock', label: 'Out of stock', count: stockCounts.out }
+          ]
+        }}
         emptyIcon='tabler-package-off'
         emptyMessage={hasFilters ? 'No products match these filters' : 'No products yet'}
         emptyDescription={
           hasFilters
-            ? 'Try a broader search, or clear the category and scent filters.'
+            ? 'Try a broader search or another tab, or clear the filters.'
             : 'Add your first fragrance to start building the catalogue.'
         }
         emptyAction={
@@ -345,12 +375,20 @@ const ProductsView = () => {
         }
         view={view}
         renderCard={renderCard}
+        renderCardSkeleton={() => <ProductCardSkeleton />}
+        gridClassName='grid grid-cols-2 gap-3 p-3 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] sm:gap-4 sm:p-4'
         selection={{
           selected: selectedIds,
           onChange: setSelectedIds,
           getId: p => p.id,
           actions: (
-            <Button size='sm' variant='outlined' color='error' onClick={() => setBulkConfirm(true)}>
+            <Button
+              size='sm'
+              variant='outlined'
+              color='error'
+              startIcon={<i className='tabler-trash' />}
+              onClick={() => setBulkConfirm(true)}
+            >
               Delete
             </Button>
           )
@@ -358,14 +396,12 @@ const ProductsView = () => {
         toolbar={
           <ProductsFilterBar
             search={search}
-            onSearchChange={resetOnChange(setSearch)}
+            onSearchChange={setSearch}
             categoryId={categoryId}
             onCategoryIdChange={resetOnChange(setCategoryId)}
             categories={categories ?? []}
             family={family}
             onFamilyChange={resetOnChange(setFamily)}
-            stock={stock}
-            onStockChange={resetOnChange(setStock)}
             priceRange={priceRange}
             onPriceRangeChange={resetOnChange(setPriceRange)}
             view={view}
@@ -382,6 +418,7 @@ const ProductsView = () => {
         title='Delete products'
         description={`Delete ${selectedIds.size} selected product${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`}
         confirmText={`Delete ${selectedIds.size}`}
+        confirmIcon='tabler-trash'
         loading={bulkDeleting}
         onConfirm={deleteSelected}
         onClose={() => setBulkConfirm(false)}

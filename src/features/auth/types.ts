@@ -23,6 +23,9 @@ export type AuthResult = {
   user: User
   accessToken: string
   refreshToken: string
+
+  /** When the session ends — 24h after sign-in for admin accounts. */
+  refreshExpiresAt?: string
 }
 
 /** Roles permitted to use the admin panel. */

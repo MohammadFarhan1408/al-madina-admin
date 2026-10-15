@@ -1,42 +1,40 @@
 'use client'
 
-// Order detail — header + 2-column card grid (line items/status left,
-// customer/shipping cards right), adapted from Theme's ecommerce
-// orders/details layout. Same useOrder/useUpdateOrderStatus hooks and
-// stage-then-confirm status logic as before — only the layout changed.
+// Order detail. Layout, top to bottom:
+//   header      — reference, placed date · item count, order + payment status
+//   fulfilment  — Processing → Shipped → Delivered stepper + status control
+//   main (2/3)  — items with the totals breakdown, then payment & transactions
+//   side (1/3)  — customer, delivery, status history
+// Status changes are staged in the Select and applied only after the confirm
+// dialog, which says exactly who the backend will notify.
 import { useState } from 'react'
 
-import { useRouter } from 'next/navigation'
-
-import Link from 'next/link'
-
-import PageHeader from '@/components/shared/PageHeader'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
-
-import OrderTimeline from '@/features/orders/components/OrderTimeline'
-import DetailSection from '@/components/shared/DetailSection'
-import DetailRow from '@/components/shared/DetailRow'
-import StatusChip from '@/components/shared/StatusChip'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import QueryState from '@/components/shared/QueryState'
-import Button from '@/components/ui/Button'
-import Select from '@/components/ui/form/Select'
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/Table'
+import DetailLoading from '@/components/shared/DetailLoading'
+import PageHeader from '@/components/shared/PageHeader'
+import Card, { CardBody, CardHeader } from '@/components/ui/Card'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/libs/api/types'
 import { formatCurrency, formatDateTime, humanize } from '@/libs/format'
+import OrderCustomerCard from '@/features/orders/components/detail/OrderCustomerCard'
+import OrderDeliveryCard from '@/features/orders/components/detail/OrderDeliveryCard'
+import OrderDetailSkeleton from '@/features/orders/components/detail/OrderDetailSkeleton'
+import OrderFulfilment from '@/features/orders/components/detail/OrderFulfilment'
+import OrderHeaderMeta from '@/features/orders/components/detail/OrderHeaderMeta'
+import OrderItemsCard from '@/features/orders/components/detail/OrderItemsCard'
+import OrderPaymentCard from '@/features/orders/components/detail/OrderPaymentCard'
+import { statusChangeEffects } from '@/features/orders/components/detail/orderDetail'
+import OrderTimeline from '@/features/orders/components/OrderTimeline'
 import {
   useOrder,
   useOrderTransactions,
   useRefundPayment,
   useUpdateOrderStatus
 } from '@/features/orders/hooks/useOrders'
-import { ORDER_STATUSES, type OrderStatus } from '@/features/orders/types'
+import type { OrderStatus } from '@/features/orders/types'
 
-type Props = { id: string }
-
-const OrderDetailView = ({ id }: Props) => {
-  const router = useRouter()
+const OrderDetailView = ({ id }: { id: string }) => {
   const { success, error } = useToast()
   const { data: order, isLoading, isError, error: fetchError, refetch } = useOrder(id)
   const { data: transactions } = useOrderTransactions(id)
@@ -71,203 +69,77 @@ const OrderDetailView = ({ id }: Props) => {
     }
   }
 
-  const latestTransaction = transactions?.[0]
-
   if (isLoading || !order) {
     return (
-      <>
-        <Breadcrumbs />
-        <PageHeader title='Order' />
-        <QueryState
-          isError={isError}
-          error={fetchError}
-          onRetry={() => refetch()}
-          fallbackMessage='Failed to load order.'
-        />
-      </>
+      <DetailLoading
+        title='Order'
+        backHref='/orders'
+        backLabel='Back to orders'
+        skeleton={<OrderDetailSkeleton />}
+        isLoading={isLoading}
+        isError={isError}
+        error={fetchError}
+        onRetry={() => refetch()}
+        fallbackMessage='Failed to load order.'
+      />
     )
   }
+
+  // The API only refunds a settled ('succeeded') transaction, so offer the
+  // button for that one specifically — not just whichever attempt is newest.
+  const refundable = order.paymentStatus === 'paid' ? transactions?.find(t => t.status === 'succeeded') : undefined
+
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
     <>
       <Breadcrumbs extra={[{ label: order.reference }]} />
       <PageHeader
         title={`Order ${order.reference}`}
-        action={
-          <div className='flex flex-wrap items-center gap-2'>
-            <StatusChip value={order.status} />
-            <StatusChip value={order.paymentStatus} />
-            <Button variant='outlined' color='secondary' onClick={() => router.push('/orders')}>
-              Back
-            </Button>
+        subtitle={`Placed ${formatDateTime(order.placedAt)} · ${itemCount} item${itemCount === 1 ? '' : 's'} · ${formatCurrency(order.total, order.currency)}`}
+        backHref='/orders'
+        backLabel='Back to orders'
+      >
+        <OrderHeaderMeta order={order} />
+      </PageHeader>
+
+      <div className='flex flex-col gap-5'>
+        <OrderFulfilment order={order} onSelectStatus={setPendingStatus} updating={updateStatus.isPending} />
+
+        <div className='grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'>
+          <div className='flex min-w-0 flex-col gap-5'>
+            <OrderItemsCard order={order} />
+            <OrderPaymentCard
+              order={order}
+              transactions={transactions}
+              refundable={refundable}
+              onRefund={setRefundTransactionId}
+            />
           </div>
-        }
-      />
 
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-        <div className='flex flex-col gap-6 md:col-span-2'>
-          <DetailSection title='Status'>
-            <Select
-              label='Update status'
-              value={order.status}
-              onChange={e => setPendingStatus(e.target.value as OrderStatus)}
-              disabled={updateStatus.isPending}
-              options={ORDER_STATUSES.map(status => ({ label: humanize(status), value: status }))}
-            />
-          </DetailSection>
-
-          <DetailSection title='Line items'>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Product</TableHeaderCell>
-                  <TableHeaderCell align='right'>Qty</TableHeaderCell>
-                  <TableHeaderCell align='right'>Unit price</TableHeaderCell>
-                  <TableHeaderCell align='right'>Line total</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {order.items.map((item, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>
-                      <div className='flex items-center gap-3'>
-                        <img src={item.productImage} alt='' className='size-9 rounded-md object-cover' />
-                        <div className='flex flex-col'>
-                          <span className='text-sm'>{item.productName}</span>
-                          <span className='text-xs text-textSecondary'>{item.volumeMl}ml</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell align='right'>{item.quantity}</TableCell>
-                    <TableCell align='right'>{formatCurrency(item.price, order.currency)}</TableCell>
-                    <TableCell align='right'>{formatCurrency(item.price * item.quantity, order.currency)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <div className='flex flex-col items-end gap-1'>
-              <span className='text-sm text-textSecondary'>
-                Subtotal: {formatCurrency(order.subtotal, order.currency)}
-              </span>
-              <span className='text-sm text-textSecondary'>
-                Shipping: {formatCurrency(order.shipping, order.currency)}
-              </span>
-              {!!order.discountAmount && (
-                <span className='text-sm text-success'>
-                  Discount ({order.couponCode}): -{formatCurrency(order.discountAmount, order.currency)}
-                </span>
-              )}
-              <span className='text-base font-semibold'>Total: {formatCurrency(order.total, order.currency)}</span>
-            </div>
-          </DetailSection>
-
-          <DetailSection title='Payment'>
-            <DetailRow label='Status' value={<StatusChip value={order.paymentStatus} />} />
-            {latestTransaction && (
-              <>
-                <DetailRow label='Provider' value={humanize(latestTransaction.provider)} />
-                <DetailRow
-                  label='Amount'
-                  value={formatCurrency(latestTransaction.amount, latestTransaction.currency)}
-                />
-                {latestTransaction.providerReference && (
-                  <DetailRow label='Transaction ref' value={latestTransaction.providerReference} />
-                )}
-                {latestTransaction.failureReason && (
-                  <DetailRow label='Failure reason' value={latestTransaction.failureReason} />
-                )}
-              </>
-            )}
-
-            {transactions && transactions.length > 1 && (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>When</TableHeaderCell>
-                    <TableHeaderCell>Provider</TableHeaderCell>
-                    <TableHeaderCell>Status</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {transactions.map(txn => (
-                    <TableRow key={txn.id}>
-                      <TableCell>{formatDateTime(txn.createdAt)}</TableCell>
-                      <TableCell>{humanize(txn.provider)}</TableCell>
-                      <TableCell>
-                        <StatusChip value={txn.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {order.paymentStatus === 'paid' && latestTransaction && (
-              <Button
-                variant='outlined'
-                color='error'
-                onClick={() => setRefundTransactionId(latestTransaction.id)}
-                className='w-fit'
-              >
-                Refund payment
-              </Button>
-            )}
-          </DetailSection>
-        </div>
-
-        <div className='flex flex-col gap-6'>
-          <DetailSection title='Customer'>
-            <DetailRow label='Placed' value={formatDateTime(order.placedAt)} />
-            <DetailRow
-              label='Payment method / Delivery'
-              value={`${humanize(order.paymentMethod)} · ${humanize(order.deliveryMethod)}`}
-              stacked
-            />
-            {order.customer && (
-              <DetailRow
-                label='Account'
-                stacked
-                value={
-                  <Link href={`/customers/${order.customer.id}`} className='flex min-h-11 flex-col justify-center hover:underline'>
-                    <span className='text-sm font-medium text-primaryInk'>{order.customer.fullName}</span>
-                    <span className='text-xs text-textSecondary'>{order.customer.email}</span>
-                  </Link>
-                }
-              />
-            )}
-            <DetailRow
-              label='Contact'
-              stacked
-              value={
-                <div className='flex flex-col'>
-                  <span className='text-sm'>{order.shippingAddress.fullName}</span>
-                  <span className='text-xs text-textSecondary'>{order.shippingAddress.phone}</span>
-                  {order.guestEmail && <span className='text-xs text-textSecondary'>{order.guestEmail} (guest)</span>}
-                </div>
-              }
-            />
-          </DetailSection>
-
-          <DetailSection title='Status history'>
-            <OrderTimeline history={order.statusHistory} />
-          </DetailSection>
-
-          <DetailSection title='Shipping address'>
-            <DetailRow
-              label='Ship to'
-              value={`${order.shippingAddress.address}, ${order.shippingAddress.city}`}
-              stacked
-            />
-          </DetailSection>
+          <div className='flex min-w-0 flex-col gap-5'>
+            <OrderCustomerCard order={order} />
+            <OrderDeliveryCard order={order} />
+            <Card>
+              <CardHeader title='Status history' icon='tabler-timeline' />
+              <CardBody>
+                <OrderTimeline history={order.statusHistory} />
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
 
       <ConfirmDialog
         open={!!pendingStatus}
-        title='Update order status'
-        description={`Mark order ${order.reference} as "${humanize(pendingStatus ?? '')}"? The customer is not currently notified of status changes.`}
+        title={`Mark as ${humanize(pendingStatus ?? '')}?`}
+        description={
+          pendingStatus
+            ? `Order ${order.reference} moves from ${humanize(order.status)} to ${humanize(pendingStatus)}. ${statusChangeEffects(order, pendingStatus)}`
+            : undefined
+        }
         confirmText='Update status'
+        confirmIcon={pendingStatus === 'cancelled' ? 'tabler-ban' : 'tabler-check'}
         confirmColor={pendingStatus === 'cancelled' ? 'error' : 'primary'}
         loading={updateStatus.isPending}
         onConfirm={applyStatusChange}
@@ -277,8 +149,9 @@ const OrderDetailView = ({ id }: Props) => {
       <ConfirmDialog
         open={!!refundTransactionId}
         title='Refund payment'
-        description={`Refund the payment for order ${order.reference}? This cannot be undone.`}
+        description={`Refund ${formatCurrency(refundable?.amount ?? order.total, refundable?.currency ?? order.currency)} for order ${order.reference}? This cannot be undone.`}
         confirmText='Refund'
+        confirmIcon='tabler-receipt-refund'
         confirmColor='error'
         loading={refundPayment.isPending}
         onConfirm={applyRefund}

@@ -4,12 +4,12 @@ import { z } from 'zod'
 import { COLLECTION_ACCENTS } from './types'
 
 export const collectionSchema = z.object({
-  title: z.string().trim().min(1, 'Title is required'),
-  subtitle: z.string().trim().min(1, 'Subtitle is required'),
-  image: z.string().min(1, 'An image is required'),
+  title: z.string().trim().min(2, 'At least 2 characters'),
+  subtitle: z.string().trim().min(2, 'At least 2 characters'),
+  image: z.string().min(1, 'An image is required').url('Must be a valid image URL'),
   accent: z.enum(COLLECTION_ACCENTS, { message: 'Accent is required' }),
   sortOrder: z.number({ error: 'Enter a number' }).int('Must be a whole number').min(0, 'Must be 0 or greater'),
-  slug: z.string().trim().optional().or(z.literal('')),
+  slug: z.string().trim().min(2, 'At least 2 characters').optional().or(z.literal('')),
   metaTitle: z.string().trim().optional().or(z.literal('')),
   metaDescription: z.string().trim().optional().or(z.literal('')),
   metaKeywords: z.array(z.string())

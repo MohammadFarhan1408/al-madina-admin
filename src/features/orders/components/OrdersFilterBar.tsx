@@ -1,38 +1,35 @@
 'use client'
 
+// Orders toolbar: search, payment status and a date range. Order status — the
+// primary split — is the tab row above, with counts.
 import Button from '@/components/ui/Button'
-import DateInput from '@/components/ui/form/DateInput'
+import DateRangeFilter from '@/components/shared/DateRangeFilter'
+import FilterSelect from '@/components/shared/FilterSelect'
 import SearchField from '@/components/shared/SearchField'
-import Select from '@/components/ui/form/Select'
 import { humanize } from '@/libs/format'
-import { ORDER_STATUSES, PAYMENT_STATUSES, type OrderStatus, type PaymentStatus } from '@/features/orders/types'
+import type { DateRange } from '@/libs/dateRange'
+import { PAYMENT_STATUSES, type PaymentStatus } from '@/features/orders/types'
 
 export type OrdersFilterBarProps = {
   search: string
   onSearchChange: (value: string) => void
   paymentStatus: PaymentStatus | ''
   onPaymentStatusChange: (value: PaymentStatus | '') => void
-  status: OrderStatus | ''
-  onStatusChange: (value: OrderStatus | '') => void
-  from: string
-  onFromChange: (value: string) => void
-  to: string
-  onToChange: (value: string) => void
+  dateRange: DateRange
+  onDateRangeChange: (value: DateRange) => void
   hasFilters: boolean
   onClearFilters: () => void
 }
+
+const PAYMENT_OPTIONS = PAYMENT_STATUSES.map(s => ({ label: humanize(s), value: s }))
 
 const OrdersFilterBar = ({
   search,
   onSearchChange,
   paymentStatus,
   onPaymentStatusChange,
-  status,
-  onStatusChange,
-  from,
-  onFromChange,
-  to,
-  onToChange,
+  dateRange,
+  onDateRangeChange,
   hasFilters,
   onClearFilters
 }: OrdersFilterBarProps) => (
@@ -40,47 +37,21 @@ const OrdersFilterBar = ({
     <SearchField
       value={search}
       onChange={onSearchChange}
-      placeholder='Search reference, name or email'
-      className='min-w-56 flex-1 self-end'
+      placeholder='Search reference, name or email…'
+      tone='subtle'
+      className='min-w-full flex-1 sm:min-w-56'
     />
-    <Select
-      label='Status'
-      value={status}
-      onChange={e => onStatusChange(e.target.value as OrderStatus | '')}
-      containerClassName='min-w-36 flex-1'
-      options={[{ label: 'All statuses', value: '' }, ...ORDER_STATUSES.map(s => ({ label: humanize(s), value: s }))]}
-    />
-    <Select
+    <FilterSelect<PaymentStatus>
       label='Payment'
+      icon='tabler-credit-card'
+      allLabel='All payment statuses'
       value={paymentStatus}
-      onChange={e => onPaymentStatusChange(e.target.value as PaymentStatus | '')}
-      containerClassName='min-w-36 flex-1'
-      options={[{ label: 'All payments', value: '' }, ...PAYMENT_STATUSES.map(s => ({ label: humanize(s), value: s }))]}
+      onChange={onPaymentStatusChange}
+      options={PAYMENT_OPTIONS}
     />
-    <DateInput
-      clearable
-      label='From'
-      value={from}
-      max={to || undefined}
-      onChange={e => onFromChange(e.target.value)}
-      containerClassName='min-w-36 flex-1'
-    />
-    <DateInput
-      clearable
-      label='To'
-      value={to}
-      min={from || undefined}
-      onChange={e => onToChange(e.target.value)}
-      containerClassName='min-w-36 flex-1'
-    />
+    <DateRangeFilter label='Placed' value={dateRange} onChange={onDateRangeChange} />
     {hasFilters && (
-      <Button
-        startIcon={<i className='tabler-x' />}
-        size='sm'
-        variant='text'
-        color='secondary'
-        onClick={onClearFilters}
-      >
+      <Button startIcon={<i className='tabler-x' />} variant='text' color='secondary' onClick={onClearFilters}>
         Clear filters
       </Button>
     )}

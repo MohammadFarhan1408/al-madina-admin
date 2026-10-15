@@ -18,8 +18,13 @@ const EditCategoryView = ({ id }: Props) => {
     return (
       <>
         <Breadcrumbs />
-        <PageHeader title='Edit Category' />
-        <QueryState isError={isError} error={error} onRetry={() => refetch()} fallbackMessage='Failed to load category.' />
+        <PageHeader title='Edit Category' backHref={`/categories/${id}`} backLabel='Back to category' />
+        <QueryState
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
+          fallbackMessage='Failed to load category.'
+        />
       </>
     )
   }
@@ -27,7 +32,7 @@ const EditCategoryView = ({ id }: Props) => {
   return (
     <>
       <Breadcrumbs extra={[{ label: category.name, href: `/categories/${id}` }, { label: 'Edit' }]} />
-      <PageHeader title={`Edit ${category.name}`} />
+      <PageHeader title={`Edit ${category.name}`} backHref={`/categories/${id}`} backLabel='Back to category' />
       <CategoryForm
         category={category}
         onSuccess={() => router.push(`/categories/${id}`)}

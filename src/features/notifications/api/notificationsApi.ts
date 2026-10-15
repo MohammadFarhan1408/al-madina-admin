@@ -16,7 +16,7 @@ export const notificationsApi = {
       ...(values.tier ? { tier: values.tier } : {})
     }
 
-    return apiPost<{ queued: boolean }>(endpoints.admin.notifications, payload)
+    return apiPost<{ recipients: number }>(endpoints.admin.notifications, payload)
   },
 
   history: (params: NotificationHistoryParams) =>

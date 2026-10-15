@@ -6,13 +6,14 @@
 
 import { useState } from 'react'
 
-import { autoUpdate, flip, offset, shift, useDismiss, useFloating, useInteractions, useRole } from '@floating-ui/react'
 import classnames from 'classnames'
 
 import Button from '@/components/ui/Button'
-import { controlBase, controlState, controlTone } from '@/components/ui/form/Field'
 import Input from '@/components/ui/form/Input'
 import { popoverSurface } from '@/components/ui/Popover'
+import { formatCurrency } from '@/libs/format'
+
+import { FilterPill, useFilterPopover } from './FilterPill'
 
 export type PriceRange = { min?: number; max?: number }
 
@@ -23,96 +24,92 @@ type PriceRangeFilterProps = {
   className?: string
 }
 
+const formatRange = ({ min, max }: PriceRange, currency: string) => {
+  const fmt = (n: number) => formatCurrency(n, currency).replace(/\.00$/, '')
+
+  if (min !== undefined && max !== undefined) return `${fmt(min)} – ${fmt(max)}`
+  if (min !== undefined) return `${fmt(min)}+`
+  if (max !== undefined) return `Up to ${fmt(max)}`
+
+  return undefined
+}
+
 const PriceRangeFilter = ({ value, onChange, currency = 'AED', className }: PriceRangeFilterProps) => {
-  const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(value)
-  const hasValue = value.min !== undefined || value.max !== undefined
-  const t = controlTone.light
+  const popover = useFilterPopover({ onOpen: () => setDraft(value) })
 
-  const { refs, floatingStyles, context, isPositioned } = useFloating({
-    open,
-    onOpenChange: next => {
-      setOpen(next)
-      if (next) setDraft(value)
-    },
-    placement: 'bottom-start',
-    whileElementsMounted: autoUpdate,
-    middleware: [offset(6), flip({ padding: 8 }), shift({ padding: 8 })]
-  })
-
-  const { getReferenceProps, getFloatingProps } = useInteractions([
-    useDismiss(context),
-    useRole(context, { role: 'dialog' })
-  ])
+  // A reversed range matches nothing server-side — block it here with a
+  // reason rather than returning an empty table.
+  const invalid = draft.min !== undefined && draft.max !== undefined && draft.min > draft.max
 
   const apply = () => {
+    if (invalid) return
     onChange(draft)
-    setOpen(false)
+    popover.setOpen(false)
   }
 
   const clear = () => {
     onChange({})
-    setOpen(false)
+    popover.setOpen(false)
   }
 
   return (
     <>
-      <button
-        type='button'
-        {...getReferenceProps({ ref: refs.setReference })}
-        className={classnames(
-          controlBase,
-          'h-10 justify-start px-3 text-left',
-          t.idle,
-          controlState(false, false),
-          className
-        )}
-      >
-        <i aria-hidden className='tabler-currency-dirham shrink-0 text-textMuted' />
-        <span className={classnames('min-w-0 flex-1 truncate text-sm', hasValue ? t.text : t.placeholder)}>
-          {hasValue ? `${value.min ?? 0}–${value.max ?? '∞'} ${currency}` : 'Price range'}
-        </span>
-        <i aria-hidden className='tabler-chevron-down shrink-0 text-[16px] text-textMuted' />
-      </button>
+      <FilterPill
+        label='Price'
+        icon='tabler-currency-dirham'
+        valueLabel={formatRange(value, currency)}
+        open={popover.open}
+        className={className}
+        {...popover.reference()}
+      />
 
-      {open && (
-        <div
-          {...getFloatingProps({
-            ref: refs.setFloating,
-            style: { ...floatingStyles, opacity: isPositioned ? 1 : 0 },
-            className: classnames(popoverSurface, 'w-64 p-3')
-          })}
+      {popover.open && (
+        <form
+          {...popover.floating(classnames(popoverSurface, 'w-64 p-3'), { 'aria-label': 'Price range' })}
+          onSubmit={e => {
+            e.preventDefault()
+            apply()
+          }}
         >
           <div className='flex items-center gap-2'>
             <Input
               type='number'
               inputSize='sm'
-              label='Min'
+              label={`Min (${currency})`}
               placeholder='0'
               min={0}
+              autoFocus
               value={draft.min ?? ''}
               onChange={e => setDraft(d => ({ ...d, min: e.target.value === '' ? undefined : Number(e.target.value) }))}
             />
-            <span className='mt-5 text-textMuted'>–</span>
+            <span aria-hidden className='mt-5 text-textMuted'>
+              –
+            </span>
             <Input
               type='number'
               inputSize='sm'
-              label='Max'
+              label={`Max (${currency})`}
               placeholder='Any'
               min={0}
               value={draft.max ?? ''}
               onChange={e => setDraft(d => ({ ...d, max: e.target.value === '' ? undefined : Number(e.target.value) }))}
             />
           </div>
+          {invalid && (
+            <p role='alert' className='mt-2 text-xs text-errorDark'>
+              Min must be less than or equal to max.
+            </p>
+          )}
           <div className='mt-3 flex items-center justify-end gap-2'>
-            <Button size='sm' variant='text' color='secondary' onClick={clear}>
+            <Button size='sm' variant='text' color='secondary' startIcon={<i className='tabler-x' />} onClick={clear}>
               Clear
             </Button>
-            <Button size='sm' onClick={apply}>
+            <Button size='sm' type='submit' startIcon={<i className='tabler-check' />} disabled={invalid}>
               Apply
             </Button>
           </div>
-        </div>
+        </form>
       )}
     </>
   )
